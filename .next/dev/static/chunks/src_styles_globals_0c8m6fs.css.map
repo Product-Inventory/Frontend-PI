@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/camib/Downloads/Marquitos%20-%20C%C3%B3mputo%20en%20la%20nube/computo/frontend-pi/src/styles/globals.css"],"sourcesContent":["/*! tailwindcss v4.2.4 | MIT License | https://tailwindcss.com */\n.flex {\n  display: flex;\n}\n.h-screen {\n  height: 100vh;\n}\n.flex-1 {\n  flex: 1;\n}"],"names":[],"mappings":"AACA;;;;AAGA;;;;AAGA"}}]
-}

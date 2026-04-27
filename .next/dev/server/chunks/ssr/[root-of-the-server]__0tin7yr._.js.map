@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/camib/Downloads/Marquitos%20-%20C%C3%B3mputo%20en%20la%20nube/computo/frontend-pi/src/app/dashboard/page.tsx"],"sourcesContent":["export default function Page() {\r\n  return <div>Dashboard de Prueba</div>;\r\n}"],"names":["Page"],"mappings":";;;;;;AAAe,SAASA;IACtB,qBAAO,8OAAC;kBAAI;;;;;;AACd"}}]
-}
