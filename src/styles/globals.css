@@ -1,273 +1,249 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* Tailwind integration hook - keep this at the top for Next/Tailwind setups */
 @import 'tailwindcss';
 
-:root,
-[data-theme='mockout'] {
-	color-scheme: light;
-	--font-sans: 'Manrope', 'Segoe UI', sans-serif;
-	--background-top: #a7eef9;
-	--background-mid: #8caeff;
-	--background-bottom: #7c8ae4;
-	--surface: rgba(255, 255, 255, 0.22);
-	--surface-strong: rgba(255, 255, 255, 0.34);
-	--surface-muted: rgba(255, 255, 255, 0.14);
-	--border-subtle: rgba(255, 255, 255, 0.5);
-	--border-strong: rgba(255, 255, 255, 0.72);
-	--text-primary: #183153;
-	--text-secondary: #52627d;
-	--primary: #5a4fcf;
-	--primary-strong: #3f44d7;
-	--accent: #56d6ea;
-	--accent-strong: #26c3d6;
-	--success: #1f9d6a;
-	--warning: #e39b2f;
-	--danger: #ef5a68;
-	--shadow-ambient: 0 22px 52px rgba(41, 60, 122, 0.24);
-	--shadow-card: 0 12px 30px rgba(44, 61, 121, 0.18);
-	--inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.82);
-	--rounded-box: 1.5rem;
-	--rounded-btn: 9999px;
-	--rounded-badge: 9999px;
-	--b1: 0 0% 100%;
-	--b2: 216 35% 96%;
-	--b3: 217 25% 88%;
-	--bc: 219 33% 28%;
-	--p: 247 58% 58%;
-	--pc: 0 0% 100%;
-	--s: 188 78% 55%;
-	--sc: 216 60% 15%;
-	--a: 192 81% 51%;
-	--ac: 214 58% 15%;
-	--n: 225 31% 22%;
-	--nc: 0 0% 100%;
-	--in: 203 89% 58%;
-	--su: 158 61% 42%;
-	--wa: 39 92% 52%;
-	--er: 355 81% 62%;
+/* Design tokens - easy to adapt in another project */
+:root {
+  --crystal-bg-a: #9cdaf2;
+  --crystal-bg-b: #8fa9ff;
+  --crystal-bg-c: #7a8de0;
+  --crystal-panel: rgba(255, 255, 255, 0.2);
+  --crystal-panel-strong: rgba(255, 255, 255, 0.34);
+  --crystal-border: rgba(255, 255, 255, 0.52);
+  --crystal-shadow: 0 20px 44px rgba(40, 62, 128, 0.32);
+  --crystal-inner: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --accent: #5a4fcf;
+  --accent-bg: rgba(154, 122, 255, 0.06);
+  --accent-border: rgba(166, 139, 255, 0.24);
 }
 
-html,
-body,
-#root,
-#__next {
-	min-height: 100%;
-}
-
-html {
-	scroll-behavior: smooth;
-	-webkit-text-size-adjust: 100%;
+/* Base page styles (drop into _app.jsx or global.css in Next) */
+html, body, #__next, #root {
+  min-height: 100%;
+  margin: 0;
 }
 
 body {
-	margin: 0;
-	font-family: var(--font-sans);
-	color: var(--text-primary);
-	background:
-		radial-gradient(75rem 50rem at 0% 0%, rgba(216, 248, 255, 0.95) 0%, transparent 54%),
-		radial-gradient(70rem 48rem at 100% 100%, rgba(148, 168, 255, 0.92) 0%, transparent 58%),
-		linear-gradient(150deg, var(--background-top) 0%, var(--background-mid) 46%, var(--background-bottom) 100%);
-	background-attachment: fixed;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial;
+  background:
+    radial-gradient(80rem 52rem at 0% 0%, #a4ecff 0%, transparent 52%),
+    radial-gradient(80rem 52rem at 100% 100%, #7a92ee 0%, transparent 58%),
+    linear-gradient(150deg, var(--crystal-bg-a) 0%, var(--crystal-bg-b) 46%, var(--crystal-bg-c) 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: rgba(12, 17, 43, 0.96);
 }
 
-body::before {
-	content: '';
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	background-image:
-		linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-	background-size: 72px 72px;
-	mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 90%);
-	opacity: 0.35;
-}
-
-* {
-	box-sizing: border-box;
-}
-
-::selection {
-	background: rgba(86, 214, 234, 0.28);
-	color: var(--text-primary);
-}
-
-a {
-	color: inherit;
-	text-decoration: none;
-}
-
-img,
-svg,
-video,
-canvas {
-	display: block;
-	max-width: 100%;
-}
-
-button,
-input,
-select,
-textarea {
-	font: inherit;
-}
-
-:where(button, .btn) {
-	border-radius: var(--rounded-btn);
-}
-
-:where(button, .btn):focus-visible {
-	outline: 2px solid rgba(213, 251, 255, 0.9);
-	outline-offset: 2px;
-}
-
+/* Atmosphere helpers used by layout wrappers */
 .app-atmosphere {
-	position: relative;
-	isolation: isolate;
+  position: relative;
+  isolation: isolate;
 }
 
 .app-atmosphere::before,
 .app-atmosphere::after {
-	content: '';
-	position: absolute;
-	inset: auto;
-	pointer-events: none;
-	filter: blur(76px);
-	opacity: 0.58;
-	z-index: -1;
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  filter: blur(70px);
+  opacity: 0.6;
+  z-index: -1;
 }
 
 .app-atmosphere::before {
-	width: 22rem;
-	height: 22rem;
-	top: 5%;
-	left: 6%;
-	background: radial-gradient(circle, rgba(223, 249, 255, 0.98) 0%, rgba(140, 226, 255, 0.62) 42%, transparent 74%);
+  width: 340px;
+  height: 340px;
+  top: 6%;
+  left: 5%;
+  background: radial-gradient(circle, #d9f6ff 0%, #8ee2ff 45%, transparent 75%);
 }
 
 .app-atmosphere::after {
-	width: 24rem;
-	height: 24rem;
-	right: 6%;
-	bottom: 5%;
-	background: radial-gradient(circle, rgba(235, 218, 255, 0.98) 0%, rgba(138, 165, 255, 0.66) 46%, transparent 76%);
+  width: 360px;
+  height: 360px;
+  right: 7%;
+  bottom: 8%;
+  background: radial-gradient(circle, #ead4ff 0%, #8aa5ff 48%, transparent 78%);
 }
 
+/* Glass container styles (keeps naming used in your project) */
 .app-shell {
-	background: linear-gradient(160deg, rgba(255, 255, 255, 0.26) 0%, rgba(218, 231, 255, 0.16) 100%);
-	border: 1px solid rgba(255, 255, 255, 0.42);
-	box-shadow: var(--shadow-ambient), var(--inner-highlight);
-	backdrop-filter: blur(24px) saturate(145%);
-}
-
-.glass-card,
-.glass-panel,
-.glass-chip,
-.glass-input {
-	position: relative;
-	overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.24) 0%, rgba(213, 228, 255, 0.14) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--crystal-shadow), var(--crystal-inner);
+  backdrop-filter: blur(24px) saturate(140%);
 }
 
 .glass-card {
-	background:
-		linear-gradient(145deg, rgba(255, 255, 255, 0.44) 0%, rgba(220, 232, 255, 0.18) 100%),
-		var(--surface);
-	border: 1px solid var(--border-subtle);
-	box-shadow: var(--shadow-card), var(--inner-highlight);
-	backdrop-filter: blur(20px) saturate(145%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42) 0%, rgba(220, 232, 255, 0.18) 100%),
+    var(--crystal-panel);
+  border: 1px solid var(--crystal-border);
+  box-shadow: 0 14px 34px rgba(40, 62, 128, 0.2), var(--crystal-inner);
+  backdrop-filter: blur(20px) saturate(140%);
 }
 
 .glass-panel {
-	background: linear-gradient(145deg, rgba(255, 255, 255, 0.5) 0%, rgba(220, 233, 255, 0.24) 100%);
-	border: 1px solid rgba(255, 255, 255, 0.56);
-	box-shadow: 0 10px 24px rgba(44, 63, 134, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.82);
-	backdrop-filter: blur(16px) saturate(138%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.48) 0%, rgba(220, 233, 255, 0.24) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  box-shadow: 0 8px 24px rgba(44, 63, 134, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .glass-chip {
-	background: linear-gradient(145deg, rgba(255, 255, 255, 0.6) 0%, rgba(227, 237, 255, 0.36) 100%);
-	border: 1px solid rgba(255, 255, 255, 0.68);
-	box-shadow: 0 8px 18px rgba(49, 70, 140, 0.14);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.56) 0%, rgba(227, 237, 255, 0.34) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 15px rgba(49, 70, 140, 0.15);
 }
 
+/* Inputs */
 .glass-input {
-	background: linear-gradient(140deg, rgba(255, 255, 255, 0.72) 0%, rgba(233, 241, 255, 0.44) 100%);
-	border: 1px solid rgba(255, 255, 255, 0.68);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.65) 0%, rgba(233, 241, 255, 0.4) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+}
+.glass-input:focus {
+  box-shadow: 0 0 0 2px rgba(132, 162, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.glass-input:focus,
-.glass-input:focus-visible {
-	outline: none;
-	box-shadow:
-		0 0 0 2px rgba(132, 162, 255, 0.58),
-		inset 0 1px 0 rgba(255, 255, 255, 0.92);
+/* Button visuals scoped to .app-shell to avoid affecting third-party UI (e.g. DaisyUI) */
+.app-shell button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 180, 236, 0.38) !important;
+  color: #baf7ff !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.14) 0%, rgba(222, 206, 255, 0.12) 50%, rgba(196, 170, 255, 0.1) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -6px 12px rgba(178, 149, 232, 0.1),
+    0 5px 14px rgba(138, 109, 196, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: transform 180ms ease, box-shadow 220ms ease, filter 220ms ease;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
 }
 
-.signin-btn {
-	border: 1px solid rgba(205, 186, 247, 0.52) !important;
-	color: #fff !important;
-	background:
-		linear-gradient(165deg, rgba(255, 255, 255, 0.18) 0%, rgba(224, 205, 255, 0.28) 52%, rgba(195, 167, 249, 0.26) 100%) !important;
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.68),
-		inset 0 -8px 14px rgba(183, 148, 240, 0.2),
-		0 8px 20px rgba(133, 104, 191, 0.26),
-		0 0 0 1px rgba(255, 255, 255, 0.24);
-	transition: transform 180ms ease, box-shadow 220ms ease, filter 220ms ease;
+/* glossy highlight */
+.app-shell button::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 7%;
+  height: 44%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.09));
+  z-index: -1;
 }
 
-.signin-btn:hover {
-	transform: translateY(-1px);
-	filter: saturate(1.05) brightness(1.03);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.74),
-		inset 0 -9px 16px rgba(176, 144, 236, 0.14),
-		0 10px 22px rgba(145, 116, 205, 0.2),
-		0 0 18px rgba(176, 145, 236, 0.24);
+/* soft glow under the button */
+.app-shell button::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -36%;
+  height: 64%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(199, 180, 255, 0.24), rgba(173, 152, 246, 0.26));
+  filter: blur(10px);
+  opacity: 0.48;
+  z-index: -2;
+  transition: opacity 220ms ease;
 }
 
-.signin-btn:active {
-	transform: translateY(1px) scale(0.995);
+.app-shell button:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05) brightness(1.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.68),
+    inset 0 -9px 16px rgba(176, 144, 236, 0.14),
+    0 8px 20px rgba(145, 116, 205, 0.2),
+    0 0 16px rgba(176, 145, 236, 0.24);
+}
+.app-shell button:hover::after { opacity: 0.95; }
+.app-shell button:active { transform: translateY(1px) scale(0.995); }
+
+/* Accessible focus ring */
+.app-shell button:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    inset 0 -9px 16px rgba(176, 144, 236, 0.14),
+    0 8px 20px rgba(145, 116, 205, 0.2),
+    0 0 0 2px rgba(213, 251, 255, 0.85),
+    0 0 24px rgba(134, 237, 255, 0.34);
 }
 
-.custom-scrollbar {
-	scrollbar-color: rgba(88, 111, 166, 0.52) transparent;
-	scrollbar-width: thin;
+.app-shell button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  filter: grayscale(0.12);
+}
+.app-shell button:disabled::after { opacity: 0.35; }
+
+/* Variant used in your app */
+.app-shell .signin-btn {
+  border: 1px solid rgba(205, 186, 247, 0.52) !important;
+  color: #5a4fcf !important;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.18) 0%, rgba(224, 205, 255, 0.28) 52%, rgba(195, 167, 249, 0.26) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.68),
+    inset 0 -8px 14px rgba(183, 148, 240, 0.2),
+    0 8px 20px rgba(133, 104, 191, 0.26),
+    0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+.app-shell .signin-btn::after {
+  background: linear-gradient(90deg, rgba(214, 191, 255, 0.35), rgba(188, 157, 255, 0.38));
+  opacity: 0.62;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
-}
+/* Small helpers */
+.left-sidebar button { color: #ffffff !important; }
+.dashboard-main button { color: #b48cff !important; }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-	background: transparent;
-}
-
+/* Custom scrollbar (opt-in via adding .custom-scrollbar) */
+.custom-scrollbar { scrollbar-color: rgba(88, 111, 166, 0.52) transparent; scrollbar-width: thin; }
+.custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-	background: linear-gradient(180deg, rgba(95, 118, 179, 0.48), rgba(90, 79, 207, 0.55));
-	border: 2px solid rgba(255, 255, 255, 0.45);
-	border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(95, 118, 179, 0.48), rgba(90, 79, 207, 0.55));
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-	background: linear-gradient(180deg, rgba(86, 103, 171, 0.66), rgba(78, 71, 194, 0.72));
+  background: linear-gradient(180deg, rgba(86, 103, 171, 0.66), rgba(78, 71, 194, 0.72));
 }
 
+/* Reusable components for Next/Tailwind projects */
+.counter { font-size: 16px; padding: 5px 10px; border-radius: 5px; color: var(--accent); background: var(--accent-bg); border: 2px solid transparent; transition: border-color 0.3s; margin-bottom: 24px; }
+.counter:hover { border-color: var(--accent-border); }
+.counter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Hero / decorative utilities kept minimal so they can be copied */
+.hero { position: relative; }
+.hero .base, .hero .framework, .hero .vite { inset-inline: 0; margin: 0 auto; }
+.hero .base { width: 170px; position: relative; z-index: 0; }
+.hero .framework, .hero .vite { position: absolute; }
+.hero .framework { z-index: 1; top: 34px; height: 28px; transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4); }
+.hero .vite { z-index: 0; top: 107px; height: 26px; width: auto; transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8); }
+
+/* Reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
-	html {
-		scroll-behavior: auto;
-	}
-
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
-	}
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Usage notes (remove if not desired):
+ - Import this file in Next.js via `import '../src/global-styles.css'` in _app.jsx
+ - Ensure Tailwind's config includes this file for purging and that PostCSS processes Tailwind directives.
+ - DaisyUI may be used on top of these tokens; adjust CSS variables to match daisy themes if needed.
+*/
