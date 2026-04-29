@@ -1,3 +1,273 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+:root,
+[data-theme='mockout'] {
+	color-scheme: light;
+	--font-sans: 'Manrope', 'Segoe UI', sans-serif;
+	--background-top: #a7eef9;
+	--background-mid: #8caeff;
+	--background-bottom: #7c8ae4;
+	--surface: rgba(255, 255, 255, 0.22);
+	--surface-strong: rgba(255, 255, 255, 0.34);
+	--surface-muted: rgba(255, 255, 255, 0.14);
+	--border-subtle: rgba(255, 255, 255, 0.5);
+	--border-strong: rgba(255, 255, 255, 0.72);
+	--text-primary: #183153;
+	--text-secondary: #52627d;
+	--primary: #5a4fcf;
+	--primary-strong: #3f44d7;
+	--accent: #56d6ea;
+	--accent-strong: #26c3d6;
+	--success: #1f9d6a;
+	--warning: #e39b2f;
+	--danger: #ef5a68;
+	--shadow-ambient: 0 22px 52px rgba(41, 60, 122, 0.24);
+	--shadow-card: 0 12px 30px rgba(44, 61, 121, 0.18);
+	--inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+	--rounded-box: 1.5rem;
+	--rounded-btn: 9999px;
+	--rounded-badge: 9999px;
+	--b1: 0 0% 100%;
+	--b2: 216 35% 96%;
+	--b3: 217 25% 88%;
+	--bc: 219 33% 28%;
+	--p: 247 58% 58%;
+	--pc: 0 0% 100%;
+	--s: 188 78% 55%;
+	--sc: 216 60% 15%;
+	--a: 192 81% 51%;
+	--ac: 214 58% 15%;
+	--n: 225 31% 22%;
+	--nc: 0 0% 100%;
+	--in: 203 89% 58%;
+	--su: 158 61% 42%;
+	--wa: 39 92% 52%;
+	--er: 355 81% 62%;
+}
+
+html,
+body,
+#root,
+#__next {
+	min-height: 100%;
+}
+
+html {
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	color: var(--text-primary);
+	background:
+		radial-gradient(75rem 50rem at 0% 0%, rgba(216, 248, 255, 0.95) 0%, transparent 54%),
+		radial-gradient(70rem 48rem at 100% 100%, rgba(148, 168, 255, 0.92) 0%, transparent 58%),
+		linear-gradient(150deg, var(--background-top) 0%, var(--background-mid) 46%, var(--background-bottom) 100%);
+	background-attachment: fixed;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+	background-size: 72px 72px;
+	mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 90%);
+	opacity: 0.35;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+::selection {
+	background: rgba(86, 214, 234, 0.28);
+	color: var(--text-primary);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+img,
+svg,
+video,
+canvas {
+	display: block;
+	max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+:where(button, .btn) {
+	border-radius: var(--rounded-btn);
+}
+
+:where(button, .btn):focus-visible {
+	outline: 2px solid rgba(213, 251, 255, 0.9);
+	outline-offset: 2px;
+}
+
+.app-atmosphere {
+	position: relative;
+	isolation: isolate;
+}
+
+.app-atmosphere::before,
+.app-atmosphere::after {
+	content: '';
+	position: absolute;
+	inset: auto;
+	pointer-events: none;
+	filter: blur(76px);
+	opacity: 0.58;
+	z-index: -1;
+}
+
+.app-atmosphere::before {
+	width: 22rem;
+	height: 22rem;
+	top: 5%;
+	left: 6%;
+	background: radial-gradient(circle, rgba(223, 249, 255, 0.98) 0%, rgba(140, 226, 255, 0.62) 42%, transparent 74%);
+}
+
+.app-atmosphere::after {
+	width: 24rem;
+	height: 24rem;
+	right: 6%;
+	bottom: 5%;
+	background: radial-gradient(circle, rgba(235, 218, 255, 0.98) 0%, rgba(138, 165, 255, 0.66) 46%, transparent 76%);
+}
+
+.app-shell {
+	background: linear-gradient(160deg, rgba(255, 255, 255, 0.26) 0%, rgba(218, 231, 255, 0.16) 100%);
+	border: 1px solid rgba(255, 255, 255, 0.42);
+	box-shadow: var(--shadow-ambient), var(--inner-highlight);
+	backdrop-filter: blur(24px) saturate(145%);
+}
+
+.glass-card,
+.glass-panel,
+.glass-chip,
+.glass-input {
+	position: relative;
+	overflow: hidden;
+}
+
+.glass-card {
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.44) 0%, rgba(220, 232, 255, 0.18) 100%),
+		var(--surface);
+	border: 1px solid var(--border-subtle);
+	box-shadow: var(--shadow-card), var(--inner-highlight);
+	backdrop-filter: blur(20px) saturate(145%);
+}
+
+.glass-panel {
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.5) 0%, rgba(220, 233, 255, 0.24) 100%);
+	border: 1px solid rgba(255, 255, 255, 0.56);
+	box-shadow: 0 10px 24px rgba(44, 63, 134, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+	backdrop-filter: blur(16px) saturate(138%);
+}
+
+.glass-chip {
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.6) 0%, rgba(227, 237, 255, 0.36) 100%);
+	border: 1px solid rgba(255, 255, 255, 0.68);
+	box-shadow: 0 8px 18px rgba(49, 70, 140, 0.14);
+}
+
+.glass-input {
+	background: linear-gradient(140deg, rgba(255, 255, 255, 0.72) 0%, rgba(233, 241, 255, 0.44) 100%);
+	border: 1px solid rgba(255, 255, 255, 0.68);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.glass-input:focus,
+.glass-input:focus-visible {
+	outline: none;
+	box-shadow:
+		0 0 0 2px rgba(132, 162, 255, 0.58),
+		inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.signin-btn {
+	border: 1px solid rgba(205, 186, 247, 0.52) !important;
+	color: #fff !important;
+	background:
+		linear-gradient(165deg, rgba(255, 255, 255, 0.18) 0%, rgba(224, 205, 255, 0.28) 52%, rgba(195, 167, 249, 0.26) 100%) !important;
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.68),
+		inset 0 -8px 14px rgba(183, 148, 240, 0.2),
+		0 8px 20px rgba(133, 104, 191, 0.26),
+		0 0 0 1px rgba(255, 255, 255, 0.24);
+	transition: transform 180ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+.signin-btn:hover {
+	transform: translateY(-1px);
+	filter: saturate(1.05) brightness(1.03);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.74),
+		inset 0 -9px 16px rgba(176, 144, 236, 0.14),
+		0 10px 22px rgba(145, 116, 205, 0.2),
+		0 0 18px rgba(176, 145, 236, 0.24);
+}
+
+.signin-btn:active {
+	transform: translateY(1px) scale(0.995);
+}
+
+.custom-scrollbar {
+	scrollbar-color: rgba(88, 111, 166, 0.52) transparent;
+	scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, rgba(95, 118, 179, 0.48), rgba(90, 79, 207, 0.55));
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, rgba(86, 103, 171, 0.66), rgba(78, 71, 194, 0.72));
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
