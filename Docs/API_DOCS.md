@@ -294,3 +294,135 @@
 | 500    | Error interno del servidor |
 
 ---
+
+## [PATCH] /api/users/:id
+**Descripción:** Actualiza un usuario. Requiere auth y permiso `users:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre (opcional)",
+  "apellido": "string - apellido (opcional)",
+  "email": "string - email (opcional)",
+  "usuario": "string - usuario (opcional)",
+  "password": "string - contrasena (opcional)",
+  "role": "string | null - nombre del rol (opcional)",
+  "roleId": "string | null - id del rol (opcional)",
+  "permissions": "string[] - permisos (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del usuario",
+    "nombre": "string - nombre",
+    "apellido": "string - apellido",
+    "email": "string - email",
+    "usuario": "string - usuario",
+    "role": "string | null - nombre del rol",
+    "roleId": "string | null - id del rol",
+    "permissions": "string[] - permisos",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Usuario no encontrado |
+| 409    | Usuario o email ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/users/:id/toggle-active
+**Descripción:** Activa o desactiva un usuario. Requiere auth y permiso `users:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "activo": "boolean - nuevo estado"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del usuario",
+    "nombre": "string - nombre",
+    "apellido": "string - apellido",
+    "email": "string - email",
+    "usuario": "string - usuario",
+    "role": "string | null - nombre del rol",
+    "roleId": "string | null - id del rol",
+    "permissions": "string[] - permisos",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Usuario no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/users/:id
+**Descripción:** Elimina un usuario. Requiere auth y permiso `users:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Usuario no encontrado |
+| 500    | Error interno del servidor |
+
+---
