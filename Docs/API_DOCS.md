@@ -426,3 +426,450 @@
 | 500    | Error interno del servidor |
 
 ---
+
+# API - Roles
+
+## [GET] /api/roles
+**Descripción:** Lista roles. Requiere auth y permiso `roles:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del rol",
+      "nombre": "string - nombre",
+      "descripcion": "string - descripcion",
+      "permissions": "string[] - permisos",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/roles/:id
+**Descripción:** Obtiene un rol por id. Requiere auth y permiso `roles:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del rol",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "permissions": "string[] - permisos",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Rol no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/roles
+**Descripción:** Crea un rol. Requiere auth y permiso `roles:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre",
+  "descripcion": "string | null - descripcion (opcional)",
+  "permissions": "string[] - permisos (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del rol",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "permissions": "string[] - permisos",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 409    | El rol ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/roles/:id
+**Descripción:** Actualiza un rol. Requiere auth y permiso `roles:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre (opcional)",
+  "descripcion": "string | null - descripcion (opcional)",
+  "permissions": "string[] - permisos (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del rol",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "permissions": "string[] - permisos",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Rol no encontrado |
+| 409    | El rol ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/roles/:id
+**Descripción:** Elimina un rol. Requiere auth y permiso `roles:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Rol no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+# API - Permissions
+
+## [GET] /api/permissions
+**Descripción:** Lista permisos. Requiere auth y permiso `permissions:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del permiso",
+      "code": "string - codigo",
+      "nombre": "string - nombre",
+      "descripcion": "string - descripcion",
+      "modulo": "string - modulo",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/permissions/:id
+**Descripción:** Obtiene un permiso por id. Requiere auth y permiso `permissions:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del permiso",
+    "code": "string - codigo",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "modulo": "string - modulo",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Permiso no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/permissions
+**Descripción:** Crea un permiso. Requiere auth y permiso `permissions:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "code": "string - codigo",
+  "nombre": "string - nombre",
+  "descripcion": "string | null - descripcion (opcional)",
+  "modulo": "string | null - modulo (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del permiso",
+    "code": "string - codigo",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "modulo": "string - modulo",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 409    | El permiso ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/permissions/seed
+**Descripción:** Siembra permisos base. Requiere auth y permiso `permissions:seed`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "items": [
+    {
+      "id": "string - id del permiso",
+      "code": "string - codigo",
+      "nombre": "string - nombre",
+      "descripcion": "string - descripcion",
+      "modulo": "string - modulo",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total sembrados"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/permissions/:id
+**Descripción:** Actualiza un permiso. Requiere auth y permiso `permissions:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "code": "string - codigo (opcional)",
+  "nombre": "string - nombre (opcional)",
+  "descripcion": "string | null - descripcion (opcional)",
+  "modulo": "string | null - modulo (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del permiso",
+    "code": "string - codigo",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "modulo": "string - modulo",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Permiso no encontrado |
+| 409    | El permiso ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/permissions/:id
+**Descripción:** Elimina un permiso. Requiere auth y permiso `permissions:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Permiso no encontrado |
+| 500    | Error interno del servidor |
+
+---
