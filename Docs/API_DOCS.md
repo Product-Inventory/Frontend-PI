@@ -4,6 +4,75 @@
 
 - Mi intencion es que sea una guia completa que ayude en el desarrollo del frontend :).
 
+## Indice
+- [Core](#api---core)
+  - [GET /](#get-)
+- [Health](#api---health)
+  - [GET /api/health](#get-apihealth)
+- [Auth](#api---auth)
+  - [POST /api/auth/login](#post-apiauthlogin)
+  - [GET /api/auth/me](#get-apiauthme)
+- [Users](#api---users)
+  - [GET /api/users](#get-apiusers)
+  - [GET /api/users/:id](#get-apiusersid)
+  - [POST /api/users](#post-apiusers)
+  - [PATCH /api/users/:id](#patch-apiusersid)
+  - [PATCH /api/users/:id/toggle-active](#patch-apiusersidtoggle-active)
+  - [DELETE /api/users/:id](#delete-apiusersid)
+- [Roles](#api---roles)
+  - [GET /api/roles](#get-apiroles)
+  - [GET /api/roles/:id](#get-apirolesid)
+  - [POST /api/roles](#post-apiroles)
+  - [PATCH /api/roles/:id](#patch-apirolesid)
+  - [DELETE /api/roles/:id](#delete-apirolesid)
+- [Permissions](#api---permissions)
+  - [GET /api/permissions](#get-apipermissions)
+  - [GET /api/permissions/:id](#get-apipermissionsid)
+  - [POST /api/permissions](#post-apipermissions)
+  - [POST /api/permissions/seed](#post-apipermissionsseed)
+  - [PATCH /api/permissions/:id](#patch-apipermissionsid)
+  - [DELETE /api/permissions/:id](#delete-apipermissionsid)
+- [Clients](#api---clients)
+  - [GET /api/clients](#get-apiclients)
+  - [GET /api/clients/:id](#get-apiclientsid)
+  - [POST /api/clients](#post-apiclients)
+  - [PATCH /api/clients/:id](#patch-apiclientsid)
+  - [PATCH /api/clients/:id/toggle-active](#patch-apiclientsidtoggle-active)
+  - [DELETE /api/clients/:id](#delete-apiclientsid)
+- [Suppliers](#api---suppliers)
+  - [GET /api/suppliers](#get-apisuppliers)
+  - [GET /api/suppliers/:id](#get-apisuppliersid)
+  - [POST /api/suppliers](#post-apisuppliers)
+  - [PATCH /api/suppliers/:id](#patch-apisuppliersid)
+  - [PATCH /api/suppliers/:id/toggle-active](#patch-apisuppliersidtoggle-active)
+  - [DELETE /api/suppliers/:id](#delete-apisuppliersid)
+- [Products](#api---products)
+  - [GET /api/products](#get-apiproducts)
+  - [GET /api/products/:id](#get-apiproductsid)
+  - [POST /api/products](#post-apiproducts)
+  - [PATCH /api/products/:id](#patch-apiproductsid)
+  - [PATCH /api/products/:id/toggle-active](#patch-apiproductsidtoggle-active)
+  - [DELETE /api/products/:id](#delete-apiproductsid)
+- [Inventory](#api---inventory)
+  - [GET /api/inventory](#get-apiinventory)
+  - [GET /api/inventory/movements](#get-apiinventorymovements)
+  - [GET /api/inventory/:productId](#get-apiinventoryproductid)
+  - [PATCH /api/inventory/:productId/adjust](#patch-apiinventoryproductidadjust)
+- [Recepciones](#api---recepciones)
+  - [GET /api/recepciones](#get-apirecepciones)
+  - [GET /api/recepciones/:id](#get-apirecepcionesid)
+  - [POST /api/recepciones](#post-apirecepciones)
+  - [PATCH /api/recepciones/:id](#patch-apirecepcionesid)
+  - [PATCH /api/recepciones/:id/confirm](#patch-apirecepcionesidconfirm)
+  - [DELETE /api/recepciones/:id](#delete-apirecepcionesid)
+- [Audit](#api---audit)
+  - [GET /api/audit](#get-apiaudit)
+  - [GET /api/audit/:id](#get-apiauditid)
+  - [POST /api/audit](#post-apiaudit)
+- [Dashboard](#api---dashboard)
+  - [GET /api/dashboard/summary](#get-apidashboardsummary)
+  - [GET /api/dashboard/recent-activity](#get-apidashboardrecent-activity)
+
 # API - Core
 
 ## [GET] /
@@ -2584,3 +2653,20 @@
 | 500    | Error interno del servidor |
 
 ---
+
+# Relaciones
+- Roles y permisos: `POST /api/roles` y `PATCH /api/roles/:id` usan el campo `permissions` para asignar permisos al rol.
+- Usuarios y roles/permisos: `POST /api/users` y `PATCH /api/users/:id` usan `role`, `roleId` y `permissions`.
+- Recepciones, proveedores y productos: `POST /api/recepciones` y `PATCH /api/recepciones/:id` usan `supplierId` e `items[].productId`.
+- Recepciones e inventario: `PATCH /api/recepciones/:id/confirm` genera movimientos de inventario y actualiza stock.
+
+---
+
+# Notas para el frontend!!!
+- Todos los endpoints bajo /api requieren `Authorization: Bearer <token>` excepto `GET /api/health` y `POST /api/auth/login`.
+- Los parametros `activo` y `lowStock` aceptan boolean o string "true"/"false".
+- Muchos campos opcionales se normalizan a string vacio en la respuesta, `createdAt`, `updatedAt` y fechas de confirmacion si pueden ser null.
+- `POST /api/permissions/seed` no requiere body.
+- `PATCH /api/recepciones/:id/confirm` cambia el status a CONFIRMED y actualiza stock en productos, el response incluye `movements`.
+- `POST /api/auth/login` puede devolver 403 si el usuario esta inactivo.
+- `POST /api/auth/login` y `POST /api/users` trabajan con password en texto plano en el request, recuerden que el backend la hashea.
