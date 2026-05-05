@@ -1433,3 +1433,520 @@
 
 ---
 
+# API - Products
+
+## [GET] /api/products
+**Descripción:** Lista productos con filtros. Requiere auth y permiso `products:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `activo` (boolean, opcional; acepta "true"/"false"), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del producto",
+      "sku": "string - SKU",
+      "nombre": "string - nombre",
+      "descripcion": "string - descripcion",
+      "categoria": "string - categoria",
+      "unidad": "string - unidad",
+      "marca": "string - marca",
+      "modelo": "string - modelo",
+      "precioCompra": "number - precio de compra",
+      "precioVenta": "number - precio de venta",
+      "stock": "number - stock",
+      "stockMinimo": "number - stock minimo",
+      "activo": "boolean - estado",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/products/:id
+**Descripción:** Obtiene un producto por id. Requiere auth y permiso `products:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "precioCompra": "number - precio de compra",
+    "precioVenta": "number - precio de venta",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/products
+**Descripción:** Crea un producto. Requiere auth y permiso `products:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "sku": "string - SKU",
+  "nombre": "string - nombre",
+  "descripcion": "string | null - descripcion (opcional)",
+  "categoria": "string | null - categoria (opcional)",
+  "unidad": "string | null - unidad (opcional)",
+  "marca": "string | null - marca (opcional)",
+  "modelo": "string | null - modelo (opcional)",
+  "precioCompra": "number - precio de compra (opcional)",
+  "precioVenta": "number - precio de venta (opcional)",
+  "stock": "number - stock (opcional)",
+  "stockMinimo": "number - stock minimo (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "precioCompra": "number - precio de compra",
+    "precioVenta": "number - precio de venta",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 409    | SKU ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/products/:id
+**Descripción:** Actualiza un producto. Requiere auth y permiso `products:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "sku": "string - SKU (opcional)",
+  "nombre": "string - nombre (opcional)",
+  "descripcion": "string | null - descripcion (opcional)",
+  "categoria": "string | null - categoria (opcional)",
+  "unidad": "string | null - unidad (opcional)",
+  "marca": "string | null - marca (opcional)",
+  "modelo": "string | null - modelo (opcional)",
+  "precioCompra": "number - precio de compra (opcional)",
+  "precioVenta": "number - precio de venta (opcional)",
+  "stock": "number - stock (opcional)",
+  "stockMinimo": "number - stock minimo (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "precioCompra": "number - precio de compra",
+    "precioVenta": "number - precio de venta",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 409    | SKU ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/products/:id/toggle-active
+**Descripción:** Activa o desactiva un producto. Requiere auth y permiso `products:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "activo": "boolean - nuevo estado"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "precioCompra": "number - precio de compra",
+    "precioVenta": "number - precio de venta",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/products/:id
+**Descripción:** Elimina un producto. Requiere auth y permiso `products:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+# API - Inventory
+
+## [GET] /api/inventory
+**Descripción:** Lista inventario con filtros. Requiere auth y permiso `inventory:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `activo` (boolean, opcional; acepta "true"/"false"), `lowStock` (boolean, opcional; acepta "true"/"false"), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del producto",
+      "productId": "string - id del producto",
+      "sku": "string - SKU",
+      "nombre": "string - nombre",
+      "descripcion": "string - descripcion",
+      "categoria": "string - categoria",
+      "unidad": "string - unidad",
+      "marca": "string - marca",
+      "modelo": "string - modelo",
+      "stock": "number - stock",
+      "stockMinimo": "number - stock minimo",
+      "lowStock": "boolean - si esta bajo minimos",
+      "activo": "boolean - estado",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/inventory/movements
+**Descripción:** Lista movimientos de inventario. Requiere auth y permiso `inventory:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `productId` (string, opcional), `tipo` (string, opcional: ENTRADA|SALIDA|AJUSTE), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del movimiento",
+      "productId": "string - id del producto",
+      "sku": "string - SKU",
+      "productNombre": "string - nombre del producto",
+      "tipo": "string - ENTRADA|SALIDA|AJUSTE",
+      "cantidad": "number - cantidad",
+      "stockAnterior": "number - stock anterior",
+      "stockNuevo": "number - stock nuevo",
+      "motivo": "string - motivo",
+      "referencia": "string - referencia",
+      "userId": "string - id del usuario",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/inventory/:productId
+**Descripción:** Obtiene inventario por producto. Requiere auth y permiso `inventory:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `productId` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del producto",
+    "productId": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "lowStock": "boolean - si esta bajo minimos",
+    "activo": "boolean - estado",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/inventory/:productId/adjust
+**Descripción:** Ajusta inventario de un producto. Requiere auth y permiso `inventory:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `productId` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "tipo": "string - ENTRADA|SALIDA|AJUSTE",
+  "cantidad": "number - cantidad",
+  "motivo": "string - motivo",
+  "referencia": "string | null - referencia (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del producto",
+    "productId": "string - id del producto",
+    "sku": "string - SKU",
+    "nombre": "string - nombre",
+    "descripcion": "string - descripcion",
+    "categoria": "string - categoria",
+    "unidad": "string - unidad",
+    "marca": "string - marca",
+    "modelo": "string - modelo",
+    "stock": "number - stock",
+    "stockMinimo": "number - stock minimo",
+    "lowStock": "boolean - si esta bajo minimos",
+    "activo": "boolean - estado",
+    "updatedAt": "string | null - ISO 8601"
+  },
+  "movement": {
+    "id": "string - id del movimiento",
+    "productId": "string - id del producto",
+    "sku": "string - SKU",
+    "productNombre": "string - nombre del producto",
+    "tipo": "string - ENTRADA|SALIDA|AJUSTE",
+    "cantidad": "number - cantidad",
+    "stockAnterior": "number - stock anterior",
+    "stockNuevo": "number - stock nuevo",
+    "motivo": "string - motivo",
+    "referencia": "string - referencia",
+    "userId": "string - id del usuario",
+    "usuario": "string - usuario",
+    "createdAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o stock insuficiente |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
