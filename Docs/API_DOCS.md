@@ -1950,3 +1950,637 @@
 | 500    | Error interno del servidor |
 
 ---
+
+# API - Recepciones
+
+## [GET] /api/recepciones
+**Descripción:** Lista recepciones con filtros. Requiere auth y permiso `recepciones:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `status` (string, opcional: DRAFT|CONFIRMED), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id de la recepcion",
+      "supplierId": "string - id del proveedor",
+      "supplierNombre": "string - nombre del proveedor",
+      "fecha": "string - fecha",
+      "folio": "string - folio",
+      "comentarios": "string - comentarios",
+      "status": "string - DRAFT|CONFIRMED",
+      "items": [
+        {
+          "productId": "string - id del producto",
+          "sku": "string - SKU",
+          "productNombre": "string - nombre del producto",
+          "cantidad": "number - cantidad",
+          "costoUnitario": "number - costo unitario",
+          "subtotal": "number - subtotal"
+        }
+      ],
+      "total": "number - total",
+      "confirmedAt": "string | null - ISO 8601",
+      "confirmedBy": "string - usuario que confirma",
+      "confirmedByUserId": "string - id del usuario",
+      "createdBy": "string - usuario que crea",
+      "createdByUserId": "string - id del usuario",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/recepciones/:id
+**Descripción:** Obtiene una recepcion por id. Requiere auth y permiso `recepciones:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id de la recepcion",
+    "supplierId": "string - id del proveedor",
+    "supplierNombre": "string - nombre del proveedor",
+    "fecha": "string - fecha",
+    "folio": "string - folio",
+    "comentarios": "string - comentarios",
+    "status": "string - DRAFT|CONFIRMED",
+    "items": [
+      {
+        "productId": "string - id del producto",
+        "sku": "string - SKU",
+        "productNombre": "string - nombre del producto",
+        "cantidad": "number - cantidad",
+        "costoUnitario": "number - costo unitario",
+        "subtotal": "number - subtotal"
+      }
+    ],
+    "total": "number - total",
+    "confirmedAt": "string | null - ISO 8601",
+    "confirmedBy": "string - usuario que confirma",
+    "confirmedByUserId": "string - id del usuario",
+    "createdBy": "string - usuario que crea",
+    "createdByUserId": "string - id del usuario",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Recepcion no encontrada |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/recepciones
+**Descripción:** Crea una recepcion. Requiere auth y permiso `recepciones:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "supplierId": "string - id del proveedor",
+  "fecha": "string - fecha",
+  "folio": "string - folio",
+  "comentarios": "string | null - comentarios (opcional)",
+  "items": [
+    {
+      "productId": "string - id del producto",
+      "cantidad": "number - cantidad",
+      "costoUnitario": "number - costo unitario"
+    }
+  ]
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id de la recepcion",
+    "supplierId": "string - id del proveedor",
+    "supplierNombre": "string - nombre del proveedor",
+    "fecha": "string - fecha",
+    "folio": "string - folio",
+    "comentarios": "string - comentarios",
+    "status": "string - DRAFT|CONFIRMED",
+    "items": [
+      {
+        "productId": "string - id del producto",
+        "sku": "string - SKU",
+        "productNombre": "string - nombre del producto",
+        "cantidad": "number - cantidad",
+        "costoUnitario": "number - costo unitario",
+        "subtotal": "number - subtotal"
+      }
+    ],
+    "total": "number - total",
+    "confirmedAt": "string | null - ISO 8601",
+    "confirmedBy": "string - usuario que confirma",
+    "confirmedByUserId": "string - id del usuario",
+    "createdBy": "string - usuario que crea",
+    "createdByUserId": "string - id del usuario",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Proveedor o producto no encontrado |
+| 409    | Folio ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/recepciones/:id
+**Descripción:** Actualiza una recepcion. Requiere auth y permiso `recepciones:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "supplierId": "string - id del proveedor (opcional)",
+  "fecha": "string - fecha (opcional)",
+  "folio": "string - folio (opcional)",
+  "comentarios": "string | null - comentarios (opcional)",
+  "items": [
+    {
+      "productId": "string - id del producto",
+      "cantidad": "number - cantidad",
+      "costoUnitario": "number - costo unitario"
+    }
+  ]
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id de la recepcion",
+    "supplierId": "string - id del proveedor",
+    "supplierNombre": "string - nombre del proveedor",
+    "fecha": "string - fecha",
+    "folio": "string - folio",
+    "comentarios": "string - comentarios",
+    "status": "string - DRAFT|CONFIRMED",
+    "items": [
+      {
+        "productId": "string - id del producto",
+        "sku": "string - SKU",
+        "productNombre": "string - nombre del producto",
+        "cantidad": "number - cantidad",
+        "costoUnitario": "number - costo unitario",
+        "subtotal": "number - subtotal"
+      }
+    ],
+    "total": "number - total",
+    "confirmedAt": "string | null - ISO 8601",
+    "confirmedBy": "string - usuario que confirma",
+    "confirmedByUserId": "string - id del usuario",
+    "createdBy": "string - usuario que crea",
+    "createdByUserId": "string - id del usuario",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion, payload vacio o recepcion confirmada |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Recepcion, proveedor o producto no encontrado |
+| 409    | Folio ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/recepciones/:id/confirm
+**Descripción:** Confirma una recepcion y actualiza inventario. Requiere auth y permiso `recepciones:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id de la recepcion",
+    "supplierId": "string - id del proveedor",
+    "supplierNombre": "string - nombre del proveedor",
+    "fecha": "string - fecha",
+    "folio": "string - folio",
+    "comentarios": "string - comentarios",
+    "status": "string - DRAFT|CONFIRMED",
+    "items": [
+      {
+        "productId": "string - id del producto",
+        "sku": "string - SKU",
+        "productNombre": "string - nombre del producto",
+        "cantidad": "number - cantidad",
+        "costoUnitario": "number - costo unitario",
+        "subtotal": "number - subtotal"
+      }
+    ],
+    "total": "number - total",
+    "confirmedAt": "string | null - ISO 8601",
+    "confirmedBy": "string - usuario que confirma",
+    "confirmedByUserId": "string - id del usuario",
+    "createdBy": "string - usuario que crea",
+    "createdByUserId": "string - id del usuario",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  },
+  "movements": [
+    {
+      "id": "string - id del movimiento",
+      "productId": "string - id del producto",
+      "sku": "string - SKU",
+      "productNombre": "string - nombre del producto",
+      "tipo": "string - ENTRADA",
+      "cantidad": "number - cantidad",
+      "stockAnterior": "number - stock anterior",
+      "stockNuevo": "number - stock nuevo",
+      "motivo": "string - motivo",
+      "referencia": "string - referencia",
+      "userId": "string - id del usuario",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ]
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Recepcion ya confirmada o sin partidas |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Recepcion o producto no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/recepciones/:id
+**Descripción:** Elimina una recepcion. Requiere auth y permiso `recepciones:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o recepcion confirmada |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Recepcion no encontrada |
+| 500    | Error interno del servidor |
+
+---
+
+# API - Audit
+
+## [GET] /api/audit
+**Descripción:** Lista registros de auditoria. Requiere auth y permiso `audit:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `resource` (string, opcional), `action` (string, opcional), `userId` (string, opcional), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del registro",
+      "action": "string - accion",
+      "resource": "string - recurso",
+      "resourceId": "string - id del recurso",
+      "details": "object - detalles",
+      "userId": "string - id del usuario",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/audit/:id
+**Descripción:** Obtiene un registro de auditoria por id. Requiere auth y permiso `audit:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del registro",
+    "action": "string - accion",
+    "resource": "string - recurso",
+    "resourceId": "string - id del recurso",
+    "details": "object - detalles",
+    "userId": "string - id del usuario",
+    "usuario": "string - usuario",
+    "createdAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Registro no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/audit
+**Descripción:** Crea un registro de auditoria. Requiere auth y permiso `audit:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "action": "string - accion",
+  "resource": "string - recurso",
+  "resourceId": "string | null - id del recurso (opcional)",
+  "details": "object - detalles (opcional)",
+  "userId": "string | null - id del usuario (opcional)",
+  "usuario": "string | null - usuario (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del registro",
+    "action": "string - accion",
+    "resource": "string - recurso",
+    "resourceId": "string - id del recurso",
+    "details": "object - detalles",
+    "userId": "string - id del usuario",
+    "usuario": "string - usuario",
+    "createdAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+# API - Dashboard
+
+## [GET] /api/dashboard/summary
+**Descripción:** Devuelve resumen del sistema. Requiere auth y permiso `dashboard:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "totals": {
+    "users": "number - total usuarios",
+    "activeUsers": "number - usuarios activos",
+    "clients": "number - total clientes",
+    "activeClients": "number - clientes activos",
+    "suppliers": "number - total proveedores",
+    "activeSuppliers": "number - proveedores activos",
+    "products": "number - total productos",
+    "activeProducts": "number - productos activos",
+    "recepciones": "number - total recepciones"
+  },
+  "lowStockCount": "number - productos con bajo stock",
+  "lowStockProducts": [
+    {
+      "id": "string - id del producto",
+      "sku": "string - SKU",
+      "nombre": "string - nombre",
+      "stock": "number - stock",
+      "stockMinimo": "number - stock minimo",
+      "lowStock": "boolean - si esta bajo minimos",
+      "activo": "boolean - estado"
+    }
+  ],
+  "recepcionesRecientes": [
+    {
+      "id": "string - id de la recepcion",
+      "folio": "string - folio",
+      "supplierNombre": "string - proveedor",
+      "fecha": "string - fecha",
+      "status": "string - DRAFT|CONFIRMED",
+      "total": "number - total",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ],
+  "recentInventoryMovements": [
+    {
+      "id": "string - id del movimiento",
+      "productId": "string - id del producto",
+      "sku": "string - SKU",
+      "productNombre": "string - nombre del producto",
+      "tipo": "string - ENTRADA|SALIDA|AJUSTE",
+      "cantidad": "number - cantidad",
+      "stockAnterior": "number - stock anterior",
+      "stockNuevo": "number - stock nuevo",
+      "motivo": "string - motivo",
+      "referencia": "string - referencia",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ],
+  "recentAudit": [
+    {
+      "id": "string - id del registro",
+      "action": "string - accion",
+      "resource": "string - recurso",
+      "resourceId": "string - id del recurso",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ]
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/dashboard/recent-activity
+**Descripción:** Devuelve actividad reciente de auditoria. Requiere auth y permiso `dashboard:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del registro",
+      "action": "string - accion",
+      "resource": "string - recurso",
+      "resourceId": "string - id del recurso",
+      "details": "object - detalles",
+      "userId": "string - id del usuario",
+      "usuario": "string - usuario",
+      "createdAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total items",
+  "limit": "number - limite aplicado"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
