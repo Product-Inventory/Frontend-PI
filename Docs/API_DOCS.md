@@ -873,3 +873,563 @@
 | 500    | Error interno del servidor |
 
 ---
+
+# API - Clients
+
+## [GET] /api/clients
+**Descripción:** Lista clientes con filtros. Requiere auth y permiso `clients:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `activo` (boolean, opcional; acepta "true"/"false"), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del cliente",
+      "nombre": "string - nombre",
+      "rfc": "string - RFC",
+      "email": "string - email",
+      "telefono": "string - telefono",
+      "direccion": "string - direccion",
+      "contacto": "string - contacto",
+      "notas": "string - notas",
+      "activo": "boolean - estado",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/clients/:id
+**Descripción:** Obtiene un cliente por id. Requiere auth y permiso `clients:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del cliente",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Cliente no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/clients
+**Descripción:** Crea un cliente. Requiere auth y permiso `clients:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre",
+  "rfc": "string | null - RFC (opcional)",
+  "email": "string | null - email (opcional)",
+  "telefono": "string | null - telefono (opcional)",
+  "direccion": "string | null - direccion (opcional)",
+  "contacto": "string | null - contacto (opcional)",
+  "notas": "string | null - notas (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del cliente",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 409    | Email o RFC ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/clients/:id
+**Descripción:** Actualiza un cliente. Requiere auth y permiso `clients:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre (opcional)",
+  "rfc": "string | null - RFC (opcional)",
+  "email": "string | null - email (opcional)",
+  "telefono": "string | null - telefono (opcional)",
+  "direccion": "string | null - direccion (opcional)",
+  "contacto": "string | null - contacto (opcional)",
+  "notas": "string | null - notas (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del cliente",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Cliente no encontrado |
+| 409    | Email o RFC ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/clients/:id/toggle-active
+**Descripción:** Activa o desactiva un cliente. Requiere auth y permiso `clients:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "activo": "boolean - nuevo estado"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del cliente",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Cliente no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/clients/:id
+**Descripción:** Elimina un cliente. Requiere auth y permiso `clients:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Cliente no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+# API - Suppliers
+
+## [GET] /api/suppliers
+**Descripción:** Lista proveedores con filtros. Requiere auth y permiso `suppliers:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** `q` (string, opcional), `activo` (boolean, opcional; acepta "true"/"false"), `page` (number, opcional), `limit` (number, opcional)
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "items": [
+    {
+      "id": "string - id del proveedor",
+      "nombre": "string - nombre",
+      "rfc": "string - RFC",
+      "email": "string - email",
+      "telefono": "string - telefono",
+      "direccion": "string - direccion",
+      "contacto": "string - contacto",
+      "giro": "string - giro",
+      "notas": "string - notas",
+      "activo": "boolean - estado",
+      "createdAt": "string | null - ISO 8601",
+      "updatedAt": "string | null - ISO 8601"
+    }
+  ],
+  "total": "number - total de registros",
+  "page": "number - pagina actual",
+  "limit": "number - tamano de pagina"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 500    | Error interno del servidor |
+
+---
+
+## [GET] /api/suppliers/:id
+**Descripción:** Obtiene un proveedor por id. Requiere auth y permiso `suppliers:read`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "item": {
+    "id": "string - id del proveedor",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "giro": "string - giro",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Proveedor no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [POST] /api/suppliers
+**Descripción:** Crea un proveedor. Requiere auth y permiso `suppliers:create`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** N/A
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre",
+  "rfc": "string | null - RFC (opcional)",
+  "email": "string | null - email (opcional)",
+  "telefono": "string | null - telefono (opcional)",
+  "direccion": "string | null - direccion (opcional)",
+  "contacto": "string | null - contacto (opcional)",
+  "giro": "string | null - giro (opcional)",
+  "notas": "string | null - notas (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 201
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del proveedor",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "giro": "string - giro",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 409    | Email o RFC ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/suppliers/:id
+**Descripción:** Actualiza un proveedor. Requiere auth y permiso `suppliers:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "nombre": "string - nombre (opcional)",
+  "rfc": "string | null - RFC (opcional)",
+  "email": "string | null - email (opcional)",
+  "telefono": "string | null - telefono (opcional)",
+  "direccion": "string | null - direccion (opcional)",
+  "contacto": "string | null - contacto (opcional)",
+  "giro": "string | null - giro (opcional)",
+  "notas": "string | null - notas (opcional)",
+  "activo": "boolean - estado (opcional)"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del proveedor",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "giro": "string - giro",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion o payload vacio |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Proveedor no encontrado |
+| 409    | Email o RFC ya existe |
+| 500    | Error interno del servidor |
+
+---
+
+## [PATCH] /api/suppliers/:id/toggle-active
+**Descripción:** Activa o desactiva un proveedor. Requiere auth y permiso `suppliers:update`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{
+  "activo": "boolean - nuevo estado"
+}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion",
+  "item": {
+    "id": "string - id del proveedor",
+    "nombre": "string - nombre",
+    "rfc": "string - RFC",
+    "email": "string - email",
+    "telefono": "string - telefono",
+    "direccion": "string - direccion",
+    "contacto": "string - contacto",
+    "giro": "string - giro",
+    "notas": "string - notas",
+    "activo": "boolean - estado",
+    "createdAt": "string | null - ISO 8601",
+    "updatedAt": "string | null - ISO 8601"
+  }
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Proveedor no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
+## [DELETE] /api/suppliers/:id
+**Descripción:** Elimina un proveedor. Requiere auth y permiso `suppliers:delete`.
+
+### Request
+- **Headers:** Authorization: Bearer <token>
+- **Params:** `id` (string)
+- **Query params:** N/A
+- **Body:**
+```json
+{}
+```
+
+### Response exitosa
+- **Status:** 200
+```json
+{
+  "message": "string - confirmacion"
+}
+```
+
+### Errores posibles
+| Status | Causa |
+|--------|-------|
+| 400    | Error de validacion |
+| 401    | No autorizado |
+| 403    | Sin permisos |
+| 404    | Proveedor no encontrado |
+| 500    | Error interno del servidor |
+
+---
+
