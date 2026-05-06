@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
+import { Toast } from "@/components/ui/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,32 +14,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const setSession = useAuthStore((state) => state.setSession);
+  const setLoginSuccessPending = useAuthStore((state) => state.setLoginSuccessPending);
 
-  useEffect(() => {
-    if (!showSuccess) {
-      return;
-    }
-
-    const totalMs = 2200;
-    const intervalMs = 40;
-    const step = 100 / (totalMs / intervalMs);
-
-    const intervalId = setInterval(() => {
-      setProgress((prev) => Math.min(100, prev + step));
-    }, intervalMs);
-
-    const timeoutId = setTimeout(() => {
-      router.replace("/dashboard");
-    }, totalMs + 80);
-
-    return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
-    };
-  }, [router, showSuccess]);
+  const handleSuccessClose = () => {
+    setLoginSuccessPending(false);
+    router.replace("/dashboard");
+  };
 
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -48,10 +31,11 @@ export default function LoginPage() {
     try {
       const res = await authService.login({ usuario, password });
       setSession(res.token, res.user);
-      setProgress(0);
+      setLoginSuccessPending(true);
       setShowSuccess(true);
     } catch {
-      setError("Credenciales incorrectas");
+      setLoginSuccessPending(false);
+      setError("Incorrect credentials");
     } finally {
       setLoading(false);
     }
@@ -60,28 +44,26 @@ export default function LoginPage() {
   if (showSuccess) {
     return (
       <main className="app-atmosphere flex min-h-screen items-center justify-center px-4 py-10">
-        <section className="app-shell glass-card w-full max-w-3xl rounded-[32px] overflow-hidden">
-          <div className="px-7 py-10 sm:px-12 sm:py-12">
-            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">
-              Inicio de sesion correcto
-            </h2>
-            <p className="mt-3 text-[2rem] leading-none text-slate-600">
-              Cargando plataforma...
-            </p>
-          </div>
-          <div className="h-3 w-full bg-white/45">
-            <div
-              className="h-full rounded-r-full bg-gradient-to-r from-cyan-300 via-cyan-400 to-fuchsia-300 transition-all duration-75"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </section>
+        <Toast
+          message="Successful login"
+          type="success"
+          duration={3000}
+          onClose={handleSuccessClose}
+        />
       </main>
     );
   }
 
   return (
     <main className="app-atmosphere flex min-h-screen items-center justify-center px-4 py-10">
+      {error && (
+        <Toast
+          message={error}
+          type="error"
+          duration={5000}
+          onClose={() => setError("")}
+        />
+      )}
       <section className="app-shell glass-card w-full max-w-[420px] rounded-[28px] px-7 py-8 sm:px-8 sm:py-9">
         <div className="mb-8 flex justify-center">
           <div className="glass-chip flex h-20 w-20 items-center justify-center rounded-3xl">
@@ -146,12 +128,6 @@ export default function LoginPage() {
               />
             </div>
           </label>
-
-          {error ? (
-            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {error}
-            </p>
-          ) : null}
 
           <button className="signin-btn w-full py-3 text-base" disabled={loading}>
             {loading ? "Loading..." : "Sign in"}

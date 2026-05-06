@@ -3,6 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
+import {
+  LayoutDashboard,
+  Users,
+  Truck,
+  Box,
+  Package,
+  Move,
+  Inbox,
+  User,
+  Settings,
+  Shield,
+  ClipboardList,
+  LogOut,
+} from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
@@ -31,12 +45,7 @@ function SidebarIconShell({ active, className = "", children }: React.PropsWithC
 function DashboardIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="4" y="4" width="6" height="6" rx="1.2" />
-        <rect x="14" y="4" width="6" height="6" rx="1.2" />
-        <rect x="4" y="14" width="6" height="6" rx="1.2" />
-        <rect x="14" y="14" width="6" height="6" rx="1.2" />
-      </svg>
+      <LayoutDashboard size={20} />
     </SidebarIconShell>
   );
 }
@@ -44,12 +53,7 @@ function DashboardIcon({ active, className }: SidebarIconProps) {
 function ClientsIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M16 20a4 4 0 0 0-8 0" />
-        <circle cx="12" cy="8" r="3.2" />
-        <path d="M6 20a4.5 4.5 0 0 1 3.2-4.3" />
-        <path d="M18 20a4.5 4.5 0 0 0-3.2-4.3" />
-      </svg>
+      <Users size={20} />
     </SidebarIconShell>
   );
 }
@@ -57,12 +61,7 @@ function ClientsIcon({ active, className }: SidebarIconProps) {
 function SuppliersIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M3 7h10v10H3z" />
-        <path d="M13 10h4l3 3v4h-7z" />
-        <circle cx="7" cy="19" r="1.4" />
-        <circle cx="17" cy="19" r="1.4" />
-      </svg>
+      <Truck size={20} />
     </SidebarIconShell>
   );
 }
@@ -70,12 +69,7 @@ function SuppliersIcon({ active, className }: SidebarIconProps) {
 function ProductsIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 3 4.5 7l7.5 4 7.5-4-7.5-4Z" />
-        <path d="M4.5 7v10l7.5 4 7.5-4V7" />
-        <path d="m12 11 7.5-4" />
-        <path d="M12 11v10" />
-      </svg>
+      <Box size={20} />
     </SidebarIconShell>
   );
 }
@@ -83,12 +77,7 @@ function ProductsIcon({ active, className }: SidebarIconProps) {
 function InventoryIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="5" y="4" width="14" height="16" rx="2" />
-        <path d="M8 8h8" />
-        <path d="M8 12h8" />
-        <path d="M8 16h5" />
-      </svg>
+      <Package size={20} />
     </SidebarIconShell>
   );
 }
@@ -96,12 +85,7 @@ function InventoryIcon({ active, className }: SidebarIconProps) {
 function MovementsIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 8h12" />
-        <path d="m12 4 4 4-4 4" />
-        <path d="M20 16H8" />
-        <path d="m12 20-4-4 4-4" />
-      </svg>
+      <Move size={20} />
     </SidebarIconShell>
   );
 }
@@ -109,12 +93,7 @@ function MovementsIcon({ active, className }: SidebarIconProps) {
 function ReceptionsIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 8h16v10H4z" />
-        <path d="M7 8V5h10v3" />
-        <path d="M9 12h6" />
-        <path d="m9 15 3 3 3-3" />
-      </svg>
+      <Inbox size={20} />
     </SidebarIconShell>
   );
 }
@@ -122,12 +101,7 @@ function ReceptionsIcon({ active, className }: SidebarIconProps) {
 function UsersIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M9 20a4 4 0 0 1 8 0" />
-        <circle cx="13" cy="8" r="3" />
-        <path d="M4 20a4.6 4.6 0 0 1 5.3-4.4" />
-        <circle cx="6.5" cy="9" r="2.3" />
-      </svg>
+      <User size={20} />
     </SidebarIconShell>
   );
 }
@@ -135,12 +109,7 @@ function UsersIcon({ active, className }: SidebarIconProps) {
 function RolesIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M10 19a4 4 0 1 1 4-4" />
-        <circle cx="10" cy="9" r="3" />
-        <path d="M17 11.5v3" />
-        <path d="M15.5 13h3" />
-      </svg>
+      <Settings size={20} />
     </SidebarIconShell>
   );
 }
@@ -148,11 +117,7 @@ function RolesIcon({ active, className }: SidebarIconProps) {
 function PermissionsIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 3 4.5 6v5.5C4.5 16 7.8 19.5 12 21c4.2-1.5 7.5-5 7.5-9.5V6L12 3Z" />
-        <path d="M12 9v4" />
-        <circle cx="12" cy="16.5" r="1" />
-      </svg>
+      <Shield size={20} />
     </SidebarIconShell>
   );
 }
@@ -160,12 +125,7 @@ function PermissionsIcon({ active, className }: SidebarIconProps) {
 function AuditIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M7 3h7l3 3v15H7z" />
-        <path d="M14 3v4h4" />
-        <path d="M9 11h6" />
-        <path d="M9 15h4" />
-      </svg>
+      <ClipboardList size={20} />
     </SidebarIconShell>
   );
 }
@@ -192,7 +152,7 @@ export default function AdminSidebar() {
             <path d="M20 7.5V16.5L12 21" />
           </svg>
         </div>
-        <p className="text-[1.5rem] font-extrabold tracking-tight text-white">Mockout UI</p>
+        <p className="text-[1.5rem] font-extrabold tracking-tight text-white">Inventory Pro</p>
       </div>
 
       <div className="sidebar-divider mx-2 my-4" />
@@ -239,11 +199,7 @@ export default function AdminSidebar() {
         className="sidebar-signout mt-3 w-full px-4 py-3 text-[1.18rem] font-extrabold text-white flex items-center justify-center gap-3"
         aria-label="Sign out"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-white/90" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="M16 17l5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
+        <LogOut size={20} className="text-white/90" />
         <span>Sign out</span>
       </button>
     </aside>
