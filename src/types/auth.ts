@@ -1,9 +1,13 @@
 export interface User {
   id: string;
-  name: string;
+  nombre: string;
+  apellido: string;
   email: string;
+  usuario: string;
   role: string;
+  roleId: string | null;
   permissions: string[]; 
+  activo: boolean;
 }
 
 export interface LoginResponse {
