@@ -22,6 +22,9 @@ export default function PermissionsPage() {
     descripcion: "",
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   useEffect(() => {
     fetchPermissions();
   }, []);
@@ -104,6 +107,16 @@ export default function PermissionsPage() {
     return matchesSearch && matchesModule;
   });
 
+  const totalPages = Math.ceil(filteredPermissions.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const paginatedPermissions = filteredPermissions.slice(
+    startIndex,
+    endIndex
+  );
+
   const modules = [
     "all",
     ...Array.from(new Set(permissions.map((p) => p.modulo))),
@@ -146,7 +159,7 @@ export default function PermissionsPage() {
 
         <button
           onClick={openCreate}
-          className="px-5 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm shadow-md hover:opacity-90"
+          className="px-5 py-2 text-sm"
         >
           + Create
         </button>
@@ -158,13 +171,13 @@ export default function PermissionsPage() {
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-72 px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-400 outline-none"
+          className="glass-input w-72"
         />
 
         <select
           value={moduleFilter}
           onChange={(e) => setModuleFilter(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm"
+          className="glass-input"
         >
           {modules.map((m) => (
             <option key={m} value={m}>
@@ -177,14 +190,42 @@ export default function PermissionsPage() {
       {isLoading ? (
         <div className="p-10 text-center">Cargando...</div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-          <DataTable columns={columns} data={filteredPermissions} />
+        <div className="glass-card rounded-2xl p-6">
+          <DataTable columns={columns} data={paginatedPermissions} />
+          <div className="flex justify-between items-center mt-4">
+
+            <p className="text-sm text-gray-400">
+              Página {currentPage} de {totalPages}
+            </p>
+
+            <div className="flex gap-2">
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+
+            </div>
+          </div>
         </div>
       )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 w-96 shadow-xl">
+          <div className="glass-card rounded-2xl p-6 w-96">
 
             <h2 className="text-xl font-semibold text-white mb-4">
               {editingPermission ? "Edit Permission" : "New Permission"}
@@ -197,7 +238,7 @@ export default function PermissionsPage() {
                 placeholder="Code"
                 value={form.code}
                 onChange={handleChange}
-                className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none"
+                className="glass-input w-full"
               />
 
               <input
@@ -205,7 +246,7 @@ export default function PermissionsPage() {
                 placeholder="Name"
                 value={form.nombre}
                 onChange={handleChange}
-                className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none"
+                className="glass-input w-full"
               />
 
               <input
@@ -213,7 +254,7 @@ export default function PermissionsPage() {
                 placeholder="Module"
                 value={form.modulo}
                 onChange={handleChange}
-                className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none"
+                className="glass-input w-full"
               />
 
               <textarea
@@ -221,7 +262,7 @@ export default function PermissionsPage() {
                 placeholder="Description"
                 value={form.descripcion}
                 onChange={handleChange}
-                className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none"
+                className="glass-input w-full"
               />
 
             </div>
@@ -229,14 +270,14 @@ export default function PermissionsPage() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-white/30 text-white"
+                className="px-4 py-2"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md"
+                className="px-4 py-2"
               >
                 Save
               </button>
