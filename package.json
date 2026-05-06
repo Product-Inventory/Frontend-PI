@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "axios": "^1.15.2",
     "daisyui": "^5.5.19",
     "lucide-react": "^1.14.0",
