@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import ProtectedRoute from './ProtectedRoute';
-import AdminShell from '@/components/layout/AdminShell';
+import Shell from '@/components/layout/Shell';
 import { Loading } from '@/components/ui/Loading';
 import { useAuth } from '@/context/AuthContext';
 
@@ -37,7 +37,7 @@ export default function AppRouter({ children }: { children: ReactNode }) {
     return (
         <ProtectedRoute>
             {/* Layout de administracion para rutas protegidas */}
-            <AdminShell>{children}</AdminShell>
+            <Shell>{children}</Shell>
         </ProtectedRoute>
     );
 }
