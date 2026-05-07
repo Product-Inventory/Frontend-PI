@@ -30,3 +30,6 @@ Thumbs.db
 
 # Misc
 *.swp
+
+# Caché
+.npm-cache/
