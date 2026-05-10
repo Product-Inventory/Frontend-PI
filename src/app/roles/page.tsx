@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DataTable } from "@/components/ui/DataTable";
 import { rolesService } from "@/services/roles.service";
 import { Role } from "@/types/role";
-import { Settings, Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Settings, Search, Plus } from "lucide-react";
 import { Toast } from "@/components/ui/Toast";
 
 function RoleIcon({ className = "h-6 w-6 text-white" }: { className?: string }) {
@@ -14,6 +14,9 @@ function RoleIcon({ className = "h-6 w-6 text-white" }: { className?: string }) 
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -28,6 +31,10 @@ export default function RolesPage() {
     useEffect(() => {
         fetchRoles();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
 
     const fetchRoles = async () => {
         try {
@@ -88,6 +95,24 @@ export default function RolesPage() {
         }
     };
 
+    const filteredRoles = roles.filter((role) => {
+        const searchText = search.toLowerCase();
+
+        return (
+            role.nombre?.toLowerCase().includes(searchText) ||
+            role.descripcion?.toLowerCase().includes(searchText)
+        );
+    });
+
+    const totalPages = Math.max(Math.ceil(filteredRoles.length / itemsPerPage), 1);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedRoles = filteredRoles.slice(startIndex, endIndex);
+
+    useEffect(() => {
+        setCurrentPage((page) => Math.min(page, totalPages));
+    }, [totalPages]);
+
     const columns = [
         { header: "Nombre", accessor: "nombre" as const },
         { header: "Descripción", accessor: "descripcion" as const },
@@ -97,18 +122,18 @@ export default function RolesPage() {
                 <div className="flex gap-2 justify-end">
                     <button
                         onClick={() => openEdit(row)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-purple-500 hover:scale-105 transition"
+                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
                         title="Editar"
                     >
-                        <Pencil size={18} className="text-purple-300 hover:text-white" />
+                        ✏️
                     </button>
 
                     <button
                         onClick={() => handleDelete(row.id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-purple-500 hover:scale-105 transition"
+                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 text-red-500"
                         title="Eliminar"
                     >
-                        <Trash2 size={18} className="text-purple-300 hover:text-white" />
+                        🗑️
                     </button>
                 </div>
             ),
@@ -141,17 +166,17 @@ export default function RolesPage() {
                             <input
                                 type="text"
                                 placeholder="Search..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
                                 className="w-64 pl-10 pr-4 py-2 rounded-full border border-white/20 bg-white/10 text-white placeholder-white/70 focus:outline-none"
                             />
                         </div>
 
                         <button
                             onClick={openCreate}
-                            className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-purple-600 text-white shadow-md hover:opacity-90 grid place-items-center"
-                            aria-label="Create role"
+                            className="px-5 py-2 text-sm"
                         >
-                            <span className="sr-only">Create</span>
-                            <Plus size={20} className="text-white" />
+                            + Create
                         </button>
                     </div>
                 </div>
@@ -159,8 +184,31 @@ export default function RolesPage() {
             {isLoading ? (
                 <div className="p-10 text-center">Cargando...</div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                    <DataTable columns={columns} data={roles} />
+                <div className="glass-card rounded-2xl p-6">
+                    <DataTable columns={columns} data={paginatedRoles} />
+                    <div className="flex justify-between items-center mt-4">
+                        <p className="text-sm text-gray-400">
+                            Página {currentPage} de {totalPages}
+                        </p>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-20"
+                            >
+                                Previous
+                            </button>
+
+                            <button
+                                onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-20"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
