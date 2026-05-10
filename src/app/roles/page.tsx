@@ -41,8 +41,8 @@ export default function RolesPage() {
             const data = await rolesService.getAll();
             setRoles(data.items || data);
         } catch (error) {
-            console.error("Error al cargar roles:", error);
-            alert("Error al cargar roles");
+            console.error("Error loading roles:", error);
+            alert("Error loading roles");
         } finally {
             setIsLoading(false);
         }
@@ -83,7 +83,7 @@ export default function RolesPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Eliminar este rol?")) return;
+        if (!confirm("Delete this role?")) return;
 
         try {
             await rolesService.delete(String(id));
@@ -114,8 +114,8 @@ export default function RolesPage() {
     }, [totalPages]);
 
     const columns = [
-        { header: "Nombre", accessor: "nombre" as const },
-        { header: "Descripción", accessor: "descripcion" as const },
+        { header: "Name", accessor: "nombre" as const },
+        { header: "Description", accessor: "descripcion" as const },
         {
             header: "",
             render: (row: Role) => (
@@ -123,7 +123,7 @@ export default function RolesPage() {
                     <button
                         onClick={() => openEdit(row)}
                         className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
-                        title="Editar"
+                        title="Edit"
                     >
                         ✏️
                     </button>
@@ -131,7 +131,7 @@ export default function RolesPage() {
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 text-red-500"
-                        title="Eliminar"
+                        title="Delete"
                     >
                         🗑️
                     </button>
@@ -141,7 +141,7 @@ export default function RolesPage() {
     ];
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex min-h-full flex-col gap-6">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -174,7 +174,7 @@ export default function RolesPage() {
 
                         <button
                             onClick={openCreate}
-                            className="px-5 py-2 text-sm"
+                            className="px-5 py-2 text-sm !text-[#9a7ef0]"
                         >
                             + Create
                         </button>
@@ -182,20 +182,20 @@ export default function RolesPage() {
                 </div>
 
             {isLoading ? (
-                <div className="p-10 text-center">Cargando...</div>
+                <div className="p-10 text-center">Loading...</div>
             ) : (
                 <div className="glass-card rounded-2xl p-6">
                     <DataTable columns={columns} data={paginatedRoles} />
                     <div className="flex justify-between items-center mt-4">
                         <p className="text-sm text-gray-400">
-                            Página {currentPage} de {totalPages}
+                            Page {currentPage} of {totalPages}
                         </p>
 
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-20"
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
                             >
                                 Previous
                             </button>
@@ -203,7 +203,7 @@ export default function RolesPage() {
                             <button
                                 onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-20"
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
                             >
                                 Next
                             </button>
@@ -215,16 +215,16 @@ export default function RolesPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 w-96 shadow-xl">
-                        <h2 className="text-xl font-semibold text-white mb-4">{editingRole ? "Editar Rol" : "Nuevo Rol"}</h2>
+                        <h2 className="text-xl font-semibold text-white mb-4">{editingRole ? "Edit Role" : "New Role"}</h2>
 
                         <div className="flex flex-col gap-3">
-                            <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
-                            <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
+                            <input name="nombre" placeholder="Name" value={form.nombre} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
+                            <textarea name="descripcion" placeholder="Description" value={form.descripcion} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
                         </div>
 
                         <div className="flex justify-end gap-2 mt-5">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-white/30 text-white">Cancel</button>
-                            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md">Save</button>
+                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-white/30 !text-[#9a7ef0]">Cancel</button>
+                            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 !text-[#9a7ef0] shadow-md">Save</button>
                         </div>
                     </div>
                 </div>
