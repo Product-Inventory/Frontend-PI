@@ -6,6 +6,7 @@ import { permissionsService } from "@/services/permissions.service";
 import { Permission } from "@/types/permissions";
 import Loading from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { Shield } from "lucide-react";
 
 export default function PermissionsPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -101,7 +102,7 @@ export default function PermissionsPage() {
     setConfirmOpen(false)
     setPermissionToDelete(null)
     } catch {
-      alert("Error al eliminar");
+      alert("Error deleting permission");
     }
   };
 
@@ -133,10 +134,10 @@ export default function PermissionsPage() {
   ];
 
   const columns = [
-    { header: "Código", accessor: "code" as const },
-    { header: "Nombre", accessor: "nombre" as const },
-    { header: "Módulo", accessor: "modulo" as const },
-    { header: "Descripción", accessor: "descripcion" as const },
+    { header: "Code", accessor: "code" as const },
+    { header: "Name", accessor: "nombre" as const },
+    { header: "Module", accessor: "modulo" as const },
+    { header: "Description", accessor: "descripcion" as const },
     {
       header: "",
       render: (row: Permission) => (
@@ -159,17 +160,22 @@ export default function PermissionsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-h-full flex-col gap-6">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">
-          Permissions
-        </h1>
+        <div className="flex items-center gap-4">
+          <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+            <Shield className="h-6 w-6 text-black" />
+          </div>
+          <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">
+            Permissions
+          </h1>
+        </div>
 
         <button
           onClick={openCreate}
-          className="px-5 py-2 text-sm"
+          className="px-5 py-2 text-sm !text-[#9a7ef0]"
         >
           + Create
         </button>
@@ -183,7 +189,7 @@ export default function PermissionsPage() {
           <div className="flex justify-between items-center mt-4">
 
             <p className="text-sm text-gray-400">
-              Página {currentPage} de {totalPages}
+              Page {currentPage} of {totalPages}
             </p>
 
             <div className="flex gap-2">
@@ -191,7 +197,7 @@ export default function PermissionsPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-50"
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-50"
               >
                 Previous
               </button>
@@ -201,7 +207,7 @@ export default function PermissionsPage() {
                   setCurrentPage((p) => Math.min(p + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm disabled:opacity-50"
+                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-50"
               >
                 Next
               </button>
@@ -258,14 +264,14 @@ export default function PermissionsPage() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2"
+                className="px-4 py-2 !text-[#9a7ef0]"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleSave}
-                className="px-4 py-2"
+                className="px-4 py-2 !text-[#9a7ef0]"
               >
                 Save
               </button>
@@ -275,8 +281,8 @@ export default function PermissionsPage() {
       )}
       <ConfirmModal
         open={confirmOpen}
-        title="Eliminar permiso"
-        message={`¿Deseas eliminar el permiso "${permissionToDelete?.code}"?`}
+        title="Delete permission"
+        message={`Do you want to delete the permission "${permissionToDelete?.code}"?`}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);
