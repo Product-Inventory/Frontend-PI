@@ -3,12 +3,12 @@ import { api } from "./api";
 export const usersService = {
   async getAll() {
     const res = await api.get("/users");
-    return res.data; // { items, total, page, limit }
+    return res.data; 
   },
 
   async getById(id: string) {
     const res = await api.get(`/users/${id}`);
-    return res.data; // { item }
+    return res.data; 
   },
 
   async create(data: any) {

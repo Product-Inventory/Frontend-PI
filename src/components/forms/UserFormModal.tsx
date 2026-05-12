@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { usersService } from '@/services/users.service';
+import { rolesService } from '@/services/roles.service';
+import { User } from '@/types/user';
 
 interface UserFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  user?: any;
+  user?: User | null;
 }
 
 export default function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModalProps) {
@@ -17,12 +19,35 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
     email: '',
     usuario: '',
     password: '',
-    roleId: 'role_admin',
+    roleId: '',
+    role: '',
     activo: true,
   });
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState<{ id: string; nombre: string }[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
+  // Cargar roles disponibles desde el backend
+  useEffect(() => {
+    if (!isOpen) return;
+    rolesService.getAll()
+      .then(data => {
+        setRoles(data.items);
+        if (data.items.length > 0 && !formData.roleId && !user) {
+          // Si hay roles y estamos en modo creación, seleccionar el primero por defecto
+          setFormData(prev => ({
+            ...prev,
+            roleId: data.items[0].id,
+            role: data.items[0].nombre,
+          }));
+        }
+      })
+      .catch(err => console.error('Error loading roles:', err))
+      .finally(() => setRolesLoading(false));
+  }, [isOpen]);
+
+  // Cargar datos del usuario si es edición
   useEffect(() => {
     if (user) {
       setFormData({
@@ -31,34 +56,54 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         email: user.email,
         usuario: user.usuario,
         password: '',
-        roleId: user.roleId || 'role_admin',
+        roleId: user.roleId || '',
+        role: user.role || '',
         activo: user.activo,
       });
     } else {
-      setFormData({
+      // No resetear roleId/role si ya se cargaron roles y no hay usuario
+      setFormData(prev => ({
+        ...prev,
         nombre: '',
         apellido: '',
         email: '',
         usuario: '',
         password: '',
-        roleId: 'role_admin',
         activo: true,
-      });
+      }));
     }
     setErrors({});
   }, [user, isOpen]);
 
-  const validate = () => {
-    const newErrors: any = {};
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
     if (!formData.nombre.trim()) newErrors.nombre = 'Nombre obligatorio';
     if (!formData.apellido.trim()) newErrors.apellido = 'Apellido obligatorio';
     if (!formData.email.trim()) newErrors.email = 'Email obligatorio';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Email inválido';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = 'Email inválido';
     if (!formData.usuario.trim()) newErrors.usuario = 'Usuario obligatorio';
     if (!user && !formData.password) newErrors.password = 'Contraseña obligatoria';
+    else if (!user && formData.password && formData.password.length < 4)
+      newErrors.password = 'Mínimo 4 caracteres';
     if (!formData.roleId) newErrors.roleId = 'Rol obligatorio';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (name === 'roleId') {
+      const selectedRole = roles.find(r => r.id === value);
+      setFormData(prev => ({
+        ...prev,
+        roleId: value,
+        role: selectedRole?.nombre || '',
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +112,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
     setLoading(true);
     try {
       if (user) {
-        const updateData = { ...formData };
+        const updateData: any = { ...formData };
         if (!updateData.password) delete updateData.password;
         await usersService.update(user.id, updateData);
       } else {
@@ -76,7 +121,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al guardar');
+      alert(err.response?.data?.message || 'Error al guardar usuario');
     } finally {
       setLoading(false);
     }
@@ -87,44 +132,118 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="glass-card rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <h2 className="text-xl font-bold text-white mb-4">{user ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
+        <h2 className="text-xl font-bold text-white mb-4">
+          {user ? 'Editar Usuario' : 'Nuevo Usuario'}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nombre */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Nombre *</label>
-            <input type="text" className="glass-input w-full" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
-            {errors.nombre && <p className="text-red-300 text-xs">{errors.nombre}</p>}
+            <input
+              type="text"
+              name="nombre"
+              className="glass-input w-full"
+              value={formData.nombre}
+              onChange={handleChange}
+            />
+            {errors.nombre && <p className="text-red-300 text-xs mt-1">{errors.nombre}</p>}
           </div>
+          {/* Apellido */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Apellido *</label>
-            <input type="text" className="glass-input w-full" value={formData.apellido} onChange={(e) => setFormData({ ...formData, apellido: e.target.value })} />
-            {errors.apellido && <p className="text-red-300 text-xs">{errors.apellido}</p>}
+            <input
+              type="text"
+              name="apellido"
+              className="glass-input w-full"
+              value={formData.apellido}
+              onChange={handleChange}
+            />
+            {errors.apellido && <p className="text-red-300 text-xs mt-1">{errors.apellido}</p>}
           </div>
+          {/* Email */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Email *</label>
-            <input type="email" className="glass-input w-full" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            {errors.email && <p className="text-red-300 text-xs">{errors.email}</p>}
+            <input
+              type="email"
+              name="email"
+              className="glass-input w-full"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email}</p>}
           </div>
+          {/* Usuario */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Usuario *</label>
-            <input type="text" className="glass-input w-full" value={formData.usuario} onChange={(e) => setFormData({ ...formData, usuario: e.target.value })} />
-            {errors.usuario && <p className="text-red-300 text-xs">{errors.usuario}</p>}
+            <input
+              type="text"
+              name="usuario"
+              className="glass-input w-full"
+              value={formData.usuario}
+              onChange={handleChange}
+            />
+            {errors.usuario && <p className="text-red-300 text-xs mt-1">{errors.usuario}</p>}
           </div>
+          {/* Contraseña */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">{user ? 'Contraseña (dejar vacía para no cambiar)' : 'Contraseña *'}</label>
-            <input type="password" className="glass-input w-full" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-            {errors.password && <p className="text-red-300 text-xs">{errors.password}</p>}
+            <label className="block text-white/80 text-sm mb-1">
+              {user ? 'Contraseña (dejar vacía para no cambiar)' : 'Contraseña *'}
+            </label>
+            <input
+              type="password"
+              name="password"
+              className="glass-input w-full"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            {errors.password && <p className="text-red-300 text-xs mt-1">{errors.password}</p>}
           </div>
+          {/* Rol (select dinámico) */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Rol *</label>
-            <select className="glass-input w-full" value={formData.roleId} onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}>
-              <option value="role_admin">Administrador</option>
-              <option value="role_user">Usuario</option>
-            </select>
-            {errors.roleId && <p className="text-red-300 text-xs">{errors.roleId}</p>}
+            {rolesLoading ? (
+              <div className="glass-input w-full text-white/50">Cargando roles...</div>
+            ) : (
+              <select
+                name="roleId"
+                className="glass-input w-full"
+                value={formData.roleId}
+                onChange={handleChange}
+              >
+                <option value="">Seleccione un rol</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id}>
+                    {role.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.roleId && <p className="text-red-300 text-xs mt-1">{errors.roleId}</p>}
           </div>
+          {/* Activo */}
+          <label className="flex items-center gap-2 text-white/80">
+            <input
+              type="checkbox"
+              name="activo"
+              checked={formData.activo}
+              onChange={handleChange}
+            />
+            Activo
+          </label>
+          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 rounded-full bg-white/20 text-white font-semibold">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading || rolesLoading}
+              className="px-4 py-2 rounded-full bg-white/20 text-white font-semibold hover:bg-white/30 transition disabled:opacity-50"
+            >
               {loading ? 'Guardando...' : user ? 'Actualizar' : 'Crear'}
             </button>
           </div>
