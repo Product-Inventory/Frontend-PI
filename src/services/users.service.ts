@@ -1,22 +1,33 @@
-import { api } from './api'
-import { User, UserCreate, UserUpdate, PaginatedResponse } from '@/types/user'
+import { api } from "./api";
 
 export const usersService = {
-  getAll: (params?: { q?: string; activo?: boolean; page?: number; limit?: number }) =>
-    api.get<PaginatedResponse<User>>('/users', { params }),
+  async getAll() {
+    const res = await api.get("/users");
+    return res.data; 
+  },
 
-  getById: (id: string) =>
-    api.get<{ item: User }>(`/users/${id}`),
+  async getById(id: string) {
+    const res = await api.get(`/users/${id}`);
+    return res.data; 
+  },
 
-  create: (data: UserCreate) =>
-    api.post<{ message: string; item: User }>('/users', data),
+  async create(data: any) {
+    const res = await api.post("/users", data);
+    return res.data;
+  },
 
-  update: (id: string, data: UserUpdate) =>
-    api.patch<{ message: string; item: User }>(`/users/${id}`, data),
+  async update(id: string, data: any) {
+    const res = await api.patch(`/users/${id}`, data);
+    return res.data;
+  },
 
-  toggleActive: (id: string, activo: boolean) =>
-    api.patch<{ message: string; item: User }>(`/users/${id}/toggle-active`, { activo }),
+  async toggleActive(id: string, activo: boolean) {
+    const res = await api.patch(`/users/${id}/toggle-active`, { activo });
+    return res.data;
+  },
 
-  delete: (id: string) =>
-    api.delete<{ message: string }>(`/users/${id}`)
-}
+  async delete(id: string) {
+    const res = await api.delete(`/users/${id}`);
+    return res.data;
+  },
+};
