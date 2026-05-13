@@ -11,6 +11,7 @@ type StatusFilter = "all" | "active" | "inactive";
 type LowStockFilter = "all" | "low";
 type MovementTypeFilter = "all" | "ENTRADA" | "SALIDA" | "AJUSTE";
 
+// Estado inicial del formulario de ajuste
 type AdjustFormState = {
     tipo: "ENTRADA" | "SALIDA" | "AJUSTE";
     cantidad: string;
@@ -20,6 +21,7 @@ type AdjustFormState = {
 
 type AdjustFormErrors = Partial<Record<keyof AdjustFormState, string>>;
 
+// Numeros de filas por tabla para mostrar usando la paginacion
 const inventoryItemsPerPage = 3;
 const movementItemsPerPage = 3;
 
@@ -35,27 +37,34 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
     timeStyle: "short",
 });
 
+// Formatea las fechas de actualización de los productos, mostrando "-" para valores nulos o inválidos
 function formatDate(value: string | null) {
     if (!value) return "-";
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "-" : dateFormatter.format(date);
 }
 
+// Considera vacíos como inválidos y luego verifica que el número sea positivo para validar la cantidad en el formulario de ajuste
 function isPositiveNumber(value: string) {
     if (value.trim() === "") return false;
     const parsed = Number(value);
-    return !Number.isNaN(parsed) && parsed > 0;
+    return !Number.isNaN(parsed) && parsed > 0; // Solo números positivos
 }
 
+// Normaliza los textos opcionales para que la API reciba null en lugar de vacíos.
 function normalizeOptionalText(value: string) {
     const trimmed = value.trim();
     return trimmed === "" ? null : trimmed;
 }
 
 export default function InventoryPage() {
+    // El toast es el canal ligero para mostrar éxitos y errores.
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+    // La página tiene dos vistas internas: inventario y movimientos.
     const [activeTab, setActiveTab] = useState<"inventory" | "movements">("inventory");
 
+    // Estado y filtros de la lista de inventario.
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [inventoryLoading, setInventoryLoading] = useState(true);
     const [inventorySearch, setInventorySearch] = useState("");
@@ -65,6 +74,7 @@ export default function InventoryPage() {
     const [inventoryTotalPages, setInventoryTotalPages] = useState(1);
     const [inventoryTotalItems, setInventoryTotalItems] = useState(0);
 
+    // Estado y filtros de la lista de movimientos.
     const [movements, setMovements] = useState<InventoryMovement[]>([]);
     const [movementsLoading, setMovementsLoading] = useState(false);
     const [movementsSearch, setMovementsSearch] = useState("");
@@ -74,6 +84,7 @@ export default function InventoryPage() {
     const [movementsTotalPages, setMovementsTotalPages] = useState(1);
     const [movementsTotalItems, setMovementsTotalItems] = useState(0);
 
+    // Estado del modal para ajustes realizados desde la lista de inventario.
     const [adjustOpen, setAdjustOpen] = useState(false);
     const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
     const [adjustForm, setAdjustForm] = useState<AdjustFormState>(emptyAdjustForm);
@@ -81,14 +92,17 @@ export default function InventoryPage() {
     const [adjustLoading, setAdjustLoading] = useState(false);
     const [adjustSaving, setAdjustSaving] = useState(false);
 
+    // Métrica derivada usada en el indicador del encabezado de inventario.
     const lowStockCount = useMemo(
         () => inventoryItems.filter((item) => item.lowStock || Number(item.stock) <= Number(item.stockMinimo)).length,
         [inventoryItems]
     );
 
+    // La paginación solo se muestra si el total de registros lo justifica.
     const showInventoryPagination = inventoryTotalItems > inventoryItemsPerPage;
     const showMovementsPagination = movementsTotalItems > movementItemsPerPage;
 
+    // Construye la consulta de inventario a partir de los filtros actuales.
     const buildInventoryQuery = () => {
         const query: Record<string, string | number | boolean> = {
             page: inventoryPage,
@@ -104,6 +118,7 @@ export default function InventoryPage() {
         return query;
     };
 
+    // Construye la consulta de movimientos con búsqueda, filtros y producto seleccionado.
     const buildMovementsQuery = () => {
         const query: Record<string, string | number> = {
             page: movementsPage,
@@ -119,6 +134,7 @@ export default function InventoryPage() {
         return query;
     };
 
+    // Carga la tabla de inventario usando el estado actual de filtros.
     const fetchInventory = async () => {
         try {
             setInventoryLoading(true);
@@ -136,6 +152,7 @@ export default function InventoryPage() {
         }
     };
 
+    // Carga la tabla de movimientos usando los filtros actuales.
     const fetchMovements = async () => {
         try {
             setMovementsLoading(true);
@@ -153,6 +170,7 @@ export default function InventoryPage() {
         }
     };
 
+    // Vuelve a cargar inventario cuando cambian filtros o página.
     useEffect(() => {
         const timer = window.setTimeout(() => {
             void fetchInventory();
@@ -161,14 +179,17 @@ export default function InventoryPage() {
         return () => window.clearTimeout(timer);
     }, [inventorySearch, inventoryStatusFilter, inventoryLowStockFilter, inventoryPage]);
 
+    // Reinicia la paginación de inventario cuando cambian los filtros.
     useEffect(() => {
         setInventoryPage(1);
     }, [inventorySearch, inventoryStatusFilter, inventoryLowStockFilter]);
 
+    // Ajusta la página de inventario al último valor válido después de actualizar totales.
     useEffect(() => {
         setInventoryPage((page) => Math.min(page, inventoryTotalPages));
     }, [inventoryTotalPages]);
 
+    // Vuelve a cargar movimientos cuando cambian filtros o página.
     useEffect(() => {
         const timer = window.setTimeout(() => {
             void fetchMovements();
@@ -177,14 +198,17 @@ export default function InventoryPage() {
         return () => window.clearTimeout(timer);
     }, [movementsSearch, movementsTypeFilter, movementsProductId, movementsPage]);
 
+    // Reinicia la paginación de movimientos cuando cambian los filtros.
     useEffect(() => {
         setMovementsPage(1);
     }, [movementsSearch, movementsTypeFilter, movementsProductId]);
 
+    // Limita la página de movimientos para no pedir una página fuera de rango.
     useEffect(() => {
         setMovementsPage((page) => Math.min(page, movementsTotalPages));
     }, [movementsTotalPages]);
 
+    // Abre el modal de ajuste y trae la información más reciente del producto.
     const openAdjust = async (item: InventoryItem) => {
         setAdjustOpen(true);
         setAdjustItem(item);
@@ -195,6 +219,7 @@ export default function InventoryPage() {
         if (!productId) return;
 
         try {
+            // Aunque ya tenemos datos del producto, los volvemos a traer para asegurarnos de tener la información más actualizada antes de hacer un ajuste
             setAdjustLoading(true);
             const data = await inventoryService.getByProductId(productId);
             setAdjustItem(data.item);
@@ -206,6 +231,7 @@ export default function InventoryPage() {
         }
     };
 
+    // Cierra el modal y limpia el estado temporal del formulario
     const closeAdjust = () => {
         setAdjustOpen(false);
         setAdjustItem(null);
@@ -213,6 +239,7 @@ export default function InventoryPage() {
         setAdjustErrors({});
     };
 
+    // Manejador genérico para los campos del modal de ajuste
     const handleAdjustChange = (event: any) => {
         const { name, value } = event.target;
         setAdjustForm((current) => ({
@@ -221,6 +248,7 @@ export default function InventoryPage() {
         }));
     };
 
+    // Valida el modal antes de enviar la solicitud de ajuste
     const validateAdjustForm = () => {
         const nextErrors: AdjustFormErrors = {};
         if (!adjustForm.tipo) nextErrors.tipo = "Select a movement type";
@@ -229,6 +257,7 @@ export default function InventoryPage() {
         return nextErrors;
     };
 
+    // Guarda el ajuste de inventario y actualiza ambas tablas
     const handleAdjustSubmit = async () => {
         if (!adjustItem) return;
 
@@ -263,43 +292,49 @@ export default function InventoryPage() {
         }
     };
 
+    // Cambia a movimientos y prefiltra por el producto seleccionado
     const handleViewMovements = (item: InventoryItem) => {
+        setMovementsSearch("");
+        setMovementsTypeFilter("all");
         setMovementsProductId(item.productId || item.id);
         setMovementsPage(1);
+        setActiveTab("movements");
     };
 
     const buttonBase =
-        "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold text-[#9a7ef0]! shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+        "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-xs sm:text-sm font-semibold text-[#9a7ef0]! shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
     return (
-        <div className="flex flex-col px-6 py-6 lg:px-10 h-full overflow-y-auto">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <div className="flex flex-col h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6">
+                {/* Toast global para operaciones asíncronas. */}
                 {toast && (
                     <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} />
                 )}
 
-                {/* Header: title left, tabs right */}
+                {/* Encabezado de la página con título y pestañas. */}
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4">
                         <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
                             <Box className="h-6 w-6 text-black" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
                                 Inventory
                             </h1>
-                            <p className="mt-1 text-sm text-slate-600">
+                            <p className="mt-1 text-xs sm:text-sm text-slate-600">
                                 Track stock levels, low stock signals, and movements.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    {/* Botones de pestañas */}
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
                         <button
                             onClick={() => setActiveTab("inventory")}
                             className={`inline-flex h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 ${activeTab === "inventory"
-                                    ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
-                                    : "border-white/50 bg-white/35 text-[#9a7ef0]!"
+                                ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
+                                : "border-white/50 bg-white/35 text-[#9a7ef0]!"
                                 }`}
                         >
                             Inventory
@@ -307,8 +342,8 @@ export default function InventoryPage() {
                         <button
                             onClick={() => setActiveTab("movements")}
                             className={`inline-flex h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 ${activeTab === "movements"
-                                    ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
-                                    : "border-white/50 bg-white/35 text-[#9a7ef0]!"
+                                ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
+                                : "border-white/50 bg-white/35 text-[#9a7ef0]!"
                                 }`}
                         >
                             Movements
@@ -316,11 +351,11 @@ export default function InventoryPage() {
                     </div>
                 </div>
 
-                {/* Filter bar: same 2-row structure for both tabs */}
+                {/* Barra de filtros compartida: se adapta según la pestaña activa. */}
                 <div className="flex flex-col gap-3">
-                    {/* Row 1: search + 2 dropdowns/inputs */}
-                    <div className="grid gap-3 md:grid-cols-[1fr_0.6fr_0.6fr]">
-                        <div className="relative">
+                    {/* Primera fila: búsqueda más los dos filtros específicos. */}
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_0.6fr_0.6fr]">
+                        <div className="relative sm:col-span-2 lg:col-span-1">
                             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
                                 <Search className="h-4 w-4" />
                             </span>
@@ -386,8 +421,8 @@ export default function InventoryPage() {
                         )}
                     </div>
 
-                    {/* Row 2: secondary controls */}
-                    <div className="flex items-center justify-between gap-3">
+                    {/* Segunda fila: resumen o controles del producto seleccionado. */}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         {activeTab === "inventory" ? (
                             <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
                                 <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -407,11 +442,89 @@ export default function InventoryPage() {
                     </div>
                 </div>
 
+                {/* Contenido de la pestaña de inventario. */}
                 {activeTab === "inventory" && (inventoryLoading ? (
                     <Loading label="Loading inventory..." />
                 ) : (
                     <div className="glass-card overflow-hidden rounded-[30px]">
-                        <div className="overflow-x-auto">
+                        {/* Tarjetas de inventario para dispositivos pequeños */}
+                        <div className="md:hidden space-y-4">
+                            {inventoryItems.map((item) => {
+                                const lowStock =
+                                    item.lowStock ||
+                                    Number(item.stock) <= Number(item.stockMinimo);
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md ${lowStock ? "bg-amber-50/75" : ""
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-extrabold text-slate-900">
+                                                    {item.nombre}
+                                                </p>
+
+                                                <p className="text-xs text-slate-500">
+                                                    {item.sku}
+                                                </p>
+                                            </div>
+
+                                            <span
+                                                className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${item.activo
+                                                    ? "bg-emerald-200 text-emerald-700"
+                                                    : "bg-slate-200 text-slate-600"
+                                                    }`}
+                                            >
+                                                {item.activo ? "Active" : "Inactive"}
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-4 grid grid-cols-2 gap-3">
+                                            <MobileMeta
+                                                label="Stock"
+                                                value={String(item.stock)}
+                                            />
+
+                                            <MobileMeta
+                                                label="Minimum"
+                                                value={String(item.stockMinimo)}
+                                            />
+
+                                            <MobileMeta
+                                                label="Category"
+                                                value={item.categoria || "-"}
+                                            />
+
+                                            <MobileMeta
+                                                label="Updated"
+                                                value={formatDate(item.updatedAt)}
+                                            />
+                                        </div>
+
+                                        <div className="mt-4 grid grid-cols-2 gap-2">
+                                            <button
+                                                className={buttonBase}
+                                                onClick={() => void openAdjust(item)}
+                                            >
+                                                Adjust
+                                            </button>
+
+                                            <button
+                                                className={buttonBase}
+                                                onClick={() => handleViewMovements(item)}
+                                            >
+                                                Movements
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Tabla de inventario para compus */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-white/25">
                                     <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
@@ -487,12 +600,13 @@ export default function InventoryPage() {
                             </table>
                         </div>
 
-                        <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
-                            <p className="text-sm text-gray-400">
-                                Page {inventoryPage} of {inventoryTotalPages}
-                            </p>
+                        {/* Pie de paginación del inventario. */}
+                        <div className="mt-4 flex flex-col gap-3 border-t border-white/20 px-5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-gray-400">
+                            Page {inventoryPage} of {inventoryTotalPages}
+                        </p>
 
-                            <div className="flex gap-2">
+                            <div className="grid grid-cols-2 gap-2 p-3 sm:flex">
                                 <button
                                     onClick={() => setInventoryPage((page) => Math.max(page - 1, 1))}
                                     disabled={!showInventoryPagination || inventoryPage === 1}
@@ -512,14 +626,69 @@ export default function InventoryPage() {
                         </div>
                     </div>
                 ))}
+
+                {/* Contenido de la pestaña de movimientos. */}
                 {activeTab === "movements" && (<>
                     {movementsLoading ? (
                         <Loading label="Loading movements..." />
                     ) : (
                         <div className="glass-card overflow-hidden rounded-[30px]">
-                            <div className="overflow-x-auto">
+                            {/* En dispositivos pequeños se muestran tarjetas para facilitar la lectura. */}
+                            <div className="md:hidden space-y-4">
+                                {movements.length > 0 ? (
+                                    movements.map((movement) => (
+                                        <div key={movement.id} className="rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-extrabold text-slate-900">{movement.productNombre}</p>
+                                                    <p className="text-xs text-slate-500">SKU: {movement.sku}</p>
+                                                </div>
+
+                                                <span
+                                                    className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${movement.tipo === "ENTRADA"
+                                                        ? "bg-emerald-200 text-emerald-700"
+                                                        : movement.tipo === "SALIDA"
+                                                            ? "bg-rose-200 text-rose-700"
+                                                            : "bg-amber-200 text-amber-700"
+                                                        }`}
+                                                >
+                                                    {movement.tipo}
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                                <MobileMeta label="Qty" value={String(movement.cantidad)} />
+                                                <MobileMeta label="Prev" value={String(movement.stockAnterior)} />
+                                                <MobileMeta label="New" value={String(movement.stockNuevo)} />
+                                                <MobileMeta label="Date" value={formatDate(movement.createdAt)} />
+                                            </div>
+
+                                            <div className="mt-4 grid gap-3">
+                                                <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
+                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Reason</p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{movement.motivo || "-"}</p>
+                                                </div>
+
+                                                <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
+                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">User</p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{movement.usuario || "-"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="rounded-3xl border border-white/30 bg-white/25 p-6 text-center text-slate-500 backdrop-blur-md">
+                                        No movements registered
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* En escritorio se muestra una tabla con el historial completo de movimientos. */}
+                            {/* Tabla de movimientos para escritorio. */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="min-w-full text-sm">
                                     <thead className="bg-white/25">
+                                        {/* Encabezados de cada columna del listado de movimientos. */}
                                         <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
                                             <th className="px-5 py-4">SKU</th>
                                             <th className="px-5 py-4">Product</th>
@@ -534,11 +703,14 @@ export default function InventoryPage() {
                                     </thead>
 
                                     <tbody>
+                                        {/* Si hay datos, se pinta una fila por cada movimiento registrado. */}
                                         {movements.length > 0 ? (
                                             movements.map((movement) => (
                                                 <tr key={movement.id} className="border-t border-white/18 transition hover:bg-white/10">
+                                                    {/* SKU y nombre del producto afectado por el movimiento. */}
                                                     <td className="px-5 py-5 font-extrabold text-slate-800">{movement.sku}</td>
                                                     <td className="px-5 py-5 text-slate-700">{movement.productNombre}</td>
+                                                    {/* El tipo se resalta con un color distinto para lectura rápida. */}
                                                     <td className="px-5 py-5">
                                                         <span
                                                             className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${movement.tipo === "ENTRADA"
@@ -551,9 +723,11 @@ export default function InventoryPage() {
                                                             {movement.tipo}
                                                         </span>
                                                     </td>
+                                                    {/* Cantidad y stock anterior/nuevo para entender el cambio exacto. */}
                                                     <td className="px-5 py-5 font-semibold text-slate-800">{movement.cantidad}</td>
                                                     <td className="px-5 py-5 text-slate-700">{movement.stockAnterior}</td>
                                                     <td className="px-5 py-5 text-slate-700">{movement.stockNuevo}</td>
+                                                    {/* Motivo, usuario y fecha ayudan a auditar quién hizo el cambio y por qué. */}
                                                     <td className="px-5 py-5 text-slate-700">{movement.motivo || "-"}</td>
                                                     <td className="px-5 py-5 text-slate-700">{movement.usuario || "-"}</td>
                                                     <td className="px-5 py-5 text-slate-700">{formatDate(movement.createdAt)}</td>
@@ -561,6 +735,7 @@ export default function InventoryPage() {
                                             ))
                                         ) : (
                                             <tr>
+                                                {/* Estado vacío cuando todavía no hay movimientos para mostrar. */}
                                                 <td colSpan={9} className="px-5 py-14 text-center text-slate-500">
                                                     No movements registered
                                                 </td>
@@ -570,12 +745,13 @@ export default function InventoryPage() {
                                 </table>
                             </div>
 
+                            {/* Pie de paginación de movimientos. */}
                             <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
                                 <p className="text-sm text-gray-400">
                                     Page {movementsPage} of {movementsTotalPages}
                                 </p>
 
-                                <div className="flex gap-2">
+                                <div className="grid grid-cols-2 gap-2 p-3 sm:flex">
                                     <button
                                         onClick={() => setMovementsPage((page) => Math.max(page - 1, 1))}
                                         disabled={!showMovementsPagination || movementsPage === 1}
@@ -598,10 +774,11 @@ export default function InventoryPage() {
                 </>)}
             </div>
 
+            {/* Modal para crear un movimiento de stock mediante ajuste. */}
             {adjustOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-                    <div className="glass-card w-full max-w-3xl rounded-[28px] p-6 md:p-8">
-                        <div className="mb-5 flex items-center justify-between gap-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-4">
+                    <div className="glass-card w-full max-w-3xl rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Adjust inventory</h2>
                                 <p className="mt-1 text-sm text-slate-600">Register an entry, exit, or adjustment movement.</p>
@@ -615,10 +792,13 @@ export default function InventoryPage() {
                             </button>
                         </div>
 
+                        {/* Mientras se carga el detalle del producto se muestra un loader simple. */}
                         {adjustLoading ? (
                             <Loading label="Loading inventory detail..." />
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
+                                {/* Formulario del ajuste: muestra el producto y captura el nuevo movimiento. */}
+                                {/* Nombre y SKU del producto como referencia visual para el usuario. */}
                                 <Field label="Product">
                                     <input
                                         value={`${adjustItem?.sku || ""} ${adjustItem?.nombre || ""}`.trim()}
@@ -627,10 +807,12 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
+                                {/* Stock actual antes de aplicar el ajuste. */}
                                 <Field label="Current stock">
                                     <input value={adjustItem?.stock ?? "-"} readOnly className="glass-input w-full" />
                                 </Field>
 
+                                {/* Tipo de movimiento que se va a registrar. */}
                                 <Field label="Movement type" error={adjustErrors.tipo}>
                                     <select
                                         name="tipo"
@@ -644,6 +826,7 @@ export default function InventoryPage() {
                                     </select>
                                 </Field>
 
+                                {/* Cantidad a sumar o restar del inventario. */}
                                 <Field label="Quantity" error={adjustErrors.cantidad}>
                                     <input
                                         name="cantidad"
@@ -655,6 +838,7 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
+                                {/* Motivo requerido para dejar trazabilidad del ajuste. */}
                                 <Field label="Reason" error={adjustErrors.motivo}>
                                     <input
                                         name="motivo"
@@ -665,19 +849,21 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
+                                {/* Referencia opcional para documentos, tickets o notas internas. */}
                                 <Field label="Reference">
                                     <input
                                         name="referencia"
                                         value={adjustForm.referencia}
                                         onChange={handleAdjustChange}
                                         className="glass-input w-full"
-                                        placeholder="Optional document, PO, note"
+                                        placeholder="Optional document, note..."
                                     />
                                 </Field>
                             </div>
                         )}
 
-                        <div className="mt-6 flex justify-end gap-3">
+                        {/* Botones para cancelar o guardar el ajuste registrado. */}
+                        <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
                             <button
                                 onClick={closeAdjust}
                                 className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold text-[#9a7ef0]! shadow-sm transition hover:bg-white/55"
@@ -700,6 +886,7 @@ export default function InventoryPage() {
     );
 }
 
+// Contenedor pequeño que agrupa etiqueta, campo y mensaje de validación.
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
         <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
@@ -710,6 +897,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     );
 }
 
+// Bloque compacto de valores usado en el diseño móvil de inventario.
 function MobileMeta({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
     return (
         <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
