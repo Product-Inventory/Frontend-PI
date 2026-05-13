@@ -395,9 +395,9 @@ export default function InventoryPage() {
                                 className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
                             >
                                 <option value="all">All types</option>
-                                <option value="ENTRADA">Entrada</option>
-                                <option value="SALIDA">Salida</option>
-                                <option value="AJUSTE">Ajuste</option>
+                                <option value="ENTRADA">Receipts</option>
+                                <option value="SALIDA">Issues</option>
+                                <option value="AJUSTE">Adjustments</option>
                             </select>
                         )}
 
@@ -610,7 +610,7 @@ export default function InventoryPage() {
                                 <button
                                     onClick={() => setInventoryPage((page) => Math.max(page - 1, 1))}
                                     disabled={!showInventoryPagination || inventoryPage === 1}
-                                    className="app"
+                                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm text-[#9a7ef0]! disabled:opacity-20"
                                 >
                                     Previous
                                 </button>
@@ -652,7 +652,13 @@ export default function InventoryPage() {
                                                             : "bg-amber-200 text-amber-700"
                                                         }`}
                                                 >
-                                                    {movement.tipo}
+                                                    { // Para que esten en ingles
+                                                        movement.tipo === "ENTRADA"
+                                                            ? "RECEIPT"
+                                                            : movement.tipo === "SALIDA"
+                                                                ? "ISSUE"
+                                                                : "ADJUSTMENT"
+                                                    }
                                                 </span>
                                             </div>
 
@@ -720,7 +726,13 @@ export default function InventoryPage() {
                                                                     : "bg-amber-200/80 text-amber-700"
                                                                 }`}
                                                         >
-                                                            {movement.tipo}
+                                                            { // Para que esten en ingles
+                                                                movement.tipo === "ENTRADA"
+                                                                    ? "RECEIPT"
+                                                                    : movement.tipo === "SALIDA"
+                                                                        ? "ISSUE"
+                                                                        : "ADJUSTMENT"
+                                                            }
                                                         </span>
                                                     </td>
                                                     {/* Cantidad y stock anterior/nuevo para entender el cambio exacto. */}
@@ -820,9 +832,9 @@ export default function InventoryPage() {
                                         onChange={handleAdjustChange}
                                         className="glass-input w-full"
                                     >
-                                        <option value="ENTRADA">Entrada</option>
-                                        <option value="SALIDA">Salida</option>
-                                        <option value="AJUSTE">Ajuste</option>
+                                        <option value="ENTRADA">Receipts</option>
+                                        <option value="SALIDA">Issues</option>
+                                        <option value="AJUSTE">Adjustments</option>
                                     </select>
                                 </Field>
 
