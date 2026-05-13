@@ -9,7 +9,6 @@ import {
   Truck,
   Box,
   Package,
-  Move,
   Inbox,
   User,
   Settings,
@@ -78,14 +77,6 @@ function InventoryIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
       <Package size={20} />
-    </SidebarIconShell>
-  );
-}
-
-function MovementsIcon({ active, className }: SidebarIconProps) {
-  return (
-    <SidebarIconShell active={active} className={className}>
-      <Move size={20} />
     </SidebarIconShell>
   );
 }

@@ -38,7 +38,7 @@ export function Toast({ message, type = "success", duration = 3000, onClose }: T
   const subTextColor = type === "success" ? "text-slate-600" : type === "error" ? "text-red-200" : "text-blue-200";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40">
+    <div className="fixed inset-0 z-100 flex items-center justify-center px-4 bg-black/40">
       <div className={`${bgColor} ${borderColor} backdrop-blur-xl border rounded-3xl px-10 py-7 w-full max-w-md shadow-2xl`}>
         <h2 className={`text-2xl font-extrabold tracking-tight ${textColor}`}>
           {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"} {message}
