@@ -123,16 +123,6 @@ export default function SuppliersPage() {
         </button>
       </div>
 
-      <div className="flex justify-end">
-        <input
-          type="text"
-          placeholder="Buscar por nombre, RFC, contacto o email..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-          className="glass-input w-64"
-        />
-      </div>
-
       {isLoading ? (
         <Loading />
       ) : (

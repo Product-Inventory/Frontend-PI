@@ -351,76 +351,7 @@ export default function InventoryPage() {
                     </div>
                 </div>
 
-                {/* Barra de filtros compartida: se adapta según la pestaña activa. */}
                 <div className="flex flex-col gap-3">
-                    {/* Primera fila: búsqueda más los dos filtros específicos. */}
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_0.6fr_0.6fr]">
-                        <div className="relative sm:col-span-2 lg:col-span-1">
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                                <Search className="h-4 w-4" />
-                            </span>
-                            {activeTab === "inventory" ? (
-                                <input
-                                    type="text"
-                                    value={inventorySearch}
-                                    onChange={(event) => setInventorySearch(event.target.value)}
-                                    placeholder="Search by SKU, name, or category..."
-                                    className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                                />
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={movementsSearch}
-                                    onChange={(event) => setMovementsSearch(event.target.value)}
-                                    placeholder="Search movements..."
-                                    className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                                />
-                            )}
-                        </div>
-
-                        {activeTab === "inventory" ? (
-                            <select
-                                value={inventoryStatusFilter}
-                                onChange={(event) => setInventoryStatusFilter(event.target.value as StatusFilter)}
-                                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-                            >
-                                <option value="all">All</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        ) : (
-                            <select
-                                value={movementsTypeFilter}
-                                onChange={(event) => setMovementsTypeFilter(event.target.value as MovementTypeFilter)}
-                                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-                            >
-                                <option value="all">All types</option>
-                                <option value="ENTRADA">Receipts</option>
-                                <option value="SALIDA">Issues</option>
-                                <option value="AJUSTE">Adjustments</option>
-                            </select>
-                        )}
-
-                        {activeTab === "inventory" ? (
-                            <select
-                                value={inventoryLowStockFilter}
-                                onChange={(event) => setInventoryLowStockFilter(event.target.value as LowStockFilter)}
-                                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-                            >
-                                <option value="all">All stock levels</option>
-                                <option value="low">Low stock only</option>
-                            </select>
-                        ) : (
-                            <input
-                                type="text"
-                                value={movementsProductId}
-                                onChange={(event) => setMovementsProductId(event.target.value)}
-                                placeholder="Filter by product id"
-                                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                            />
-                        )}
-                    </div>
-
                     {/* Segunda fila: resumen o controles del producto seleccionado. */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         {activeTab === "inventory" ? (
@@ -788,20 +719,11 @@ export default function InventoryPage() {
 
             {/* Modal para crear un movimiento de stock mediante ajuste. */}
             {adjustOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-4 rounded-[40px]">
                     <div className="glass-card w-full max-w-3xl rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
-                        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Adjust inventory</h2>
-                                <p className="mt-1 text-sm text-slate-600">Register an entry, exit, or adjustment movement.</p>
-                            </div>
-
-                            <button
-                                onClick={closeAdjust}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-4 text-sm font-semibold text-[#9a7ef0]! shadow-sm transition hover:bg-white/55"
-                            >
-                                Close
-                            </button>
+                        <div className="mb-5">
+                            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Adjust inventory</h2>
+                            <p className="mt-1 text-sm text-slate-600">Register an entry, exit, or adjustment movement.</p>
                         </div>
 
                         {/* Mientras se carga el detalle del producto se muestra un loader simple. */}

@@ -159,19 +159,6 @@ export default function RolesPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70">
-                                <Search size={18} />
-                            </span>
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-64 pl-10 pr-4 py-2 rounded-full border border-white/20 bg-white/10 text-white placeholder-white/70 focus:outline-none"
-                            />
-                        </div>
-
                         <button
                             onClick={openCreate}
                             className="px-5 py-2 text-sm !text-[#9a7ef0]"

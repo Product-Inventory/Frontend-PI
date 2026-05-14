@@ -5,9 +5,9 @@
 
 
 :root {
-  --crystal-bg-a: #9cdaf2;
-  --crystal-bg-b: #8fa9ff;
-  --crystal-bg-c: #7a8de0;
+  --crystal-bg-a: #ffffff;
+  --crystal-bg-b: #ffffff;
+  --crystal-bg-c: #ffffff;
   --crystal-panel: rgba(255, 255, 255, 0.2);
   --crystal-panel-strong: rgba(255, 255, 255, 0.34);
   --crystal-border: rgba(255, 255, 255, 0.52);
@@ -72,13 +72,14 @@ body {
 .app-shell {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.24) 0%, rgba(213, 228, 255, 0.14) 100%);
   border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3rem;
   box-shadow: var(--crystal-shadow), var(--crystal-inner);
   backdrop-filter: blur(24px) saturate(140%);
 }
 
 .glass-card {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.42) 0%, rgba(220, 232, 255, 0.18) 100%),
+    linear-gradient(145deg, rgba(252, 251, 254, 0.42) 0%, rgba(237, 237, 241, 0.18) 100%),
     var(--crystal-panel);
   border: 1px solid var(--crystal-border);
   box-shadow: 0 14px 34px rgba(40, 62, 128, 0.2), var(--crystal-inner);
