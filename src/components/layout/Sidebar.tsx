@@ -9,7 +9,6 @@ import {
   Truck,
   Box,
   Package,
-  Move,
   Inbox,
   User,
   Settings,
@@ -24,7 +23,6 @@ const navItems = [
   { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon },
   { label: "Products", href: "/products", icon: ProductsIcon },
   { label: "Inventory", href: "/inventory", icon: InventoryIcon },
-  { label: "Movements", href: "/inventory", icon: MovementsIcon },
   { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon },
   { label: "Users", href: "/users", icon: UsersIcon },
   { label: "Roles", href: "/roles", icon: RolesIcon },
@@ -78,14 +76,6 @@ function InventoryIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
       <Package size={20} />
-    </SidebarIconShell>
-  );
-}
-
-function MovementsIcon({ active, className }: SidebarIconProps) {
-  return (
-    <SidebarIconShell active={active} className={className}>
-      <Move size={20} />
     </SidebarIconShell>
   );
 }
@@ -160,7 +150,7 @@ export default function AdminSidebar() {
       <nav className="sidebar-list custom-scrollbar flex-1 space-y-3 overflow-y-auto px-1 pr-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const href = item.label === "Movements" ? "/inventory" : item.href;
+          const href = item.label === "Orders" ? "/orders" : item.href;
           const Icon = item.icon;
 
           return (
