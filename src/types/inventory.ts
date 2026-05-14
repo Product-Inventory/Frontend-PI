@@ -37,3 +37,19 @@ export interface InventoryAdjustmentPayload {
 	motivo: string;
 	referencia?: string | null;
 }
+
+export interface InventoryQueryParams {
+	q?: string;
+	activo?: boolean;
+	lowStock?: boolean;
+	page?: number;
+	limit?: number;
+}
+
+export interface InventoryMovementsQueryParams {
+	q?: string;
+	productId?: string;
+	tipo?: InventoryMovement["tipo"];
+	page?: number;
+	limit?: number;
+}
