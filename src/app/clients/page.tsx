@@ -376,8 +376,8 @@ export default function ClientsPage() {
       </div>
       {/* MODAL CREAR/EDITAR */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8 rounded-[40px]">
-          <div className="glass-card w-full max-w-2xl rounded-[28px] p-6 md:p-8">
+        <div className="app-modal-overlay app-modal-overlay--padded">
+          <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
             <div className="mb-5">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 {editingClient ? "Edit client" : "New client"}

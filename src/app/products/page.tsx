@@ -15,7 +15,6 @@ type ProductFormState = {
     nombre: string;
     descripcion: string;
     categoria: string;
-    unidad: string;
     marca: string;
     modelo: string;
     precioCompra: string;
@@ -34,11 +33,10 @@ const emptyForm: ProductFormState = {
     nombre: "",
     descripcion: "",
     categoria: "",
-    unidad: "",
     marca: "",
     modelo: "",
-    precioCompra: "0",
-    precioVenta: "0",
+    precioCompra: "",
+    precioVenta: "",
     stock: "0",
     stockMinimo: "0",
     activo: true,
@@ -58,7 +56,6 @@ function toFormState(product?: Product | null): ProductFormState {
         nombre: product.nombre || "",
         descripcion: product.descripcion || "",
         categoria: product.categoria || "",
-        unidad: product.unidad || "",
         marca: product.marca || "",
         modelo: product.modelo || "",
         precioCompra: String(product.precioCompra ?? 0),
@@ -73,6 +70,12 @@ function isNonNegativeNumber(value: string) {
     if (value.trim() === "") return false;
     const parsed = Number(value);
     return !Number.isNaN(parsed) && parsed >= 0;
+}
+
+function isPositiveNumber(value: string) {
+    if (value.trim() === "") return false;
+    const parsed = Number(value);
+    return !Number.isNaN(parsed) && parsed > 0;
 }
 
 function normalizeOptionalText(value: string) {
@@ -94,6 +97,7 @@ export default function ProductsPage() {
     const [formErrors, setFormErrors] = useState<ProductFormErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [validationToast, setValidationToast] = useState<string | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
@@ -152,6 +156,7 @@ export default function ProductsPage() {
 
         const sku = form.sku.trim();
         const nombre = form.nombre.trim();
+        const categoria = form.categoria.trim();
 
         if (!sku) nextErrors.sku = "SKU is required";
         else if (sku.length < 2) nextErrors.sku = "SKU must have at least 2 characters";
@@ -159,8 +164,10 @@ export default function ProductsPage() {
         if (!nombre) nextErrors.nombre = "Name is required";
         else if (nombre.length < 2) nextErrors.nombre = "Name must have at least 2 characters";
 
-        if (!isNonNegativeNumber(form.precioCompra)) nextErrors.precioCompra = "Enter a valid purchase price";
-        if (!isNonNegativeNumber(form.precioVenta)) nextErrors.precioVenta = "Enter a valid sale price";
+        if (!categoria) nextErrors.categoria = "Category is required";
+
+        if (!isPositiveNumber(form.precioCompra)) nextErrors.precioCompra = "Purchase price must be greater than 0";
+        if (!isPositiveNumber(form.precioVenta)) nextErrors.precioVenta = "Sale price must be greater than 0";
         if (!isNonNegativeNumber(form.stock)) nextErrors.stock = "Enter a valid stock value";
         if (!isNonNegativeNumber(form.stockMinimo)) nextErrors.stockMinimo = "Enter a valid minimum stock";
 
@@ -195,7 +202,6 @@ export default function ProductsPage() {
         setFormErrors(nextErrors);
 
         if (Object.keys(nextErrors).length > 0) {
-            setToast({ message: "Review the highlighted fields before saving", type: "error" });
             return;
         }
 
@@ -204,7 +210,7 @@ export default function ProductsPage() {
             nombre: form.nombre.trim(),
             descripcion: normalizeOptionalText(form.descripcion),
             categoria: normalizeOptionalText(form.categoria),
-            unidad: normalizeOptionalText(form.unidad),
+            unidad: null,
             marca: normalizeOptionalText(form.marca),
             modelo: normalizeOptionalText(form.modelo),
             precioCompra: Number(form.precioCompra),
@@ -266,20 +272,22 @@ export default function ProductsPage() {
         }
     };
 
-    const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
-    const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+    const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+    const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
     return (
-        <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+        <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    duration={1000}
+                    portal={false}
+                    overlayClassName="app-alert-overlay--module"
+                    onClose={() => setToast(null)}
+                />
+            )}
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
-                {toast && (
-                    <Toast
-                        message={toast.message}
-                        type={toast.type}
-                        duration={3000}
-                        onClose={() => setToast(null)}
-                    />
-                )}
 
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-center gap-4">
@@ -425,7 +433,7 @@ export default function ProductsPage() {
                                             <div className="mt-4 flex flex-wrap gap-2">
                                                 <button
                                                     onClick={() => openEdit(product)}
-                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     ✏️
                                                     Edit
@@ -433,7 +441,7 @@ export default function ProductsPage() {
 
                                                 <button
                                                     onClick={() => void handleToggleActive(product)}
-                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     <Power className="h-4 w-4" />
                                                     {product.activo ? "Off" : "On"}
@@ -444,7 +452,7 @@ export default function ProductsPage() {
                                                         setProductToDelete(product);
                                                         setConfirmOpen(true);
                                                     }}
-                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     🗑️
                                                 </button>
@@ -468,7 +476,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                                     disabled={!showPagination || currentPage === 1}
-                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                                 >
                                     Previous
                                 </button>
@@ -476,7 +484,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                                     disabled={!showPagination || currentPage === totalPages}
-                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                                 >
                                     Next
                                 </button>
@@ -488,44 +496,54 @@ export default function ProductsPage() {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8 rounded-[40px]">
-                    <div className="glass-card w-full max-w-5xl rounded-[40px] p-6 md:p-8">
+                <div className="app-modal-overlay app-modal-overlay--padded">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative p-6 md:p-8">
+                        {validationToast && (
+                            <Toast
+                                message={validationToast}
+                                type="error"
+                                duration={1000}
+                                onClose={() => setValidationToast(null)}
+                                portal={false}
+                                overlayClassName="app-alert-overlay--module"
+                                shellClassName="app-alert-shell--error"
+                                subtitleClassName="app-alert-subtitle--error"
+                                progressClassName="app-alert-progress--error"
+                            />
+                        )}
+
                         <div className="mb-5">
-                            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                            <h2 className="text-2xl font-extrabold tracking-tight text-[#392750]">
                                 {editingProduct ? "Edit product" : "New product"}
                             </h2>
-                            <p className="mt-1 text-sm text-slate-600">
+                            <p className="mt-1 text-sm text-[#392750]">
                                 Manage product details including pricing and status.
                             </p>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <Field label="SKU" error={formErrors.sku}>
+                            <Field label="SKU *" error={formErrors.sku}>
                                 <input name="sku" value={form.sku} onChange={handleChange} className="glass-input w-full" placeholder="PRD-001" />
                             </Field>
 
-                            <Field label="Name" error={formErrors.nombre}>
+                            <Field label="Name *" error={formErrors.nombre}>
                                 <input name="nombre" value={form.nombre} onChange={handleChange} className="glass-input w-full" placeholder="Laptop Pro 15" />
                             </Field>
 
-                            <Field label="Category">
+                            <Field label="Category *" error={formErrors.categoria}>
                                 <input name="categoria" value={form.categoria} onChange={handleChange} className="glass-input w-full" placeholder="Electronics" />
-                            </Field>
-
-                            <Field label="Unit">
-                                <input name="unidad" value={form.unidad} onChange={handleChange} className="glass-input w-full" placeholder="pcs" />
                             </Field>
 
                             <Field label="Brand">
                                 <input name="marca" value={form.marca} onChange={handleChange} className="glass-input w-full" placeholder="Dell" />
                             </Field>
 
-                            <Field label="Purchase price" error={formErrors.precioCompra}>
-                                <input name="precioCompra" type="number" min="0" step="0.01" value={form.precioCompra} onChange={handleChange} className="glass-input w-full" />
+                            <Field label="Purchase price $ *" error={formErrors.precioCompra}>
+                                <input name="precioCompra" type="number" min="0.01" step="0.01" value={form.precioCompra} onChange={handleChange} className="glass-input w-full" placeholder="0.00" />
                             </Field>
 
-                            <Field label="Sale price" error={formErrors.precioVenta}>
-                                <input name="precioVenta" type="number" min="0" step="0.01" value={form.precioVenta} onChange={handleChange} className="glass-input w-full" />
+                            <Field label="Sale price $ *" error={formErrors.precioVenta}>
+                                <input name="precioVenta" type="number" min="0.01" step="0.01" value={form.precioVenta} onChange={handleChange} className="glass-input w-full" placeholder="0.00" />
                             </Field>
 
                             <div className="md:col-span-2">
@@ -549,8 +567,8 @@ export default function ProductsPage() {
                                     className="h-4 w-4 rounded border-white/60 text-[#9a7ef0] focus:ring-[#9a7ef0]"
                                 />
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-800">Active product</p>
-                                    <p className="text-xs text-slate-600">You can activate or deactivate the product without deleting it.</p>
+                                    <p className="text-sm font-semibold text-[#392750]">Active product</p>
+                                    <p className="text-xs text-[#392750]">You can activate or deactivate the product without deleting it.</p>
                                 </div>
                             </div>
                         </div>
@@ -558,7 +576,7 @@ export default function ProductsPage() {
                         <div className="mt-6 flex justify-end gap-3">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-sm transition hover:bg-white/55"
+                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
                             >
                                 Cancel
                             </button>
@@ -566,7 +584,7 @@ export default function ProductsPage() {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {isSaving ? "Saving..." : "Save"}
                             </button>
@@ -584,6 +602,8 @@ export default function ProductsPage() {
                     setConfirmOpen(false);
                     setProductToDelete(null);
                 }}
+                cancelButtonClassName="products-violet-black-button"
+                confirmButtonClassName="products-violet-black-button"
             />
         </div>
     );

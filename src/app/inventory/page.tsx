@@ -719,8 +719,8 @@ export default function InventoryPage() {
 
             {/* Modal para crear un movimiento de stock mediante ajuste. */}
             {adjustOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 py-4 rounded-[40px]">
-                    <div className="glass-card w-full max-w-3xl rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                <div className="app-modal-overlay app-modal-overlay--bottom px-4 py-4 rounded-[40px]">
+                    <div className="app-modal-shell app-modal-shell--lg glass-card rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
                         <div className="mb-5">
                             <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Adjust inventory</h2>
                             <p className="mt-1 text-sm text-slate-600">Register an entry, exit, or adjustment movement.</p>

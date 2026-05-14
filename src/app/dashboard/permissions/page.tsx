@@ -218,8 +218,8 @@ export default function PermissionsPage() {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="glass-card rounded-2xl p-6 w-96">
+        <div className="app-modal-overlay">
+          <div className="app-modal-shell app-modal-shell--tight glass-card rounded-2xl p-6">
 
             <h2 className="text-xl font-semibold text-white mb-4">
               {editingPermission ? "Edit Permission" : "New Permission"}

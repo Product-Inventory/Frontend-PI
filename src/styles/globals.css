@@ -16,6 +16,7 @@
   --accent: #5a4fcf;
   --accent-bg: rgba(154, 122, 255, 0.06);
   --accent-border: rgba(166, 139, 255, 0.24);
+  --product-violet-black: #392750;
 }
 
 
@@ -117,7 +118,7 @@ body {
   isolation: isolate;
   border-radius: 999px;
   border: 1px solid rgba(196, 180, 236, 0.38) !important;
-  color: #baf7ff !important;
+  color: var(--product-violet-black) !important;
   background:
     linear-gradient(165deg, rgba(255, 255, 255, 0.14) 0%, rgba(222, 206, 255, 0.12) 50%, rgba(196, 170, 255, 0.1) 100%) !important;
   box-shadow:
@@ -161,15 +162,25 @@ body {
 
 .app-shell button:hover {
   transform: translateY(-1px);
-  filter: saturate(1.05) brightness(1.03);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.18) 0%, rgba(242, 236, 255, 0.14) 50%, rgba(216, 203, 255, 0.12) 100%) !important;
+  filter: brightness(1.01);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.68),
-    inset 0 -9px 16px rgba(176, 144, 236, 0.14),
-    0 8px 20px rgba(145, 116, 205, 0.2),
-    0 0 16px rgba(176, 145, 236, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -6px 12px rgba(255, 255, 255, 0.12),
+    0 6px 16px rgba(176, 145, 236, 0.12),
+    0 0 14px rgba(255, 255, 255, 0.18);
 }
-.app-shell button:hover::after { opacity: 0.95; }
+.app-shell button:hover::after {
+  opacity: 0.62;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(223, 213, 255, 0.18));
+}
 .app-shell button:active { transform: translateY(1px) scale(0.995); }
+.app-shell button:hover,
+.app-shell button:focus-visible,
+.app-shell button:active {
+  color: var(--product-violet-black) !important;
+}
 
 
 .app-shell button:focus-visible {
@@ -204,6 +215,146 @@ body {
 .app-shell .signin-btn::after {
   background: linear-gradient(90deg, rgba(214, 191, 255, 0.35), rgba(188, 157, 255, 0.38));
   opacity: 0.62;
+}
+
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+  border-radius: 40px;
+}
+
+.app-modal-overlay--padded {
+  padding: 2rem 1rem;
+}
+
+.app-modal-overlay--bottom {
+  align-items: flex-end;
+}
+
+.app-modal-shell {
+  width: 100%;
+  border-radius: 40px;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.24);
+}
+
+.app-modal-shell--xl {
+  max-width: 64rem;
+}
+
+.app-modal-shell--lg {
+  max-width: 48rem;
+}
+
+.app-modal-shell--md {
+  max-width: 42rem;
+}
+
+.app-modal-shell--sm {
+  max-width: 28rem;
+}
+
+.app-modal-shell--tight {
+  max-width: 24rem;
+}
+
+.app-alert-shell {
+  max-width: 21rem;
+  border-radius: 40px;
+}
+
+/* Este estilo es para alert de error. */
+.app-alert-overlay--error {
+  border-radius: 40px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Overlay para alertas dentro de módulos/páginas. Cubre toda la shell de esquina a esquina
+   con un fondo semi-transparente. Se usa con portal=false para renderizar inline relativo
+   al contenedor padre (app-atmosphere). Este overlay centra el alerta en el módulo completo. */
+.app-alert-overlay--module {
+  border-radius: 40px;
+  background: rgba(0, 0, 0, 0.12);
+  position: absolute;
+  inset: 0;
+}
+
+/* Este estilo es para alert de éxito del login. */
+.app-alert-overlay--login {
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(2px);
+}
+
+/* Este estilo es para alert de éxito. */
+.app-alert-shell--success {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Este estilo es para el alert de error. */
+.app-alert-shell--error {
+  background: rgba(220, 38, 38, 0.5);
+  border-color: rgba(252, 165, 165, 0.7);
+  box-shadow: 0 30px 80px rgba(127, 29, 29, 0.32);
+}
+
+/* Este estilo es para alert de información. */
+.app-alert-shell--info {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+/* Este estilo es para alert de éxito. */
+.app-alert-title--success {
+  color: #0f172a;
+}
+
+/* Este estilo es para el alert de error. */
+.app-alert-title--error {
+  color: #fee2e2;
+}
+
+/* Este estilo es para alert de información. */
+.app-alert-title--info {
+  color: #dbeafe;
+}
+
+/* Este estilo es para alert de éxito. */
+.app-alert-subtitle--success {
+  color: #475569;
+}
+
+/* Este estilo es para el alert de error. */
+.app-alert-subtitle--error {
+  color: #ffffff;
+  font-size: 0.73rem;
+  line-height: 1rem;
+}
+
+/* Este estilo es para alert de información. */
+.app-alert-subtitle--info {
+  color: #bfdbfe;
+}
+
+/* Este estilo es para alert de éxito. */
+.app-alert-progress--success {
+  background: linear-gradient(to right, #67e8f9, #f9a8d4);
+}
+
+/* Este estilo es para el alert de error. */
+.app-alert-progress--error {
+  background: linear-gradient(to right, #ef4444, #9ca3af);
+}
+
+/* Este estilo es para alert de información. */
+.app-alert-progress--info {
+  background: #60a5fa;
 }
 
 
@@ -312,6 +463,26 @@ body {
 
 .sidebar-signout:hover {
   filter: brightness(1.05);
+}
+
+.products-violet-black-button {
+  background: linear-gradient(180deg, #24103f 0%, #16092b 100%) !important;
+  border: 1px solid rgba(82, 49, 126, 0.92) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.28),
+    0 8px 18px rgba(18, 8, 38, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.04) !important;
+}
+
+.products-violet-black-button:hover {
+  background: linear-gradient(180deg, #2a1448 0%, #180b2f 100%) !important;
+  filter: brightness(1.04);
+}
+
+.products-violet-black-button:focus-visible {
+  outline: 2px solid rgba(218, 196, 255, 0.7);
+  outline-offset: 2px;
 }
 
 /* Visible scrollbar for the sidebar with rounded thumb and subtle track */

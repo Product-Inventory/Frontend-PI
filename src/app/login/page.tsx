@@ -48,6 +48,7 @@ export default function LoginPage() {
           message="Successful login"
           type="success"
           duration={1000}
+          overlayClassName="app-alert-overlay--login"
           onClose={handleSuccessClose}
         />
       </main>

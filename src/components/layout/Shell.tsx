@@ -14,7 +14,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="fixed left-3 top-3 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/65 text-purple-500 shadow-[0_10px_28px_rgba(58,72,145,0.18)] backdrop-blur-xl transition-transform transition-colors hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_14px_34px_rgba(58,72,145,0.22)] cursor-pointer sm:left-4 sm:top-4"
+            className="fixed left-3 top-3 z-[70] flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/65 text-purple-500 shadow-[0_10px_28px_rgba(58,72,145,0.18)] backdrop-blur-xl transition-transform transition-colors hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[0_14px_34px_rgba(58,72,145,0.22)] cursor-pointer sm:left-4 sm:top-4"
             aria-label="Open sidebar"
           >
             <Box size={26} />
@@ -22,7 +22,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         )}
         
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className={`flex min-h-screen flex-1 flex-col pr-4 pt-16 pb-4 sm:pr-5 sm:pt-20 sm:pb-5 transition-all duration-200 rounded-[40px] overflow-hidden ${sidebarOpen ? 'pl-2 sm:pl-3' : 'pl-16 sm:pl-20'}`}>
+        <main className={`relative z-0 flex min-h-screen flex-1 flex-col pr-4 pt-16 pb-4 sm:pr-5 sm:pt-20 sm:pb-5 transition-all duration-300 rounded-[40px] overflow-hidden ${sidebarOpen ? 'pl-80 md:pl-80 lg:pl-80' : 'pl-16 sm:pl-20'}`}>
           <div className="app-shell flex flex-1 flex-col rounded-[40px] shadow-lg p-0 sm:p-1 min-h-0">
             {children}
           </div>
