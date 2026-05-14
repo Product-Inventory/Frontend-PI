@@ -7,6 +7,7 @@ import { Supplier } from "@/types/supplier";
 import Loading from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
+import { Power } from "lucide-react";
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -28,7 +29,7 @@ export default function SuppliersPage() {
       const data = await suppliersService.getAll();
       setSuppliers(data.items);
     } catch (error) {
-      console.error("Error al cargar proveedores:", error);
+      console.error("Error al cargar suppliers:", error);
     } finally {
       setIsLoading(false);
     }
@@ -66,11 +67,11 @@ export default function SuppliersPage() {
       setConfirmOpen(false);
       setSupplierToDelete(null);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Error al eliminar proveedor");
+      alert(err.response?.data?.message || "Error al eliminar supplier");
     }
   };
 
-  // Filtro local
+  
   const filteredSuppliers = suppliers.filter((s) => {
     const searchLower = search.toLowerCase();
     return (
@@ -106,7 +107,8 @@ export default function SuppliersPage() {
         <div className="flex gap-2 justify-end">
           <button onClick={() => handleEdit(row)} className="btn btn-ghost btn-xs opacity-70 hover:opacity-100" title="Editar">✏️</button>
           <button onClick={() => handleToggleActive(row)} className="btn btn-ghost btn-xs opacity-70 hover:opacity-100" title={row.activo ? "Desactivar" : "Activar"}>
-            {row.activo ? "🔇" : "🔁"}
+             <Power className="mr-1 h-3.5 w-3.5" />
+            {row.activo ? "Off" : "On"}
           </button>
           <button onClick={() => handleDelete(row)} className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 text-red-500" title="Eliminar">🗑️</button>
         </div>
@@ -117,9 +119,9 @@ export default function SuppliersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">Proveedores</h1>
+        <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">Suppliers</h1>
         <button onClick={handleCreate} className="px-5 py-2 text-sm bg-white/20 backdrop-blur-sm border border-white/40 rounded-full shadow-md hover:bg-white/30 transition">
-          + Nuevo Proveedor
+          + New Supplier
         </button>
       </div>
 

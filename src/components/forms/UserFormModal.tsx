@@ -28,14 +28,12 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   const [roles, setRoles] = useState<{ id: string; nombre: string }[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
 
-  // Cargar roles disponibles desde el backend
   useEffect(() => {
     if (!isOpen) return;
     rolesService.getAll()
       .then(data => {
         setRoles(data.items);
         if (data.items.length > 0 && !formData.roleId && !user) {
-          // Si hay roles y estamos en modo creación, seleccionar el primero por defecto
           setFormData(prev => ({
             ...prev,
             roleId: data.items[0].id,
@@ -47,7 +45,6 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
       .finally(() => setRolesLoading(false));
   }, [isOpen]);
 
-  // Cargar datos del usuario si es edición
   useEffect(() => {
     if (user) {
       setFormData({
@@ -61,7 +58,6 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         activo: user.activo,
       });
     } else {
-      // No resetear roleId/role si ya se cargaron roles y no hay usuario
       setFormData(prev => ({
         ...prev,
         nombre: '',
@@ -77,16 +73,16 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.nombre.trim()) newErrors.nombre = 'Nombre obligatorio';
-    if (!formData.apellido.trim()) newErrors.apellido = 'Apellido obligatorio';
-    if (!formData.email.trim()) newErrors.email = 'Email obligatorio';
+    if (!formData.nombre.trim()) newErrors.nombre = 'First name is required';
+    if (!formData.apellido.trim()) newErrors.apellido = 'Last name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = 'Email inválido';
-    if (!formData.usuario.trim()) newErrors.usuario = 'Usuario obligatorio';
-    if (!user && !formData.password) newErrors.password = 'Contraseña obligatoria';
+      newErrors.email = 'Invalid email';
+    if (!formData.usuario.trim()) newErrors.usuario = 'Username is required';
+    if (!user && !formData.password) newErrors.password = 'Password is required';
     else if (!user && formData.password && formData.password.length < 4)
-      newErrors.password = 'Mínimo 4 caracteres';
-    if (!formData.roleId) newErrors.roleId = 'Rol obligatorio';
+      newErrors.password = 'Minimum 4 characters';
+    if (!formData.roleId) newErrors.roleId = 'Role is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -121,7 +117,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al guardar usuario');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -130,121 +126,63 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="glass-card rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div className="app-modal-overlay app-modal-overlay--padded">
+      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
         <h2 className="text-xl font-bold text-white mb-4">
-          {user ? 'Editar Usuario' : 'Nuevo Usuario'}
+          {user ? 'Edit User' : 'New User'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nombre */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Nombre *</label>
-            <input
-              type="text"
-              name="nombre"
-              className="glass-input w-full"
-              value={formData.nombre}
-              onChange={handleChange}
-            />
+            <label className="block text-white/80 text-sm mb-1">First name *</label>
+            <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} />
             {errors.nombre && <p className="text-red-300 text-xs mt-1">{errors.nombre}</p>}
           </div>
-          {/* Apellido */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Apellido *</label>
-            <input
-              type="text"
-              name="apellido"
-              className="glass-input w-full"
-              value={formData.apellido}
-              onChange={handleChange}
-            />
+            <label className="block text-white/80 text-sm mb-1">Last name *</label>
+            <input type="text" name="apellido" className="glass-input w-full" value={formData.apellido} onChange={handleChange} />
             {errors.apellido && <p className="text-red-300 text-xs mt-1">{errors.apellido}</p>}
           </div>
-          {/* Email */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Email *</label>
-            <input
-              type="email"
-              name="email"
-              className="glass-input w-full"
-              value={formData.email}
-              onChange={handleChange}
-            />
+            <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange} />
             {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email}</p>}
           </div>
-          {/* Usuario */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Usuario *</label>
-            <input
-              type="text"
-              name="usuario"
-              className="glass-input w-full"
-              value={formData.usuario}
-              onChange={handleChange}
-            />
+            <label className="block text-white/80 text-sm mb-1">Username *</label>
+            <input type="text" name="usuario" className="glass-input w-full" value={formData.usuario} onChange={handleChange} />
             {errors.usuario && <p className="text-red-300 text-xs mt-1">{errors.usuario}</p>}
           </div>
-          {/* Contraseña */}
           <div>
             <label className="block text-white/80 text-sm mb-1">
-              {user ? 'Contraseña (dejar vacía para no cambiar)' : 'Contraseña *'}
+              {user ? 'Password (leave blank to keep)' : 'Password *'}
             </label>
-            <input
-              type="password"
-              name="password"
-              className="glass-input w-full"
-              value={formData.password}
-              onChange={handleChange}
-            />
+            <input type="password" name="password" className="glass-input w-full" value={formData.password} onChange={handleChange} />
             {errors.password && <p className="text-red-300 text-xs mt-1">{errors.password}</p>}
           </div>
-          {/* Rol (select dinámico) */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Rol *</label>
+            <label className="block text-white/80 text-sm mb-1">Role *</label>
             {rolesLoading ? (
-              <div className="glass-input w-full text-white/50">Cargando roles...</div>
+              <div className="glass-input w-full text-white/50">Loading roles...</div>
             ) : (
-              <select
-                name="roleId"
-                className="glass-input w-full"
-                value={formData.roleId}
-                onChange={handleChange}
-              >
-                <option value="">Seleccione un rol</option>
+              <select name="roleId" className="glass-input w-full" value={formData.roleId} onChange={handleChange}>
+                <option value="">Select a role</option>
                 {roles.map(role => (
-                  <option key={role.id} value={role.id}>
-                    {role.nombre}
-                  </option>
+                  <option key={role.id} value={role.id}>{role.nombre}</option>
                 ))}
               </select>
             )}
             {errors.roleId && <p className="text-red-300 text-xs mt-1">{errors.roleId}</p>}
           </div>
-          {/* Activo */}
           <label className="flex items-center gap-2 text-white/80">
-            <input
-              type="checkbox"
-              name="activo"
-              checked={formData.activo}
-              onChange={handleChange}
-            />
-            Activo
+            <input type="checkbox" name="activo" checked={formData.activo} onChange={handleChange} />
+            Active
           </label>
-          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-            >
-              Cancelar
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition">
+              Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading || rolesLoading}
-              className="px-4 py-2 rounded-full bg-white/20 text-white font-semibold hover:bg-white/30 transition disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : user ? 'Actualizar' : 'Crear'}
+            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
+              {loading ? 'Saving...' : user ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
