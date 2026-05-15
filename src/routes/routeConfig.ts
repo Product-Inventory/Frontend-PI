@@ -77,6 +77,13 @@ export const routeConfig: AppRouteConfig[] = [
         showInSidebar: true,
     },
     {
+        path: '/orders',
+        label: 'Orders',
+        permission: 'orders.view',
+        requiresAuth: true,
+        showInSidebar: true,
+    },
+    {
         path: '/recepciones',
         label: 'Recepciones',
         permission: 'recepciones.view',

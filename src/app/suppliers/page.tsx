@@ -98,6 +98,7 @@ export default function SuppliersPage() {
         </button>
       </div>
 
+
       <div className="flex justify-end">
         <input
           type="text"
@@ -107,6 +108,8 @@ export default function SuppliersPage() {
           className="glass-input w-64"
         />
       </div>
+
+
 
       {isLoading ? (
         <Loading />

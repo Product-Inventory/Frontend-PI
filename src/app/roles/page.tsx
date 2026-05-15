@@ -27,6 +27,7 @@ export default function RolesPage() {
     });
 
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [modalToast, setModalToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
     useEffect(() => {
         fetchRoles();
@@ -68,17 +69,15 @@ export default function RolesPage() {
         try {
             if (editingRole) {
                 await rolesService.update(String(editingRole.id), form);
-                setToast({ message: "Role updated successfully", type: "success" });
+                setModalToast({ message: "Role updated successfully", type: "success" });
             } else {
                 await rolesService.create(form);
-                setToast({ message: "Role created successfully", type: "success" });
+                setModalToast({ message: "Role created successfully", type: "success" });
             }
-
-            setIsModalOpen(false);
             fetchRoles();
         } catch (err: any) {
             console.error(err);
-            setToast({ message: err?.response?.data?.message || "Error saving role", type: "error" });
+            setModalToast({ message: err?.response?.data?.message || "Error saving role", type: "error" });
         }
     };
 
@@ -122,7 +121,7 @@ export default function RolesPage() {
                 <div className="flex gap-2 justify-end">
                     <button
                         onClick={() => openEdit(row)}
-                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
+                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 products-violet-black-button"
                         title="Edit"
                     >
                         ✏️
@@ -130,7 +129,7 @@ export default function RolesPage() {
 
                     <button
                         onClick={() => handleDelete(row.id)}
-                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 text-red-500"
+                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 products-violet-black-button"
                         title="Delete"
                     >
                         🗑️
@@ -159,22 +158,9 @@ export default function RolesPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70">
-                                <Search size={18} />
-                            </span>
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-64 pl-10 pr-4 py-2 rounded-full border border-white/20 bg-white/10 text-white placeholder-white/70 focus:outline-none"
-                            />
-                        </div>
-
                         <button
                             onClick={openCreate}
-                            className="px-5 py-2 text-sm !text-[#9a7ef0]"
+                            className="px-5 py-2 text-sm products-violet-black-button"
                         >
                             + Create
                         </button>
@@ -195,7 +181,7 @@ export default function RolesPage() {
                             <button
                                 onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                             >
                                 Previous
                             </button>
@@ -203,7 +189,7 @@ export default function RolesPage() {
                             <button
                                 onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                             >
                                 Next
                             </button>
@@ -213,8 +199,24 @@ export default function RolesPage() {
             )}
 
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 w-96 shadow-xl">
+                <div className="app-modal-overlay">
+                    <div className="app-modal-shell app-modal-shell--sm relative bg-white/20 backdrop-blur-xl border border-white/30 p-6 shadow-xl">
+                        {modalToast && (
+                            <Toast
+                                message={modalToast.message}
+                                type={modalToast.type}
+                                duration={3000}
+                                onClose={() => {
+                                    setModalToast(null);
+                                    setIsModalOpen(false);
+                                    setEditingRole(null);
+                                    setForm({ nombre: "", descripcion: "" });
+                                }}
+                                portal={false}
+                                overlayClassName="app-alert-overlay--module"
+                            />
+                        )}
+
                         <h2 className="text-xl font-semibold text-white mb-4">{editingRole ? "Edit Role" : "New Role"}</h2>
 
                         <div className="flex flex-col gap-3">
@@ -223,8 +225,8 @@ export default function RolesPage() {
                         </div>
 
                         <div className="flex justify-end gap-2 mt-5">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-white/30 !text-[#9a7ef0]">Cancel</button>
-                            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 !text-[#9a7ef0] shadow-md">Save</button>
+                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-white/30 products-violet-black-button">Cancel</button>
+                            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 products-violet-black-button shadow-md">Save</button>
                         </div>
                     </div>
                 </div>

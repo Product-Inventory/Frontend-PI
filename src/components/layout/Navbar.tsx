@@ -6,7 +6,6 @@ type NavbarProps = {
   moduleFilter?: string;
   setModuleFilter?: (v: string) => void;
   modules?: string[];
-  onMenuClick?: () => void;
 };
 
 export default function Navbar({
@@ -15,7 +14,6 @@ export default function Navbar({
   moduleFilter = "all",
   setModuleFilter = () => {},
   modules = ["all"],
-  onMenuClick,
 }: NavbarProps) {
   return (
     <nav className="h-16 bg-transparent flex flex-col lg:flex-row items-center lg:items-center px-4 sm:px-10 z-30 relative">

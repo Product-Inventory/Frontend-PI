@@ -98,9 +98,13 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
   return (
     <div className="app-modal-overlay app-modal-overlay--padded">
       <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
+
         <h2 className="text-xl font-bold text-white mb-4">
           {supplier ? 'Edit Supplier' : 'New Supplier'}
         </h2>
+
+        <h2 className="text-xl font-bold text-white mb-4">{supplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
