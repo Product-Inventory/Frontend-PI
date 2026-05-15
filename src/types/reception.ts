@@ -44,5 +44,8 @@ export interface ReceptionFormValues {
     productId: string;
     cantidad: number | string;
     costoUnitario: number | string;
+    productNombre?: string;
+    sku?: string;
+    subtotal?: number;
   }>;
 }

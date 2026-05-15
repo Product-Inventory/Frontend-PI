@@ -46,7 +46,7 @@ function toFormState(client?: Client | null): ClientFormState {
     direccion: client.direccion ?? "",
     contacto: client.contacto ?? "",
     notas: client.notas ?? "",
-    activo: client.activo ?? true,
+    activo: typeof client.activo === "string" ? client.activo === "true" : (client.activo ?? true),
   };
 }
 

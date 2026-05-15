@@ -104,8 +104,8 @@ export default function OrdersPage() {
                       <tr key={order.id} className="border-t border-white/18 transition hover:bg-white/10">
                         <td className="px-5 py-5 font-extrabold text-slate-800">{order.folio}</td>
                         <td className="px-5 py-5 text-slate-700">{order.fecha}</td>
-                        <td className="px-5 py-5 text-slate-700">{order.cliente}</td>
-                        <td className="px-5 py-5">{order.estado}</td>
+                        <td className="px-5 py-5 text-slate-700">{order.clienteNombre}</td>
+                        <td className="px-5 py-5">{order.status}</td>
                         <td className="px-5 py-5 font-semibold text-slate-800">${order.total.toLocaleString()}</td>
                       </tr>
                     ))
@@ -130,11 +130,11 @@ export default function OrdersPage() {
                         <p className="font-extrabold text-slate-900">{order.folio}</p>
                       </div>
                       <span className="rounded-full px-3 py-1 text-xs font-bold bg-slate-200/80 text-slate-600">
-                        {order.estado}
+                        {order.status}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                      <OrderMeta label="Client" value={order.cliente} />
+                      <OrderMeta label="Client" value={order.clienteNombre} />
                       <OrderMeta label="Date" value={order.fecha} />
                       <OrderMeta label="Total" value={`$${order.total.toLocaleString()}`} />
                     </div>
