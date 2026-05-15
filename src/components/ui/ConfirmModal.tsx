@@ -4,6 +4,8 @@ interface ConfirmModalProps {
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
+  confirmButtonClassName?: string;
+  cancelButtonClassName?: string;
 }
 
 export default function ConfirmModal({
@@ -12,20 +14,22 @@ export default function ConfirmModal({
   message,
   onConfirm,
   onCancel,
+  confirmButtonClassName = "",
+  cancelButtonClassName = "",
 }: ConfirmModalProps) {
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="app-modal-overlay">
 
-      <div className="glass-card rounded-2xl p-6 w-96">
+      <div className="app-modal-shell app-modal-shell--tight glass-card p-6">
 
-        <h2 className="text-xl font-semibold text-white mb-3">
+        <h2 className="text-3xl font-extrabold text-[#392750] mb-3">
           {title}
         </h2>
 
-        <p className="text-white/80 mb-6">
+        <p className="text-[#392750] mb-6">
           {message}
         </p>
 
@@ -33,14 +37,14 @@ export default function ConfirmModal({
 
           <button
             onClick={onCancel}
-            className="px-4 py-2"
+            className={`px-4 py-2 ${cancelButtonClassName}`}
           >
             Cancel
           </button>
 
           <button
             onClick={onConfirm}
-            className="px-4 py-2"
+            className={`px-4 py-2 ${confirmButtonClassName}`}
           >
             Confirm
           </button>

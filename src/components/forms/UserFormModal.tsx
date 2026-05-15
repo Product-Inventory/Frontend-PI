@@ -88,19 +88,22 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    if (name === 'roleId') {
-      const selectedRole = roles.find(r => r.id === value);
-      setFormData(prev => ({
-        ...prev,
-        roleId: value,
-        role: selectedRole?.nombre || '',
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
+  const { name, value, type } = e.target;
+  if (name === 'roleId') {
+    const selectedRole = roles.find(r => r.id === value);
+    setFormData(prev => ({
+      ...prev,
+      roleId: value,
+      role: selectedRole?.nombre || '',
+    }));
+  } else if (type === 'checkbox') {
+    const checked = (e.target as HTMLInputElement).checked;
+    setFormData(prev => ({ ...prev, [name]: checked }));
+  } else {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }
+  if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

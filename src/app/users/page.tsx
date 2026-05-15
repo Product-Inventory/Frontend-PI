@@ -163,9 +163,27 @@ export default function UsersPage() {
       )}
 
       <UserFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchUsers} user={editingUser} />
-      <ConfirmModal open={confirmOpen} title="Delete user" message={`Are you sure you want to delete "${userToDelete?.nombre} ${userToDelete?.apellido}"?`} onConfirm={confirmDelete} onCancel={() => setConfirmOpen(false)} />
 
-      {toast && <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} portal={false} />}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete user"
+        message={`Are you sure you want to delete "${userToDelete?.nombre} ${userToDelete?.apellido}"?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        confirmButtonClassName="products-violet-black-button"
+        cancelButtonClassName="products-violet-black-button"
+      />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+          portal={false}
+          overlayClassName="app-alert-overlay--module"
+        />
+      )}
     </div>
   );
 }

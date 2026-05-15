@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { suppliersService } from '@/services/suppliers.service';
+import { Supplier } from '@/types/supplier';
 
 interface SupplierFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  supplier?: any;
+  supplier?: Supplier | null;   // ← esta línea faltaba
 }
 
 export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: SupplierFormModalProps) {
@@ -22,7 +23,7 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
     notas: '',
     activo: true,
   });
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -54,13 +55,23 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
     setErrors({});
   }, [supplier, isOpen]);
 
-  const validate = () => {
-    const newErrors: any = {};
-    if (!formData.nombre.trim()) newErrors.nombre = 'Nombre / Razón social obligatorio';
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.nombre.trim()) newErrors.nombre = 'Company name is required';
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = 'Email inválido';
+      newErrors.email = 'Invalid email';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'select-one' && name === 'activo') {
+      setFormData(prev => ({ ...prev, activo: value === 'true' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +87,7 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al guardar proveedor');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -85,55 +96,59 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="glass-card rounded-2xl w-full max-w-md p-6 shadow-2xl">
-        <h2 className="text-xl font-bold text-white mb-4">{supplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h2>
+    <div className="app-modal-overlay app-modal-overlay--padded">
+      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
+        <h2 className="text-xl font-bold text-white mb-4">
+          {supplier ? 'Edit Supplier' : 'New Supplier'}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Nombre / Razón social *</label>
-            <input type="text" className="glass-input w-full" value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
-            {errors.nombre && <p className="text-red-300 text-xs">{errors.nombre}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Company name *</label>
+              <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} />
+              {errors.nombre && <p className="text-red-300 text-xs">{errors.nombre}</p>}
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">RFC</label>
+              <input type="text" name="rfc" className="glass-input w-full" value={formData.rfc} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Contact person</label>
+              <input type="text" name="contacto" className="glass-input w-full" value={formData.contacto} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Email</label>
+              <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange} />
+              {errors.email && <p className="text-red-300 text-xs">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Phone</label>
+              <input type="tel" name="telefono" className="glass-input w-full" value={formData.telefono} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Address</label>
+              <input type="text" name="direccion" className="glass-input w-full" value={formData.direccion} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Business line</label>
+              <input type="text" name="giro" className="glass-input w-full" value={formData.giro} onChange={handleChange} />
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Status</label>
+              <select name="activo" className="glass-input w-full" value={formData.activo ? 'true' : 'false'} onChange={handleChange}>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label className="block text-white/80 text-sm mb-1">RFC</label>
-            <input type="text" className="glass-input w-full" value={formData.rfc} onChange={(e) => setFormData({ ...formData, rfc: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Contacto</label>
-            <input type="text" className="glass-input w-full" value={formData.contacto} onChange={(e) => setFormData({ ...formData, contacto: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Email</label>
-            <input type="email" className="glass-input w-full" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            {errors.email && <p className="text-red-300 text-xs">{errors.email}</p>}
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Teléfono</label>
-            <input type="tel" className="glass-input w-full" value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Dirección</label>
-            <input type="text" className="glass-input w-full" value={formData.direccion} onChange={(e) => setFormData({ ...formData, direccion: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Giro</label>
-            <input type="text" className="glass-input w-full" value={formData.giro} onChange={(e) => setFormData({ ...formData, giro: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Notas</label>
-            <textarea className="glass-input w-full" rows={2} value={formData.notas} onChange={(e) => setFormData({ ...formData, notas: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Estado</label>
-            <select className="glass-input w-full" value={formData.activo ? 'true' : 'false'} onChange={(e) => setFormData({ ...formData, activo: e.target.value === 'true' })}>
-              <option value="true">Activo</option>
-              <option value="false">Inactivo</option>
-            </select>
+            <label className="block text-white/80 text-sm mb-1">Notes</label>
+            <textarea name="notas" className="glass-input w-full" rows={2} value={formData.notas} onChange={handleChange} />
           </div>
           <div className="flex justify-end space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 rounded-full bg-white/20 text-white font-semibold">
-              {loading ? 'Guardando...' : supplier ? 'Actualizar' : 'Crear'}
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20">Cancel</button>
+            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
+              {loading ? 'Saving...' : supplier ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

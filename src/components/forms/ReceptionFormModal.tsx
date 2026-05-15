@@ -10,10 +10,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  reception?: Reception | null;
+  recepcion?: Reception | null;
 }
 
-export default function ReceptionFormModal({ isOpen, onClose, onSuccess, reception }: Props) {
+export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepcion }: Props) {
   const [form, setForm] = useState<ReceptionFormValues>({
     supplierId: '',
     fecha: new Date().toISOString().slice(0, 10),
@@ -24,15 +24,24 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<{ id: string; nombre: string }[]>([]);
-  const [products, setProducts] = useState<{ id: string; nombre: string; sku?: string; precioCompra: number }[]>([]);
+  const [products, setProducts] = useState<{ id: string; nombre: string; sku?: string; precioCompra?: number }[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
+  // Cargar proveedores y productos (incluyendo precioCompra)
   useEffect(() => {
     if (!isOpen) return;
     Promise.all([
       suppliersService.getAll().then(data => setSuppliers(data.items)),
-      productsService.getAll().then(data => setProducts(data.items)),
+      productsService.getAll().then(data => {
+        const items = data.items.map((p: any) => ({
+          id: p.id,
+          nombre: p.nombre,
+          sku: p.sku,
+          precioCompra: p.precioCompra ?? 0,
+        }));
+        setProducts(items);
+      }),
     ]).finally(() => {
       setLoadingSuppliers(false);
       setLoadingProducts(false);
@@ -40,13 +49,13 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
   }, [isOpen]);
 
   useEffect(() => {
-    if (reception) {
+    if (recepcion) {
       setForm({
-        supplierId: reception.supplierId,
-        fecha: reception.fecha.slice(0, 10),
-        folio: reception.folio,
-        comentarios: reception.comentarios || '',
-        items: reception.items,
+        supplierId: recepcion.supplierId,
+        fecha: recepcion.fecha.slice(0, 10),
+        folio: recepcion.folio,
+        comentarios: recepcion.comentarios || '',
+        items: recepcion.items,
       });
     } else {
       setForm({
@@ -58,7 +67,7 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
       });
     }
     setErrors({});
-  }, [reception, isOpen]);
+  }, [recepcion, isOpen]);
 
   const addItem = () => {
     const newItem: ReceptionItem = {
@@ -82,52 +91,58 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
     }));
   };
 
-    const updateItem = (index: number, field: keyof ReceptionItem, value: any) => {
-  setForm(prev => ({
-    ...prev,
-    items: prev.items.map((item, i) => {
-      if (i !== index) return item;
-      const updated = { ...item, [field]: value };
-      
-      if (field === 'productId') {
-        const selectedProduct = products.find(p => p.id === value);
-        if (selectedProduct) {
-          updated.costoUnitario = selectedProduct.precioCompra;
-          updated.productNombre = selectedProduct.nombre;
-          updated.sku = selectedProduct.sku || '';
-        } else {
-          updated.costoUnitario = 0;
+  // Función tipada correctamente con genérico
+  const updateItem = <K extends keyof ReceptionItem>(
+    index: number,
+    field: K,
+    value: ReceptionItem[K]
+  ) => {
+    setForm(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => {
+        if (i !== index) return item;
+        const updated = { ...item, [field]: value };
+
+        // Si cambia el producto, cargar datos del producto
+        if (field === 'productId') {
+          const selectedProduct = products.find(p => p.id === value);
+          if (selectedProduct) {
+            updated.costoUnitario = selectedProduct.precioCompra ?? 0;
+            updated.productNombre = selectedProduct.nombre;
+            updated.sku = selectedProduct.sku || '';
+          } else {
+            updated.costoUnitario = 0;
+          }
         }
-      }
-      
-      // Validar cantidad: mínimo 1
-      if (field === 'cantidad') {
-        let qty = parseFloat(value);
-        if (isNaN(qty) || qty < 1) qty = 1;
-        updated.cantidad = qty;
-      }
-      
-      if (field === 'cantidad' || field === 'costoUnitario' || field === 'productId') {
-        updated.subtotal = updated.cantidad * updated.costoUnitario;
-      }
-      
-      return updated;
-    }),
-  }));
-};
-  
+
+        // Validar cantidad: mínimo 1
+        if (field === 'cantidad') {
+          let qty = typeof value === 'number' ? value : parseFloat(value as any);
+          if (isNaN(qty) || qty < 1) qty = 1;
+          updated.cantidad = qty;
+        }
+
+        // Recalcular subtotal si cambia cantidad, costoUnitario o producto
+        if (field === 'cantidad' || field === 'costoUnitario' || field === 'productId') {
+          updated.subtotal = (updated.cantidad || 0) * (updated.costoUnitario || 0);
+        }
+
+        return updated;
+      }),
+    }));
+  };
 
   const validate = (): boolean => {
     const err: Record<string, string> = {};
-    if (!form.supplierId) err.supplierId = 'Select a supplier';
-    if (!form.fecha) err.fecha = 'Date is required';
-    if (!form.folio.trim()) err.folio = 'Folio is required';
-    if (form.items.length === 0) err.items = 'Add at least one product';
+    if (!form.supplierId) err.supplierId = 'Seleccione un proveedor';
+    if (!form.fecha) err.fecha = 'Fecha obligatoria';
+    if (!form.folio.trim()) err.folio = 'Folio obligatorio';
+    if (form.items.length === 0) err.items = 'Debe agregar al menos un producto';
     for (let i = 0; i < form.items.length; i++) {
       const item = form.items[i];
-      if (!item.productId) err[`product_${i}`] = 'Select a product';
-      if (item.cantidad <= 0) err[`cantidad_${i}`] = 'Quantity > 0';
-      if (item.costoUnitario <= 0) err[`costo_${i}`] = 'Unit cost > 0';
+      if (!item.productId) err[`product_${i}`] = 'Seleccione producto';
+      if (item.cantidad <= 0) err[`cantidad_${i}`] = 'Cantidad > 0';
+      if (item.costoUnitario <= 0) err[`costo_${i}`] = 'Costo > 0';
     }
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -138,15 +153,15 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
     if (!validate()) return;
     setLoading(true);
     try {
-      if (reception) {
-        await receptionsService.update(reception.id, form);
+      if (recepcion) {
+        await receptionsService.update(recepcion.id, form);
       } else {
         await receptionsService.create(form);
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error saving reception');
+      alert(err.response?.data?.message || 'Error al guardar recepción');
     } finally {
       setLoading(false);
     }
@@ -155,57 +170,55 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="glass-card rounded-2xl w-full max-w-4xl p-6 my-8 shadow-2xl">
-        <h2 className="text-xl font-bold text-white mb-4">
-          {reception ? 'Edit Reception' : 'New Reception'}
+    <div className="app-modal-overlay app-modal-overlay--padded">
+      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold text-white mb-4 sticky top-0 bg-inherit z-10">
+          {recepcion ? 'Edit Reception' : 'New Reception'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Supplier */}
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Supplier *</label>
-            {loadingSuppliers ? (
-              <div className="glass-input w-full text-white/50">Loading...</div>
-            ) : (
-              <select
+          {/* Proveedor, Fecha, Folio */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Proveedor *</label>
+              {loadingSuppliers ? (
+                <div className="glass-input w-full text-white/50">Cargando...</div>
+              ) : (
+                <select
+                  className="glass-input w-full"
+                  value={form.supplierId}
+                  onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
+                >
+                  <option value="">Choose</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.nombre}</option>
+                  ))}
+                </select>
+              )}
+              {errors.supplierId && <p className="text-red-300 text-xs mt-1">{errors.supplierId}</p>}
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Date *</label>
+              <input
+                type="date"
                 className="glass-input w-full"
-                value={form.supplierId}
-                onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
-              >
-                <option value="">Select</option>
-                {suppliers.map(s => (
-                  <option key={s.id} value={s.id}>{s.nombre}</option>
-                ))}
-              </select>
-            )}
-            {errors.supplierId && <p className="text-red-300 text-xs mt-1">{errors.supplierId}</p>}
+                value={form.fecha}
+                onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+              />
+              {errors.fecha && <p className="text-red-300 text-xs mt-1">{errors.fecha}</p>}
+            </div>
+            <div>
+              <label className="block text-white/80 text-sm mb-1">Folio *</label>
+              <input
+                type="text"
+                className="glass-input w-full"
+                value={form.folio}
+                onChange={(e) => setForm({ ...form, folio: e.target.value })}
+              />
+              {errors.folio && <p className="text-red-300 text-xs mt-1">{errors.folio}</p>}
+            </div>
           </div>
 
-          {/* Date */}
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Date *</label>
-            <input
-              type="date"
-              className="glass-input w-full"
-              value={form.fecha}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-            />
-            {errors.fecha && <p className="text-red-300 text-xs mt-1">{errors.fecha}</p>}
-          </div>
-
-          {/* Folio */}
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Folio *</label>
-            <input
-              type="text"
-              className="glass-input w-full"
-              value={form.folio}
-              onChange={(e) => setForm({ ...form, folio: e.target.value })}
-            />
-            {errors.folio && <p className="text-red-300 text-xs mt-1">{errors.folio}</p>}
-          </div>
-
-          {/* Comments */}
+          {/* Comentarios */}
           <div>
             <label className="block text-white/80 text-sm mb-1">Comments</label>
             <textarea
@@ -216,57 +229,61 @@ export default function ReceptionFormModal({ isOpen, onClose, onSuccess, recepti
             />
           </div>
 
-          {/* Items */}
-            <div>
+          {/* Productos */}
+          <div>
             <label className="block text-white/80 text-sm mb-1">Products *</label>
-            {form.items.map((item, idx) => (
-                <div key={idx} className="flex flex-wrap gap-2 mb-3 items-center">
-                <select
-                    className="glass-input flex-1 min-w-[180px]"
+            <div className="space-y-2 max-h-60 overflow-y-auto p-1">
+              {form.items.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center bg-white/5 p-2 rounded-xl">
+                  <select
+                    className="glass-input w-full"
                     value={item.productId}
                     onChange={(e) => updateItem(idx, 'productId', e.target.value)}
-                >
-                    <option value="">Select product</option>
+                  >
+                    <option value="">Product</option>
                     {products.map(p => (
-                    <option key={p.id} value={p.id}>
-                        {p.nombre} {p.sku ? `(${p.sku})` : ''} - ${p.precioCompra?.toFixed(2) || '0'}
-                    </option>
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} {p.sku ? `(${p.sku})` : ''}
+                      </option>
                     ))}
-                </select>
-                <input
+                  </select>
+                  <input
                     type="number"
-                    placeholder="Qty"
-                    className="glass-input w-24"
+                    step="1"
+                    min="1"
+                    placeholder="Amount"
+                    className="glass-input w-full"
                     value={item.cantidad}
-                    onChange={(e) => updateItem(idx, 'cantidad', parseFloat(e.target.value) || 0)}
-                />
-                {/* Costo unitario */}
-                   <div className="flex flex-col gap-1">
-      {/* Unit Cost box */}
-      <div className="text-white/80 text-sm bg-white/5 px-2 py-1 rounded w-28 flex flex-col items-center">
-        <span>Unit Cost</span>
-        <span>${item.costoUnitario.toFixed(2)}</span>
-      </div>
-      {/* Subtotal box */}
-      <div className="text-white/80 text-sm bg-white/5 px-2 py-1 rounded w-28 flex flex-col items-center">
-        <span>Subtotal</span>
-        <span>${item.subtotal.toFixed(2)}</span>
-      </div>
-    </div>
-                <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-300">🗑️</button>
+                    onChange={(e) => updateItem(idx, 'cantidad', parseInt(e.target.value, 10) || 1)}
+                  />
+                  <div className="glass-input w-full bg-white/5 text-black/80 text-center py-2">
+                  ${item.costoUnitario.toFixed(2)}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-white text-sm font-mono">Subtotal: ${(item.subtotal || 0).toFixed(2)}</span>
+                    <button type="button" onClick={() => removeItem(idx)} className="text-red-400">🗑️</button>
+                  </div>
                 </div>
-            ))}
-            <button type="button" onClick={addItem} className="text-blue-300 text-sm hover:underline">+ Add product</button>
-            {errors.items && <p className="text-red-300 text-xs mt-1">{errors.items}</p>}
+              ))}
             </div>
+            <button type="button" onClick={addItem} className="text-blue-300 text-sm mt-2">+ Add a product</button>
+            {errors.items && <p className="text-red-300 text-xs mt-1">{errors.items}</p>}
+          </div>
 
-          {/* Submit */}
-          <div className="flex justify-end space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20">
+          {/* Total general */}
+          {form.items.length > 0 && (
+            <div className="text-right text-white font-bold text-lg border-t border-white/20 pt-2">
+              Total: ${form.items.reduce((sum, i) => sum + (i.subtotal || 0), 0).toFixed(2)}
+            </div>
+          )}
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-3 pt-2 sticky bottom-0 bg-inherit pb-2">
+            <button type="button" onClick={onClose} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="px-4 py-2 rounded-full bg-white/20 text-white font-semibold hover:bg-white/30 disabled:opacity-50">
-              {loading ? 'Saving...' : reception ? 'Update' : 'Create'}
+            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
+              {loading ? 'Guardando...' : recepcion ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

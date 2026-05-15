@@ -1,26 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ToastProps {
   message: string;
   type?: "success" | "error" | "info";
   duration?: number;
   onClose?: () => void;
+  portal?: boolean;
+  overlayClassName?: string;
+  shellClassName?: string;
+  subtitleClassName?: string;
+  progressClassName?: string;
 }
 
-export function Toast({ message, type = "success", duration = 3000, onClose }: ToastProps) {
+export function Toast({
+  message,
+  type = "success",
+  duration = 3000,
+  onClose,
+  portal = true,
+  overlayClassName = "",
+  shellClassName = "",
+  subtitleClassName = "",
+  progressClassName = "",
+}: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(100);
+  const [mounted, setMounted] = useState(false);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    onClose?.();
+  };
 
   useEffect(() => {
+    setMounted(true);
+
     const interval = setInterval(() => {
       setProgress((prev) => Math.max(prev - 2, 0));
     }, duration / 50);
 
     const timer = setTimeout(() => {
-      setIsVisible(false);
-      onClose?.();
+      handleClose();
     }, duration);
 
     return () => {
@@ -29,30 +52,37 @@ export function Toast({ message, type = "success", duration = 3000, onClose }: T
     };
   }, [duration, onClose]);
 
-  if (!isVisible) return null;
+  if (!mounted || !isVisible) return null;
 
-  const bgColor = type === "success" ? "bg-white/30" : type === "error" ? "bg-red-500/30" : "bg-blue-500/30";
-  const borderColor = type === "success" ? "border-white/40" : type === "error" ? "border-red-500/40" : "border-blue-500/40";
-  const progressColor = type === "success" ? "bg-gradient-to-r from-cyan-300 to-pink-400" : type === "error" ? "bg-red-400" : "bg-blue-400";
-  const textColor = type === "success" ? "text-slate-900" : type === "error" ? "text-red-100" : "text-blue-100";
-  const subTextColor = type === "success" ? "text-slate-600" : type === "error" ? "text-red-200" : "text-blue-200";
+  const shellTypeClass = type === "success" ? "app-alert-shell--success" : type === "error" ? "app-alert-shell--error" : "app-alert-shell--info";
+  const titleTypeClass = type === "success" ? "app-alert-title--success" : type === "error" ? "app-alert-title--error" : "app-alert-title--info";
+  const subtitleTypeClass = type === "success" ? "app-alert-subtitle--success" : type === "error" ? "app-alert-subtitle--error" : "app-alert-subtitle--info";
+  const progressTypeClass = type === "success" ? "app-alert-progress--success" : type === "error" ? "app-alert-progress--error" : "app-alert-progress--info";
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40">
-      <div className={`${bgColor} ${borderColor} backdrop-blur-xl border rounded-3xl px-10 py-7 w-full max-w-md shadow-2xl`}>
-        <h2 className={`text-2xl font-extrabold tracking-tight ${textColor}`}>
-          {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"} {message}
+  const content = (
+    <div
+      className={
+        portal
+          ? `app-modal-overlay z-[2147483647] ${overlayClassName}`
+          : `absolute inset-0 z-[2147483647] flex items-center justify-center rounded-[40px] ${overlayClassName}`
+      }
+    >
+      <div className={`app-modal-shell app-alert-shell ${shellTypeClass} relative backdrop-blur-xl border px-10 py-7 ${shellClassName}`}>
+        <h2 className={`text-2xl font-extrabold tracking-tight ${titleTypeClass}`}>
+          {type === "success" ? "✓" : type === "error" ? "" : "ℹ"} {message}
         </h2>
-        <p className={`mt-2 text-sm ${subTextColor}`}>
-          Loading platform...
-        </p>
+        <p className={`mt-2 text-sm ${subtitleTypeClass} ${subtitleClassName}`}>Loading platform...</p>
         <div className="mt-4 h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
           <div
-            className={`${progressColor} h-full rounded-full transition-all`}
+            className={`${progressTypeClass} h-full rounded-full transition-all ${progressClassName}`}
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
     </div>
   );
+
+  if (!portal) return content;
+
+  return createPortal(content, document.body);
 }
