@@ -188,26 +188,6 @@ export default function ReceptionsPage() {
             </div>
           </div>
           <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-            <div className="grid gap-3 md:grid-cols-[1.6fr_0.9fr]">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by folio or supplier"
-                  className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-5 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-              >
-                <option value="all">All</option>
-                <option value="DRAFT">Draft</option>
-                <option value="CONFIRMED">Confirmed</option>
-              </select>
-            </div>
             <div className="flex items-center justify-between gap-3">
               <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
                 Total: {totalItems}
@@ -337,20 +317,17 @@ export default function ReceptionsPage() {
 
         {/* MODAL CREAR/EDITAR */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-            <div className="glass-card w-full max-w-2xl rounded-[28px] p-6 md:p-8">
-              <div className="mb-5 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                    {editingReception ? "Edit Reception" : "New Reception"}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {editingReception
-                      ? "Modify the folio, date, supplier, items, or comments."
-                      : "Register a new inventory reception."}
-                  </p>
-                </div>
-                <button onClick={() => setIsModalOpen(false)} className={buttonBase}>Close</button>
+          <div className="app-modal-overlay app-modal-overlay--padded">
+            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+              <div className="mb-5">
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                  {editingReception ? "Edit Reception" : "New Reception"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {editingReception
+                    ? "Modify the folio, date, supplier, items, or comments."
+                    : "Register a new inventory reception."}
+                </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <ReceptionInput label="Folio">

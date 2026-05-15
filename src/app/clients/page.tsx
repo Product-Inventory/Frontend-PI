@@ -262,26 +262,6 @@ export default function ClientsPage() {
             </div>
           </div>
           <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-            <div className="grid gap-3 md:grid-cols-[1.6fr_0.9fr]">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search..."
-                  className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-5 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-              >
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
             <div className="flex items-center justify-between gap-3">
               <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -435,18 +415,13 @@ export default function ClientsPage() {
       </div>
       {/* MODAL CREAR/EDITAR */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2 py-6">
-          <div className="glass-card w-full max-w-xl rounded-[28px] p-4 md:p-8 max-h-[80vh] overflow-y-auto lg:max-h-none lg:overflow-visible">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {editingClient ? "Edit client" : "New client"}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Capture name, contact and status.
-                </p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className={buttonBase}>Close</button>
+        <div className="app-modal-overlay app-modal-overlay--padded">
+          <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+            <div className="mb-5">
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                {editingClient ? "Edit client" : "New client"}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">Capture name, contact and status.</p>
             </div>
             <form
               className="grid gap-x-3 gap-y-4

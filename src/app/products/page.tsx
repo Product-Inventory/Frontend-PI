@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
 import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
 import type { Product, ProductFormValues } from "@/types/product";
-import { AlertTriangle, ChevronLeft, ChevronRight, Box, Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Box, Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -15,7 +15,6 @@ type ProductFormState = {
     nombre: string;
     descripcion: string;
     categoria: string;
-    unidad: string;
     marca: string;
     modelo: string;
     precioCompra: string;
@@ -34,11 +33,10 @@ const emptyForm: ProductFormState = {
     nombre: "",
     descripcion: "",
     categoria: "",
-    unidad: "",
     marca: "",
     modelo: "",
-    precioCompra: "0",
-    precioVenta: "0",
+    precioCompra: "",
+    precioVenta: "",
     stock: "0",
     stockMinimo: "0",
     activo: true,
@@ -58,7 +56,6 @@ function toFormState(product?: Product | null): ProductFormState {
         nombre: product.nombre || "",
         descripcion: product.descripcion || "",
         categoria: product.categoria || "",
-        unidad: product.unidad || "",
         marca: product.marca || "",
         modelo: product.modelo || "",
         precioCompra: String(product.precioCompra ?? 0),
@@ -73,6 +70,12 @@ function isNonNegativeNumber(value: string) {
     if (value.trim() === "") return false;
     const parsed = Number(value);
     return !Number.isNaN(parsed) && parsed >= 0;
+}
+
+function isPositiveNumber(value: string) {
+    if (value.trim() === "") return false;
+    const parsed = Number(value);
+    return !Number.isNaN(parsed) && parsed > 0;
 }
 
 function normalizeOptionalText(value: string) {
@@ -94,13 +97,9 @@ export default function ProductsPage() {
     const [formErrors, setFormErrors] = useState<ProductFormErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [validationToast, setValidationToast] = useState<string | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-
-    const lowStockCount = useMemo(
-        () => products.filter((product) => Number(product.stock || 0) <= Number(product.stockMinimo || 0)).length,
-        [products]
-    );
 
     const showPagination = totalItems > itemsPerPage;
 
@@ -157,6 +156,7 @@ export default function ProductsPage() {
 
         const sku = form.sku.trim();
         const nombre = form.nombre.trim();
+        const categoria = form.categoria.trim();
 
         if (!sku) nextErrors.sku = "SKU is required";
         else if (sku.length < 2) nextErrors.sku = "SKU must have at least 2 characters";
@@ -164,8 +164,10 @@ export default function ProductsPage() {
         if (!nombre) nextErrors.nombre = "Name is required";
         else if (nombre.length < 2) nextErrors.nombre = "Name must have at least 2 characters";
 
-        if (!isNonNegativeNumber(form.precioCompra)) nextErrors.precioCompra = "Enter a valid purchase price";
-        if (!isNonNegativeNumber(form.precioVenta)) nextErrors.precioVenta = "Enter a valid sale price";
+        if (!categoria) nextErrors.categoria = "Category is required";
+
+        if (!isPositiveNumber(form.precioCompra)) nextErrors.precioCompra = "Purchase price must be greater than 0";
+        if (!isPositiveNumber(form.precioVenta)) nextErrors.precioVenta = "Sale price must be greater than 0";
         if (!isNonNegativeNumber(form.stock)) nextErrors.stock = "Enter a valid stock value";
         if (!isNonNegativeNumber(form.stockMinimo)) nextErrors.stockMinimo = "Enter a valid minimum stock";
 
@@ -200,7 +202,6 @@ export default function ProductsPage() {
         setFormErrors(nextErrors);
 
         if (Object.keys(nextErrors).length > 0) {
-            setToast({ message: "Review the highlighted fields before saving", type: "error" });
             return;
         }
 
@@ -209,7 +210,7 @@ export default function ProductsPage() {
             nombre: form.nombre.trim(),
             descripcion: normalizeOptionalText(form.descripcion),
             categoria: normalizeOptionalText(form.categoria),
-            unidad: normalizeOptionalText(form.unidad),
+            unidad: null,
             marca: normalizeOptionalText(form.marca),
             modelo: normalizeOptionalText(form.modelo),
             precioCompra: Number(form.precioCompra),
@@ -271,24 +272,26 @@ export default function ProductsPage() {
         }
     };
 
-    const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
-    const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+    const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+    const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
     return (
-        <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
-            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
-                {toast && (
-                    <Toast
-                        message={toast.message}
-                        type={toast.type}
-                        duration={3000}
-                        onClose={() => setToast(null)}
-                    />
-                )}
+        <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    duration={1000}
+                    portal={false}
+                    overlayClassName="app-alert-overlay--module"
+                    onClose={() => setToast(null)}
+                />
+            )}
+            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
 
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+                        <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
                             <Box className="h-6 w-6 text-black" />
                         </div>
 
@@ -303,37 +306,7 @@ export default function ProductsPage() {
                     </div>
 
                     <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-                        <div className="grid gap-3 md:grid-cols-[1.6fr_0.9fr]">
-                            <div className="relative">
-                                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                                    <Search className="h-4 w-4" />
-                                </span>
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Search..."
-                                    className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-                                />
-                            </div>
-
-                            <select
-                                value={statusFilter}
-                                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-                                className="w-full rounded-full border border-white/45 bg-white/50 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md focus:border-white/70"
-                            >
-                                <option value="all">All</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-3">
-                            <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                Low stock visible: {lowStockCount}
-                            </span>
-
+                        <div className="flex items-center justify-end gap-3">
                             <button onClick={openCreate} className={buttonBase}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create
@@ -345,7 +318,7 @@ export default function ProductsPage() {
                 {isLoading ? (
                     <Loading label="Loading products..." />
                 ) : (
-                    <div className="glass-card overflow-hidden rounded-[30px]">
+                    <div className="glass-card overflow-hidden rounded-[40px]">
                         <div className="hidden overflow-x-auto md:block">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-white/25">
@@ -353,12 +326,9 @@ export default function ProductsPage() {
                                         <th className="px-5 py-4">SKU</th>
                                         <th className="px-5 py-4">Name</th>
                                         <th className="px-5 py-4">Category</th>
-                                        <th className="px-5 py-4">Unit</th>
                                         <th className="px-5 py-4">Brand</th>
                                         <th className="px-5 py-4">Purchase price</th>
                                         <th className="px-5 py-4">Sale price</th>
-                                        <th className="px-5 py-4">Stock</th>
-                                        <th className="px-5 py-4">Minimum stock</th>
                                         <th className="px-5 py-4 text-center">Status</th>
                                         <th className="px-5 py-4 text-center">Actions</th>
                                     </tr>
@@ -367,35 +337,19 @@ export default function ProductsPage() {
                                 <tbody>
                                     {products.length > 0 ? (
                                         products.map((product) => {
-                                            const lowStock = Number(product.stock || 0) <= Number(product.stockMinimo || 0);
-
                                             return (
                                                 <tr
                                                     key={product.id}
-                                                    className={`border-t border-white/18 transition ${lowStock ? "bg-amber-50/75" : "hover:bg-white/10"}`}
+                                                    className="border-t border-white/18 transition hover:bg-white/10"
                                                 >
                                                     <td className="px-5 py-5 font-extrabold text-slate-800">{product.sku}</td>
                                                     <td className="px-5 py-5">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="font-semibold text-slate-800">{product.nombre}</span>
-                                                            {lowStock && (
-                                                                <span className="inline-flex w-fit items-center rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-extrabold tracking-[0.22em] text-rose-500">
-                                                                    LOW
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        <span className="font-semibold text-slate-800">{product.nombre}</span>
                                                     </td>
                                                     <td className="px-5 py-5 text-slate-700">{product.categoria || "-"}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{product.unidad || "-"}</td>
                                                     <td className="px-5 py-5 text-slate-700">{product.marca || "-"}</td>
                                                     <td className="px-5 py-5 font-semibold text-slate-800">{currency.format(Number(product.precioCompra || 0))}</td>
                                                     <td className="px-5 py-5 font-semibold text-slate-800">{currency.format(Number(product.precioVenta || 0))}</td>
-                                                    <td className="px-5 py-5">
-                                                        <span className={`font-extrabold ${lowStock ? "text-rose-600" : "text-slate-800"}`}>
-                                                            {product.stock}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-5 font-semibold text-slate-800">{product.stockMinimo}</td>
                                                     <td className="px-5 py-5 text-center">
                                                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${product.activo ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"}`}>
                                                             {product.activo ? "Active" : "Inactive"}
@@ -440,7 +394,7 @@ export default function ProductsPage() {
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={11} className="px-5 py-14 text-center text-slate-500">
+                                            <td colSpan={8} className="px-5 py-14 text-center text-slate-500">
                                                 No products registered
                                             </td>
                                         </tr>
@@ -452,12 +406,10 @@ export default function ProductsPage() {
                         <div className="grid gap-4 p-4 md:hidden">
                             {products.length > 0 ? (
                                 products.map((product) => {
-                                    const lowStock = Number(product.stock || 0) <= Number(product.stockMinimo || 0);
-
                                     return (
                                         <article
                                             key={product.id}
-                                            className={`rounded-[24px] border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)] ${lowStock ? "ring-2 ring-rose-200" : ""}`}
+                                            className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)]"
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
@@ -472,25 +424,16 @@ export default function ProductsPage() {
                                             </div>
 
                                             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                                                <MobileMeta label="Category" value={product.categoria || "-"} />
-                                                <MobileMeta label="Unit" value={product.unidad || "-"} />
-                                                <MobileMeta label="Brand" value={product.marca || "-"} />
-                                                <MobileMeta label="Stock" value={String(product.stock)} valueClassName={lowStock ? "text-rose-600" : "text-slate-800"} />
-                                                <MobileMeta label="Minimum stock" value={String(product.stockMinimo)} />
-                                                <MobileMeta label="Purchase price" value={currency.format(Number(product.precioCompra || 0))} />
-                                                <MobileMeta label="Sale price" value={currency.format(Number(product.precioVenta || 0))} />
+                                                <MobileMeta label="Category" value={product.categoria || "-"} rounded="rounded-2xl" />
+                                                <MobileMeta label="Brand" value={product.marca || "-"} rounded="rounded-2xl" />
+                                                <MobileMeta label="Purchase price" value={currency.format(Number(product.precioCompra || 0))} rounded="rounded-2xl" />
+                                                <MobileMeta label="Sale price" value={currency.format(Number(product.precioVenta || 0))} rounded="rounded-2xl" />
                                             </div>
-
-                                            {lowStock && (
-                                                <div className="mt-4 inline-flex items-center rounded-full border border-rose-300 bg-rose-100 px-3 py-1 text-[10px] font-extrabold tracking-[0.22em] text-rose-500">
-                                                    LOW STOCK
-                                                </div>
-                                            )}
 
                                             <div className="mt-4 flex flex-wrap gap-2">
                                                 <button
                                                     onClick={() => openEdit(product)}
-                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     ✏️
                                                     Edit
@@ -498,7 +441,7 @@ export default function ProductsPage() {
 
                                                 <button
                                                     onClick={() => void handleToggleActive(product)}
-                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     <Power className="h-4 w-4" />
                                                     {product.activo ? "Off" : "On"}
@@ -509,7 +452,7 @@ export default function ProductsPage() {
                                                         setProductToDelete(product);
                                                         setConfirmOpen(true);
                                                     }}
-                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                                 >
                                                     🗑️
                                                 </button>
@@ -518,7 +461,7 @@ export default function ProductsPage() {
                                     );
                                 })
                             ) : (
-                                <div className="rounded-[24px] border border-white/45 bg-white/35 px-4 py-10 text-center text-slate-500">
+                                <div className="rounded-3xl border border-white/45 bg-white/35 px-4 py-10 text-center text-slate-500">
                                     No products registered
                                 </div>
                             )}
@@ -533,7 +476,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                                     disabled={!showPagination || currentPage === 1}
-                                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                                 >
                                     Previous
                                 </button>
@@ -541,7 +484,7 @@ export default function ProductsPage() {
                                 <button
                                     onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                                     disabled={!showPagination || currentPage === totalPages}
-                                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
+                                    className="px-4 py-2 rounded-2xl border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                                 >
                                     Next
                                 </button>
@@ -553,65 +496,54 @@ export default function ProductsPage() {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-                    <div className="glass-card w-full max-w-5xl rounded-[28px] p-6 md:p-8">
-                        <div className="mb-5 flex items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                                    {editingProduct ? "Edit product" : "New product"}
-                                </h2>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    Capture SKU, name, prices, and stock to connect with inventory.
-                                </p>
-                            </div>
+                <div className="app-modal-overlay app-modal-overlay--padded">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative p-6 md:p-8">
+                        {validationToast && (
+                            <Toast
+                                message={validationToast}
+                                type="error"
+                                duration={1000}
+                                onClose={() => setValidationToast(null)}
+                                portal={false}
+                                overlayClassName="app-alert-overlay--module"
+                                shellClassName="app-alert-shell--error"
+                                subtitleClassName="app-alert-subtitle--error"
+                                progressClassName="app-alert-progress--error"
+                            />
+                        )}
 
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-4 text-sm font-semibold !text-[#9a7ef0] shadow-sm transition hover:bg-white/55"
-                            >
-                                Close
-                            </button>
+                        <div className="mb-5">
+                            <h2 className="text-2xl font-extrabold tracking-tight text-[#392750]">
+                                {editingProduct ? "Edit product" : "New product"}
+                            </h2>
+                            <p className="mt-1 text-sm text-[#392750]">
+                                Manage product details including pricing and status.
+                            </p>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <Field label="SKU" error={formErrors.sku}>
+                            <Field label="SKU *" error={formErrors.sku}>
                                 <input name="sku" value={form.sku} onChange={handleChange} className="glass-input w-full" placeholder="PRD-001" />
                             </Field>
 
-                            <Field label="Name" error={formErrors.nombre}>
+                            <Field label="Name *" error={formErrors.nombre}>
                                 <input name="nombre" value={form.nombre} onChange={handleChange} className="glass-input w-full" placeholder="Laptop Pro 15" />
                             </Field>
 
-                            <Field label="Category">
+                            <Field label="Category *" error={formErrors.categoria}>
                                 <input name="categoria" value={form.categoria} onChange={handleChange} className="glass-input w-full" placeholder="Electronics" />
-                            </Field>
-
-                            <Field label="Unit">
-                                <input name="unidad" value={form.unidad} onChange={handleChange} className="glass-input w-full" placeholder="pcs" />
                             </Field>
 
                             <Field label="Brand">
                                 <input name="marca" value={form.marca} onChange={handleChange} className="glass-input w-full" placeholder="Dell" />
                             </Field>
 
-                            <Field label="Model">
-                                <input name="modelo" value={form.modelo} onChange={handleChange} className="glass-input w-full" placeholder="XPS 15" />
+                            <Field label="Purchase price $ *" error={formErrors.precioCompra}>
+                                <input name="precioCompra" type="number" min="0.01" step="0.01" value={form.precioCompra} onChange={handleChange} className="glass-input w-full" placeholder="0.00" />
                             </Field>
 
-                            <Field label="Purchase price" error={formErrors.precioCompra}>
-                                <input name="precioCompra" type="number" min="0" step="0.01" value={form.precioCompra} onChange={handleChange} className="glass-input w-full" />
-                            </Field>
-
-                            <Field label="Sale price" error={formErrors.precioVenta}>
-                                <input name="precioVenta" type="number" min="0" step="0.01" value={form.precioVenta} onChange={handleChange} className="glass-input w-full" />
-                            </Field>
-
-                            <Field label="Stock" error={formErrors.stock}>
-                                <input name="stock" type="number" min="0" step="1" value={form.stock} onChange={handleChange} className="glass-input w-full" />
-                            </Field>
-
-                            <Field label="Minimum stock" error={formErrors.stockMinimo}>
-                                <input name="stockMinimo" type="number" min="0" step="1" value={form.stockMinimo} onChange={handleChange} className="glass-input w-full" />
+                            <Field label="Sale price $ *" error={formErrors.precioVenta}>
+                                <input name="precioVenta" type="number" min="0.01" step="0.01" value={form.precioVenta} onChange={handleChange} className="glass-input w-full" placeholder="0.00" />
                             </Field>
 
                             <div className="md:col-span-2">
@@ -626,7 +558,7 @@ export default function ProductsPage() {
                                 </Field>
                             </div>
 
-                            <div className="md:col-span-2 flex items-center gap-3 rounded-2xl border border-white/40 bg-white/25 px-4 py-3">
+                            <div className="md:col-span-2 flex items-center gap-3 rounded-3xl border border-white/40 bg-white/25 px-4 py-3">
                                 <input
                                     type="checkbox"
                                     name="activo"
@@ -635,8 +567,8 @@ export default function ProductsPage() {
                                     className="h-4 w-4 rounded border-white/60 text-[#9a7ef0] focus:ring-[#9a7ef0]"
                                 />
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-800">Active product</p>
-                                    <p className="text-xs text-slate-600">You can activate or deactivate the product without deleting it.</p>
+                                    <p className="text-sm font-semibold text-[#392750]">Active product</p>
+                                    <p className="text-xs text-[#392750]">You can activate or deactivate the product without deleting it.</p>
                                 </div>
                             </div>
                         </div>
@@ -644,7 +576,7 @@ export default function ProductsPage() {
                         <div className="mt-6 flex justify-end gap-3">
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-sm transition hover:bg-white/55"
+                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
                             >
                                 Cancel
                             </button>
@@ -652,7 +584,7 @@ export default function ProductsPage() {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {isSaving ? "Saving..." : "Save"}
                             </button>
@@ -670,6 +602,8 @@ export default function ProductsPage() {
                     setConfirmOpen(false);
                     setProductToDelete(null);
                 }}
+                cancelButtonClassName="products-violet-black-button"
+                confirmButtonClassName="products-violet-black-button"
             />
         </div>
     );
@@ -697,13 +631,15 @@ function MobileMeta({
     label,
     value,
     valueClassName,
+    rounded,
 }: {
     label: string;
     value: string;
     valueClassName?: string;
+    rounded?: string;
 }) {
     return (
-        <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
+        <div className={`${rounded || "rounded-2xl"} border border-white/40 bg-white/25 px-3 py-2`}>
             <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">{label}</p>
             <p className={`mt-1 text-sm font-semibold text-slate-800 ${valueClassName || ""}`}>{value}</p>
         </div>

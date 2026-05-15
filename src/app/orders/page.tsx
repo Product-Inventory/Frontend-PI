@@ -71,15 +71,6 @@ export default function OrdersPage() {
             </div>
           </div>
           <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search by folio or client"
-                className="w-full rounded-full border border-white/45 bg-white/50 py-2.5 pl-5 pr-4 text-sm font-medium text-slate-800 shadow-[0_6px_18px_rgba(138,108,198,0.12)] outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-white/70"
-              />
-            </div>
             <div className="flex items-center justify-between mt-3 gap-3">
               <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
                 Total: {totalItems}

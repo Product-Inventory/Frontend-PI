@@ -47,7 +47,8 @@ export default function LoginPage() {
         <Toast
           message="Successful login"
           type="success"
-          duration={3000}
+          duration={1000}
+          overlayClassName="app-alert-overlay--login"
           onClose={handleSuccessClose}
         />
       </main>
@@ -60,7 +61,7 @@ export default function LoginPage() {
         <Toast
           message={error}
           type="error"
-          duration={5000}
+          duration={1000}
           onClose={() => setError("")}
         />
       )}
