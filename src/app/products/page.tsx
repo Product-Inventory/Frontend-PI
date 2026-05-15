@@ -199,7 +199,23 @@ export default function ProductsPage() {
 
     const handleSave = async () => {
         const nextErrors = validateForm();
+        const requiredMissing = [
+            form.sku.trim(),
+            form.nombre.trim(),
+            form.categoria.trim(),
+            form.precioCompra.trim(),
+            form.precioVenta.trim(),
+            form.stock.trim(),
+            form.stockMinimo.trim(),
+        ].some((v) => v === "");
+
         setFormErrors(nextErrors);
+
+        if (requiredMissing) {
+            setValidationToast("All fields are required");
+            window.setTimeout(() => setValidationToast(null), 2000);
+            return;
+        }
 
         if (Object.keys(nextErrors).length > 0) {
             return;
