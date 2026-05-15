@@ -124,7 +124,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
 
         // Recalcular subtotal si cambia cantidad, costoUnitario o producto
         if (field === 'cantidad' || field === 'costoUnitario' || field === 'productId') {
-          updated.subtotal = (updated.cantidad || 0) * (updated.costoUnitario || 0);
+          updated.subtotal = Number(updated.cantidad || 0) * Number(updated.costoUnitario || 0);
         }
 
         return updated;
@@ -141,8 +141,8 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
     for (let i = 0; i < form.items.length; i++) {
       const item = form.items[i];
       if (!item.productId) err[`product_${i}`] = 'Seleccione producto';
-      if (item.cantidad <= 0) err[`cantidad_${i}`] = 'Cantidad > 0';
-      if (item.costoUnitario <= 0) err[`costo_${i}`] = 'Costo > 0';
+      if (Number(item.cantidad) <= 0) err[`cantidad_${i}`] = 'Cantidad > 0';
+      if (Number(item.costoUnitario) <= 0) err[`costo_${i}`] = 'Costo > 0';
     }
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -257,10 +257,10 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
                     onChange={(e) => updateItem(idx, 'cantidad', parseInt(e.target.value, 10) || 1)}
                   />
                   <div className="glass-input w-full bg-white/5 text-black/80 text-center py-2">
-                  ${item.costoUnitario.toFixed(2)}
+                  ${Number(item.costoUnitario || 0).toFixed(2)}
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-white text-sm font-mono">Subtotal: ${(item.subtotal || 0).toFixed(2)}</span>
+                    <span className="text-white text-sm font-mono">Subtotal: ${Number(item.subtotal || 0).toFixed(2)}</span>
                     <button type="button" onClick={() => removeItem(idx)} className="text-red-400">🗑️</button>
                   </div>
                 </div>
@@ -272,8 +272,8 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
 
           {/* Total general */}
           {form.items.length > 0 && (
-            <div className="text-right text-white font-bold text-lg border-t border-white/20 pt-2">
-              Total: ${form.items.reduce((sum, i) => sum + (i.subtotal || 0), 0).toFixed(2)}
+              <div className="text-right text-white font-bold text-lg border-t border-white/20 pt-2">
+              Total: ${form.items.reduce((sum, i) => sum + Number(i.subtotal || 0), 0).toFixed(2)}
             </div>
           )}
 
