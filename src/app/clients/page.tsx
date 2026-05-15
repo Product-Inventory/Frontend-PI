@@ -23,7 +23,7 @@ type ClientFormState = {
 
 type ClientFormErrors = Partial<Record<keyof ClientFormState, string>>;
 
-const itemsPerPage = 10;
+const itemsPerPage = 3;
 
 const emptyForm: ClientFormState = {
   nombre: "",
@@ -86,16 +86,50 @@ export default function ClientsPage() {
     return query;
   };
 
-  const fetchClients = async () => {
+  const fetchClients = async (
+    currentSearch = search,
+    currentStatus = statusFilter,
+    page = currentPage
+  ) => {
     try {
+      const params: any = {
+        page,
+        limit: itemsPerPage,
+      };
+
+      if (currentSearch.trim()) {
+        params.q = currentSearch.trim();
+      }
+
+      if (currentStatus === "active") {
+        params.activo = true;
+      }
+
+      if (currentStatus === "inactive") {
+        params.activo = false;
+      }
+
       setIsLoading(true);
-      const data = await clientsService.getAll(buildQuery());
+
+      const data = await clientsService.getAll(params);
+
       const items = data.items || [];
+
       setClients(items);
       setTotalItems(data.total || 0);
-      setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || itemsPerPage))));
+
+      setTotalPages(
+        Math.max(
+          1,
+          Math.ceil((data.total || 0) / (data.limit || itemsPerPage))
+        )
+      );
     } catch (error: any) {
-      setToast({ message: error?.response?.data?.message || "Error loading clients", type: "error" });
+      setToast({
+        message:
+          error?.response?.data?.message || "Error loading clients",
+        type: "error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,8 +137,9 @@ export default function ClientsPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void fetchClients();
+      void fetchClients(search, statusFilter, currentPage);
     }, 250);
+
     return () => window.clearTimeout(timer);
   }, [search, statusFilter, currentPage]);
   useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
@@ -353,7 +388,7 @@ export default function ClientsPage() {
               )}
             </div>
             {/* Paginación */}
-            <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
+            <div className="flex justify-between items-center mt-2 mb-4 border-t border-white/20 px-5 pt-4">
               <p className="text-sm text-gray-400">
                 Page {currentPage} of {totalPages}
               </p>
@@ -361,13 +396,17 @@ export default function ClientsPage() {
                 <button
                   onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                   disabled={!showPagination || currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
-                >Previous</button>
+                  className={
+                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] 
+                    ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`
+                  }>Previous</button>
                 <button
                   onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                   disabled={!showPagination || currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] disabled:opacity-20"
-                >Next</button>
+                  className={
+                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] 
+                    ${currentPage === totalPages ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`
+                  }>Next</button>
               </div>
             </div>
           </div>
@@ -384,31 +423,34 @@ export default function ClientsPage() {
               </h2>
               <p className="mt-1 text-sm text-slate-600">Capture name, contact and status.</p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Name" error={formErrors.nombre}>
+            <form
+              className="grid gap-x-3 gap-y-4
+                grid-cols-1
+                md:grid-cols-3
+                md:gap-y-3"
+            >
+              <Field label="Name" error={formErrors.nombre} className="md:col-span-1">
                 <input name="nombre" value={form.nombre} onChange={handleChange} className="glass-input w-full" placeholder="Name" />
               </Field>
-              <Field label="RFC">
+              <Field label="RFC" className="md:col-span-1">
                 <input name="rfc" value={form.rfc || ""} onChange={handleChange} className="glass-input w-full" placeholder="RFC" />
               </Field>
-              <Field label="Email" error={formErrors.email}>
+              <Field label="Email" error={formErrors.email} className="md:col-span-1">
                 <input name="email" value={form.email || ""} onChange={handleChange} className="glass-input w-full" placeholder="Email" />
               </Field>
-              <Field label="Phone">
-                <input name="telefono" value={form.telefono || ""} onChange={handleChange} className="glass-input w-full" placeholder="Phone" />
-              </Field>
-              <Field label="Contact">
+              <Field label="Contact" className="md:col-span-1">
                 <input name="contacto" value={form.contacto || ""} onChange={handleChange} className="glass-input w-full" placeholder="Contact" />
               </Field>
-              <Field label="Address">
+              <Field label="Phone" className="md:col-span-1">
+                <input name="telefono" value={form.telefono || ""} onChange={handleChange} className="glass-input w-full" placeholder="Phone" />
+              </Field>
+              <Field label="Address" className="md:col-span-1">
                 <input name="direccion" value={form.direccion || ""} onChange={handleChange} className="glass-input w-full" placeholder="Address" />
               </Field>
-              <div className="md:col-span-2">
-                <Field label="Notes">
-                  <textarea name="notas" value={form.notas || ""} onChange={handleChange} className="glass-input w-full min-h-20" placeholder="Any notes" />
-                </Field>
-              </div>
-              <div className="md:col-span-2 flex items-center gap-3 rounded-2xl border border-white/40 bg-white/25 px-4 py-3">
+              <Field label="Notes" className="md:col-span-3">
+                <textarea name="notas" value={form.notas || ""} onChange={handleChange} className="glass-input w-full min-h-20" placeholder="Any notes" />
+              </Field>
+              <div className="md:col-span-3 flex items-center gap-3 rounded-2xl border border-white/40 bg-white/25 px-4 py-3">
                 <input
                   type="checkbox"
                   name="activo"
@@ -418,24 +460,26 @@ export default function ClientsPage() {
                 />
                 <div>
                   <p className="text-sm font-semibold text-slate-800">Active client</p>
-                  <p className="text-xs text-slate-600">You can activate or deactivate the client without deleting it.</p>
+                  <p className="text-xs text-slate-600">
+                    You can activate or deactivate the client without deleting it.
+                  </p>
                 </div>
               </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} className={buttonBase}>Cancel</button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSaving ? "Saving..." : "Save"}
-              </button>
-            </div>
+              <div className="md:col-span-3 flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setIsModalOpen(false)} className={buttonBase}>Cancel</button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-
       <ConfirmModal
         open={confirmOpen}
         title="Delete client"
@@ -455,13 +499,15 @@ function Field({
   label,
   error,
   children,
+  className = "",
 }: {
   label: string;
   error?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+    <label className={`flex flex-col gap-2 text-sm font-semibold text-slate-800 ${className}`}>
       <span>{label}</span>
       {children}
       {error ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}

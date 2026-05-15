@@ -7,14 +7,14 @@ export interface Client {
   direccion: string | null;
   contacto: string | null;
   notas: string | null;
-  activo: boolean;
+  activo: boolean | string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
 
 export interface ClientQueryParams {
   q?: string;
-  activo?: boolean;
+  activo?: boolean | string;
   page?: number;
   limit?: number;
 }
@@ -27,5 +27,5 @@ export interface ClientFormValues {
   direccion: string | null;
   contacto: string | null;
   notas: string | null;
-  activo: boolean;
+  activo: boolean | string | null;
 }
