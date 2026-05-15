@@ -5,145 +5,176 @@ import { Loading } from "@/components/ui/Loading";
 import { Toast } from "@/components/ui/Toast";
 import { inventoryService } from "@/services/inventory.service";
 import type { InventoryAdjustmentPayload, InventoryItem, InventoryMovement } from "@/types/inventory";
-import { Activity, AlertTriangle, Box, Search } from "lucide-react";
+import { Activity, AlertTriangle, Box } from "lucide-react";
 
-type StatusFilter = "all" | "active" | "inactive";
-type LowStockFilter = "all" | "low";
+// ── Tipos de filtro ────────────────────────────────────────────────────────────
+
+type StatusFilter       = "all" | "active" | "inactive";
+type LowStockFilter     = "all" | "low";
 type MovementTypeFilter = "all" | "ENTRADA" | "SALIDA" | "AJUSTE";
 
-// Estado inicial del formulario de ajuste
+// Estructura del formulario de ajuste de inventario
 type AdjustFormState = {
-    tipo: "ENTRADA" | "SALIDA" | "AJUSTE";
-    cantidad: string;
-    motivo: string;
+    tipo:      "ENTRADA" | "SALIDA" | "AJUSTE";
+    cantidad:  string;
+    motivo:    string;
     referencia: string;
 };
 
+// Errores de validación del formulario (cada campo es opcional)
 type AdjustFormErrors = Partial<Record<keyof AdjustFormState, string>>;
 
-// Numeros de filas por tabla para mostrar usando la paginacion
-const inventoryItemsPerPage = 3;
-const movementItemsPerPage = 3;
+// ── Constantes ────────────────────────────────────────────────────────────────
 
+// Cuántos registros mostrar por página en cada tabla
+const inventoryItemsPerPage = 4;
+const movementItemsPerPage  = 4;
+
+// Estado vacío que se usa al abrir o resetear el modal de ajuste
 const emptyAdjustForm: AdjustFormState = {
-    tipo: "ENTRADA",
-    cantidad: "",
-    motivo: "",
+    tipo:       "ENTRADA",
+    cantidad:   "",
+    motivo:     "",
     referencia: "",
 };
 
+// Formateador de fechas reutilizable para toda la página
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
 });
 
-// Formatea las fechas de actualización de los productos, mostrando "-" para valores nulos o inválidos
+// ── Funciones utilitarias ─────────────────────────────────────────────────────
+
+// Devuelve la fecha formateada o "-" para valores nulos o inválidos
 function formatDate(value: string | null) {
     if (!value) return "-";
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "-" : dateFormatter.format(date);
 }
 
-// Considera vacíos como inválidos y luego verifica que el número sea positivo para validar la cantidad en el formulario de ajuste
+// Verifica que el valor sea un número positivo (rechaza vacíos y negativos)
 function isPositiveNumber(value: string) {
     if (value.trim() === "") return false;
     const parsed = Number(value);
-    return !Number.isNaN(parsed) && parsed > 0; // Solo números positivos
+    return !Number.isNaN(parsed) && parsed > 0;
 }
 
-// Normaliza los textos opcionales para que la API reciba null en lugar de vacíos.
+// Convierte strings vacíos en null para que la API no reciba campos vacíos
 function normalizeOptionalText(value: string) {
     const trimmed = value.trim();
     return trimmed === "" ? null : trimmed;
 }
 
+// ── Componente principal ──────────────────────────────────────────────────────
+
 export default function InventoryPage() {
-    // El toast es el canal ligero para mostrar éxitos y errores.
+
+    // ── Estado global de UI ──────────────────────────────────────────────────
+
+    // Canal ligero para mostrar éxitos y errores al usuario
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-    // La página tiene dos vistas internas: inventario y movimientos.
+    // Controla qué pestaña está activa: inventario o movimientos
     const [activeTab, setActiveTab] = useState<"inventory" | "movements">("inventory");
 
-    // Estado y filtros de la lista de inventario.
-    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-    const [inventoryLoading, setInventoryLoading] = useState(true);
-    const [inventorySearch, setInventorySearch] = useState("");
+    // ── Estado de inventario ─────────────────────────────────────────────────
+
+    const [inventoryItems,       setInventoryItems]       = useState<InventoryItem[]>([]);
+    const [inventoryLoading,     setInventoryLoading]     = useState(true);
+    const [inventorySearch,      setInventorySearch]      = useState("");
     const [inventoryStatusFilter, setInventoryStatusFilter] = useState<StatusFilter>("all");
     const [inventoryLowStockFilter, setInventoryLowStockFilter] = useState<LowStockFilter>("all");
-    const [inventoryPage, setInventoryPage] = useState(1);
-    const [inventoryTotalPages, setInventoryTotalPages] = useState(1);
-    const [inventoryTotalItems, setInventoryTotalItems] = useState(0);
+    const [inventoryPage,        setInventoryPage]        = useState(1);
+    const [inventoryTotalPages,  setInventoryTotalPages]  = useState(1);
+    const [inventoryTotalItems,  setInventoryTotalItems]  = useState(0);
 
-    // Estado y filtros de la lista de movimientos.
-    const [movements, setMovements] = useState<InventoryMovement[]>([]);
-    const [movementsLoading, setMovementsLoading] = useState(false);
-    const [movementsSearch, setMovementsSearch] = useState("");
-    const [movementsTypeFilter, setMovementsTypeFilter] = useState<MovementTypeFilter>("all");
-    const [movementsProductId, setMovementsProductId] = useState("");
-    const [movementsPage, setMovementsPage] = useState(1);
-    const [movementsTotalPages, setMovementsTotalPages] = useState(1);
-    const [movementsTotalItems, setMovementsTotalItems] = useState(0);
+    // ── Estado de movimientos ────────────────────────────────────────────────
 
-    // Estado del modal para ajustes realizados desde la lista de inventario.
-    const [adjustOpen, setAdjustOpen] = useState(false);
-    const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
-    const [adjustForm, setAdjustForm] = useState<AdjustFormState>(emptyAdjustForm);
-    const [adjustErrors, setAdjustErrors] = useState<AdjustFormErrors>({});
+    const [movements,            setMovements]            = useState<InventoryMovement[]>([]);
+    const [movementsLoading,     setMovementsLoading]     = useState(false);
+    const [movementsSearch,      setMovementsSearch]      = useState("");
+    const [movementsTypeFilter,  setMovementsTypeFilter]  = useState<MovementTypeFilter>("all");
+    const [movementsProductId,   setMovementsProductId]   = useState("");
+    const [movementsProductName, setMovementsProductName] = useState("");
+    const [movementsPage,        setMovementsPage]        = useState(1);
+    const [movementsTotalPages,  setMovementsTotalPages]  = useState(1);
+    const [movementsTotalItems,  setMovementsTotalItems]  = useState(0);
+
+    // ── Estado del modal de ajuste ───────────────────────────────────────────
+
+    const [adjustOpen,    setAdjustOpen]    = useState(false);
+    const [adjustItem,    setAdjustItem]    = useState<InventoryItem | null>(null);
+    const [adjustForm,    setAdjustForm]    = useState<AdjustFormState>(emptyAdjustForm);
+    const [adjustErrors,  setAdjustErrors]  = useState<AdjustFormErrors>({});
     const [adjustLoading, setAdjustLoading] = useState(false);
-    const [adjustSaving, setAdjustSaving] = useState(false);
+    const [adjustSaving,  setAdjustSaving]  = useState(false);
 
-    // Métrica derivada usada en el indicador del encabezado de inventario.
+    // ── Valores derivados ────────────────────────────────────────────────────
+
+    // Cuenta cuántos productos visibles están por debajo del stock mínimo
     const lowStockCount = useMemo(
-        () => inventoryItems.filter((item) => item.lowStock || Number(item.stock) <= Number(item.stockMinimo)).length,
+        () => inventoryItems.filter(
+            (item) => item.lowStock || Number(item.stock) <= Number(item.stockMinimo)
+        ).length,
         [inventoryItems]
     );
 
-    // La paginación solo se muestra si el total de registros lo justifica.
+    // La paginación solo aparece si hay más registros de los que caben en una página
     const showInventoryPagination = inventoryTotalItems > inventoryItemsPerPage;
     const showMovementsPagination = movementsTotalItems > movementItemsPerPage;
 
-    // Construye la consulta de inventario a partir de los filtros actuales.
+    // ── Constructores de consulta ────────────────────────────────────────────
+
+    // Arma los parámetros de búsqueda de inventario según los filtros activos
     const buildInventoryQuery = () => {
         const query: Record<string, string | number | boolean> = {
-            page: inventoryPage,
+            page:  inventoryPage,
             limit: inventoryItemsPerPage,
         };
 
         const trimmedSearch = inventorySearch.trim();
-        if (trimmedSearch) query.q = trimmedSearch;
-        if (inventoryStatusFilter === "active") query.activo = true;
-        if (inventoryStatusFilter === "inactive") query.activo = false;
-        if (inventoryLowStockFilter === "low") query.lowStock = true;
+        if (trimmedSearch)                          query.q       = trimmedSearch;
+        if (inventoryStatusFilter === "active")     query.activo  = true;
+        if (inventoryStatusFilter === "inactive")   query.activo  = false;
+        if (inventoryLowStockFilter === "low")      query.lowStock = true;
 
         return query;
     };
 
-    // Construye la consulta de movimientos con búsqueda, filtros y producto seleccionado.
+    // Arma los parámetros de búsqueda de movimientos según los filtros activos
     const buildMovementsQuery = () => {
         const query: Record<string, string | number> = {
-            page: movementsPage,
+            page:  movementsPage,
             limit: movementItemsPerPage,
         };
 
-        const trimmedSearch = movementsSearch.trim();
-        if (trimmedSearch) query.q = trimmedSearch;
-        if (movementsTypeFilter !== "all") query.tipo = movementsTypeFilter;
+        const trimmedSearch    = movementsSearch.trim();
         const trimmedProductId = movementsProductId.trim();
-        if (trimmedProductId) query.productId = trimmedProductId;
+
+        // Solo se incluye el filtro de texto si no está vacío para evitar interferir con la búsqueda por producto
+        if (trimmedSearch)                    query.q         = trimmedSearch;
+        if (movementsTypeFilter !== "all")    query.tipo      = movementsTypeFilter;
+        if (trimmedProductId)                 query.productId = trimmedProductId;
 
         return query;
     };
 
-    // Carga la tabla de inventario usando el estado actual de filtros.
+    // ── Funciones de carga de datos ──────────────────────────────────────────
+
+    // Obtiene la lista de inventario con los filtros y página actuales
     const fetchInventory = async () => {
         try {
+            // Para que se vea el indicar de carga
             setInventoryLoading(true);
-            const data = await inventoryService.getAll(buildInventoryQuery());
+            const data  = await inventoryService.getAll(buildInventoryQuery());
             const items = data.items || [];
 
             setInventoryItems(items);
             setInventoryTotalItems(data.total || 0);
-            setInventoryTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || inventoryItemsPerPage))));
+            setInventoryTotalPages(
+                Math.max(1, Math.ceil((data.total || 0) / (data.limit || inventoryItemsPerPage)))
+            );
         } catch (error: any) {
             console.error("Error loading inventory:", error);
             setToast({ message: error?.response?.data?.message || "Error loading inventory", type: "error" });
@@ -152,16 +183,19 @@ export default function InventoryPage() {
         }
     };
 
-    // Carga la tabla de movimientos usando los filtros actuales.
+    // Obtiene el historial de movimientos con los filtros y página actuales
     const fetchMovements = async () => {
         try {
+            // Para que se vea el indicador de carga
             setMovementsLoading(true);
-            const data = await inventoryService.getMovements(buildMovementsQuery());
+            const data  = await inventoryService.getMovements(buildMovementsQuery());
             const items = data.items || [];
 
             setMovements(items);
             setMovementsTotalItems(data.total || 0);
-            setMovementsTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || movementItemsPerPage))));
+            setMovementsTotalPages(
+                Math.max(1, Math.ceil((data.total || 0) / (data.limit || movementItemsPerPage)))
+            );
         } catch (error: any) {
             console.error("Error loading movements:", error);
             setToast({ message: error?.response?.data?.message || "Error loading movements", type: "error" });
@@ -170,45 +204,45 @@ export default function InventoryPage() {
         }
     };
 
-    // Vuelve a cargar inventario cuando cambian filtros o página.
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            void fetchInventory();
-        }, 250);
+    // ── Efectos de inventario ────────────────────────────────────────────────
 
+    // Recarga el inventario cada vez que cambia un filtro o la página (con debounce de 250ms)
+    useEffect(() => {
+        const timer = window.setTimeout(() => { void fetchInventory(); }, 250);
         return () => window.clearTimeout(timer);
     }, [inventorySearch, inventoryStatusFilter, inventoryLowStockFilter, inventoryPage]);
 
-    // Reinicia la paginación de inventario cuando cambian los filtros.
+    // Vuelve a la primera página cuando cambia cualquier filtro de inventario
     useEffect(() => {
         setInventoryPage(1);
     }, [inventorySearch, inventoryStatusFilter, inventoryLowStockFilter]);
 
-    // Ajusta la página de inventario al último valor válido después de actualizar totales.
+    // Ajusta la página actual si el total de páginas disminuye (ej. después de filtrar)
     useEffect(() => {
         setInventoryPage((page) => Math.min(page, inventoryTotalPages));
     }, [inventoryTotalPages]);
 
-    // Vuelve a cargar movimientos cuando cambian filtros o página.
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            void fetchMovements();
-        }, 250);
+    // ── Efectos de movimientos ───────────────────────────────────────────────
 
+    // Recarga movimientos cuando cambia un filtro o la página (con debounce de 250ms)
+    useEffect(() => {
+        const timer = window.setTimeout(() => { void fetchMovements(); }, 250);
         return () => window.clearTimeout(timer);
     }, [movementsSearch, movementsTypeFilter, movementsProductId, movementsPage]);
 
-    // Reinicia la paginación de movimientos cuando cambian los filtros.
+    // Vuelve a la primera página cuando cambia cualquier filtro de movimientos
     useEffect(() => {
         setMovementsPage(1);
     }, [movementsSearch, movementsTypeFilter, movementsProductId]);
 
-    // Limita la página de movimientos para no pedir una página fuera de rango.
+    // Ajusta la página actual si el total de páginas de movimientos disminuye
     useEffect(() => {
         setMovementsPage((page) => Math.min(page, movementsTotalPages));
     }, [movementsTotalPages]);
 
-    // Abre el modal de ajuste y trae la información más reciente del producto.
+    // ── Manejadores del modal de ajuste ──────────────────────────────────────
+
+    // Abre el modal y recarga el detalle actualizado del producto antes de ajustar
     const openAdjust = async (item: InventoryItem) => {
         setAdjustOpen(true);
         setAdjustItem(item);
@@ -219,7 +253,7 @@ export default function InventoryPage() {
         if (!productId) return;
 
         try {
-            // Aunque ya tenemos datos del producto, los volvemos a traer para asegurarnos de tener la información más actualizada antes de hacer un ajuste
+            // Se vuelve a traer el producto para tener el stock más reciente antes de ajustar
             setAdjustLoading(true);
             const data = await inventoryService.getByProductId(productId);
             setAdjustItem(data.item);
@@ -231,7 +265,7 @@ export default function InventoryPage() {
         }
     };
 
-    // Cierra el modal y limpia el estado temporal del formulario
+    // Cierra el modal y limpia todo el estado temporal del formulario
     const closeAdjust = () => {
         setAdjustOpen(false);
         setAdjustItem(null);
@@ -239,25 +273,22 @@ export default function InventoryPage() {
         setAdjustErrors({});
     };
 
-    // Manejador genérico para los campos del modal de ajuste
+    // Actualiza un campo del formulario de ajuste al escribir
     const handleAdjustChange = (event: any) => {
         const { name, value } = event.target;
-        setAdjustForm((current) => ({
-            ...current,
-            [name]: value,
-        }));
+        setAdjustForm((current) => ({ ...current, [name]: value }));
     };
 
-    // Valida el modal antes de enviar la solicitud de ajuste
+    // Valida todos los campos antes de enviar el ajuste
     const validateAdjustForm = () => {
         const nextErrors: AdjustFormErrors = {};
-        if (!adjustForm.tipo) nextErrors.tipo = "Select a movement type";
+        if (!adjustForm.tipo)                      nextErrors.tipo     = "Select a movement type";
         if (!isPositiveNumber(adjustForm.cantidad)) nextErrors.cantidad = "Enter a positive quantity";
-        if (!adjustForm.motivo.trim()) nextErrors.motivo = "Reason is required";
+        if (!adjustForm.motivo.trim())              nextErrors.motivo   = "Reason is required";
         return nextErrors;
     };
 
-    // Guarda el ajuste de inventario y actualiza ambas tablas
+    // Envía el ajuste a la API y recarga ambas tablas al confirmar
     const handleAdjustSubmit = async () => {
         if (!adjustItem) return;
 
@@ -271,9 +302,9 @@ export default function InventoryPage() {
 
         const productId = adjustItem.productId || adjustItem.id;
         const payload: InventoryAdjustmentPayload = {
-            tipo: adjustForm.tipo,
-            cantidad: Number(adjustForm.cantidad),
-            motivo: adjustForm.motivo.trim(),
+            tipo:       adjustForm.tipo,
+            cantidad:   Number(adjustForm.cantidad),
+            motivo:     adjustForm.motivo.trim(),
             referencia: normalizeOptionalText(adjustForm.referencia),
         };
 
@@ -292,28 +323,39 @@ export default function InventoryPage() {
         }
     };
 
-    // Cambia a movimientos y prefiltra por el producto seleccionado
+    // ── Navegación entre pestañas ────────────────────────────────────────────
+
+    // Cambia a la pestaña de movimientos y prefiltra por el producto seleccionado.
+    // Coloca el nombre del producto en el input de búsqueda para que sea visible.
     const handleViewMovements = (item: InventoryItem) => {
-        setMovementsSearch("");
+        setMovementsSearch(item.nombre || "");
         setMovementsTypeFilter("all");
         setMovementsProductId(item.productId || item.id);
+        setMovementsProductName(item.nombre || "");
         setMovementsPage(1);
         setActiveTab("movements");
     };
 
-    const buttonBase =
-        "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-xs sm:text-sm font-semibold text-[#9a7ef0]! shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="flex flex-col h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6">
-                {/* Toast global para operaciones asíncronas. */}
+
+                {/* Toast: notificaciones de éxito y error de operaciones asíncronas */}
                 {toast && (
-                    <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} />
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        duration={3000}
+                        onClose={() => setToast(null)}
+                    />
                 )}
 
-                {/* Encabezado de la página con título y pestañas. */}
+                {/* ── Encabezado: título + selector de pestañas ── */}
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                    {/* Ícono y título de la página */}
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4">
                         <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
                             <Box className="h-6 w-6 text-black" />
@@ -328,287 +370,385 @@ export default function InventoryPage() {
                         </div>
                     </div>
 
-                    {/* Botones de pestañas */}
+                    {/* Pestañas para cambiar entre Inventario y Movimientos */}
                     <div className="grid grid-cols-2 gap-2 sm:flex">
                         <button
                             onClick={() => setActiveTab("inventory")}
-                            className={`inline-flex h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 ${activeTab === "inventory"
-                                ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
-                                : "border-white/50 bg-white/35 text-[#9a7ef0]!"
-                                }`}
+                            className={activeTab === "inventory" ? "signin-btn" : ""}
                         >
                             Inventory
                         </button>
                         <button
                             onClick={() => setActiveTab("movements")}
-                            className={`inline-flex h-10 items-center justify-center rounded-full border px-5 text-sm font-semibold shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 ${activeTab === "movements"
-                                ? "border-indigo-400/60 bg-indigo-100/60 text-indigo-700"
-                                : "border-white/50 bg-white/35 text-[#9a7ef0]!"
-                                }`}
+                            className={activeTab === "movements" ? "signin-btn" : ""}
                         >
                             Movements
                         </button>
                     </div>
                 </div>
 
+                {/* ── Barra de resumen y filtros ── */}
                 <div className="flex flex-col gap-3">
-                    {/* Segunda fila: resumen o controles del producto seleccionado. */}
+
+                    {/* Indicador de métricas según la pestaña activa */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         {activeTab === "inventory" ? (
+                            /* Inventario: muestra cuántos productos tienen stock bajo */
                             <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
                                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                                 Low stock visible: {lowStockCount}
                             </span>
                         ) : (
-                            <>
-                                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                                    <Activity className="h-4 w-4 text-indigo-400" />
-                                    Movements total: {movementsTotalItems}
-                                </span>
-                                <button onClick={() => setMovementsProductId("")} className={buttonBase}>
-                                    Clear filter
-                                </button>
-                            </>
+                            /* Movimientos: muestra el total de registros encontrados */
+                            <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
+                                <Activity className="h-4 w-4 text-indigo-400" />
+                                Movements total: {movementsTotalItems}
+                            </span>
                         )}
                     </div>
-                </div>
 
-                {/* Contenido de la pestaña de inventario. */}
-                {activeTab === "inventory" && (inventoryLoading ? (
-                    <Loading label="Loading inventory..." />
-                ) : (
-                    <div className="glass-card overflow-hidden rounded-[30px]">
-                        {/* Tarjetas de inventario para dispositivos pequeños */}
-                        <div className="md:hidden space-y-4">
-                            {inventoryItems.map((item) => {
-                                const lowStock =
-                                    item.lowStock ||
-                                    Number(item.stock) <= Number(item.stockMinimo);
+                    {/* Filtros de la pestaña Inventario */}
+                    {activeTab === "inventory" && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
 
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className={`rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md ${lowStock ? "bg-amber-50/75" : ""
-                                            }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="text-sm font-extrabold text-slate-900">
-                                                    {item.nombre}
-                                                </p>
-
-                                                <p className="text-xs text-slate-500">
-                                                    {item.sku}
-                                                </p>
-                                            </div>
-
-                                            <span
-                                                className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${item.activo
-                                                    ? "bg-emerald-200 text-emerald-700"
-                                                    : "bg-slate-200 text-slate-600"
-                                                    }`}
-                                            >
-                                                {item.activo ? "Active" : "Inactive"}
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-4 grid grid-cols-2 gap-3">
-                                            <MobileMeta
-                                                label="Stock"
-                                                value={String(item.stock)}
-                                            />
-
-                                            <MobileMeta
-                                                label="Minimum"
-                                                value={String(item.stockMinimo)}
-                                            />
-
-                                            <MobileMeta
-                                                label="Category"
-                                                value={item.categoria || "-"}
-                                            />
-
-                                            <MobileMeta
-                                                label="Updated"
-                                                value={formatDate(item.updatedAt)}
-                                            />
-                                        </div>
-
-                                        <div className="mt-4 grid grid-cols-2 gap-2">
-                                            <button
-                                                className={buttonBase}
-                                                onClick={() => void openAdjust(item)}
-                                            >
-                                                Adjust
-                                            </button>
-
-                                            <button
-                                                className={buttonBase}
-                                                onClick={() => handleViewMovements(item)}
-                                            >
-                                                Movements
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Tabla de inventario para compus */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <table className="min-w-full text-sm">
-                                <thead className="bg-white/25">
-                                    <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
-                                        <th className="px-5 py-4">SKU</th>
-                                        <th className="px-5 py-4">Name</th>
-                                        <th className="px-5 py-4">Category</th>
-                                        <th className="px-5 py-4">Stock</th>
-                                        <th className="px-5 py-4">Minimum</th>
-                                        <th className="px-5 py-4 text-center">Status</th>
-                                        <th className="px-5 py-4">Updated</th>
-                                        <th className="px-5 py-4 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {inventoryItems.length > 0 ? (
-                                        inventoryItems.map((item) => {
-                                            const lowStock = item.lowStock || Number(item.stock) <= Number(item.stockMinimo);
-
-                                            return (
-                                                <tr
-                                                    key={item.id}
-                                                    className={`border-t border-white/18 transition ${lowStock ? "bg-amber-50/75" : "hover:bg-white/10"}`}
-                                                >
-                                                    <td className="px-5 py-5 font-extrabold text-slate-800">{item.sku}</td>
-                                                    <td className="px-5 py-5">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="font-semibold text-slate-800">{item.nombre}</span>
-                                                            {lowStock && (
-                                                                <span className="inline-flex w-fit items-center rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-extrabold tracking-[0.22em] text-rose-500">
-                                                                    LOW
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-5 py-5 text-slate-700">{item.categoria || "-"}</td>
-                                                    <td className="px-5 py-5">
-                                                        <span className={`font-extrabold ${lowStock ? "text-rose-600" : "text-slate-800"}`}>
-                                                            {item.stock}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-5 font-semibold text-slate-800">{item.stockMinimo}</td>
-                                                    <td className="px-5 py-5 text-center">
-                                                        <span
-                                                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${item.activo ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"
-                                                                }`}
-                                                        >
-                                                            {item.activo ? "Active" : "Inactive"}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-5 text-slate-700">{formatDate(item.updatedAt)}</td>
-                                                    <td className="px-5 py-5 text-center">
-                                                        <div className="inline-flex items-center gap-2">
-                                                            <button className={buttonBase} onClick={() => void openAdjust(item)}>
-                                                                Adjust
-                                                            </button>
-                                                            <button className={buttonBase} onClick={() => handleViewMovements(item)}>
-                                                                Movements
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={8} className="px-5 py-14 text-center text-slate-500">
-                                                No inventory registered
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pie de paginación del inventario. */}
-                        <div className="mt-4 flex flex-col gap-3 border-t border-white/20 px-5 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm text-gray-400">
-                            Page {inventoryPage} of {inventoryTotalPages}
-                        </p>
-
-                            <div className="grid grid-cols-2 gap-2 p-3 sm:flex">
-                                <button
-                                    onClick={() => setInventoryPage((page) => Math.max(page - 1, 1))}
-                                    disabled={!showInventoryPagination || inventoryPage === 1}
-                                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm text-[#9a7ef0]! disabled:opacity-20"
-                                >
-                                    Previous
-                                </button>
-
-                                <button
-                                    onClick={() => setInventoryPage((page) => Math.min(page + 1, inventoryTotalPages))}
-                                    disabled={!showInventoryPagination || inventoryPage === inventoryTotalPages}
-                                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm text-[#9a7ef0]! disabled:opacity-20"
-                                >
-                                    Next
+                            {/* Búsqueda por nombre o SKU con botón para limpiar */}
+                            <div className="flex flex-1 items-center gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, sku..."
+                                    value={inventorySearch}
+                                    onChange={(e) => setInventorySearch(e.target.value)}
+                                    className="glass-input"
+                                />
+                                <button onClick={() => setInventorySearch("")}>
+                                    Clear filter
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                ))}
 
-                {/* Contenido de la pestaña de movimientos. */}
-                {activeTab === "movements" && (<>
-                    {movementsLoading ? (
+                            {/* Filtro por estado del producto */}
+                            <select
+                                value={inventoryStatusFilter}
+                                onChange={(e) => setInventoryStatusFilter(e.target.value as StatusFilter)}
+                                className="glass-input"
+                            >
+                                <option value="all">All statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+
+                            {/* Filtro para ver solo productos con stock bajo */}
+                            <select
+                                value={inventoryLowStockFilter}
+                                onChange={(e) => setInventoryLowStockFilter(e.target.value as LowStockFilter)}
+                                className="glass-input"
+                            >
+                                <option value="all">All stock</option>
+                                <option value="low">Low stock</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Filtros de la pestaña Movimientos */}
+                    {activeTab === "movements" && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+
+                            {/* Búsqueda por nombre de producto (se precarga al navegar desde inventario) */}
+                            <div className="flex flex-1 items-center gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Search movements..."
+                                    value={movementsSearch}
+                                    onChange={(e) => setMovementsSearch(e.target.value)}
+                                    className="glass-input"
+                                />
+                                {/* Limpia el texto y el filtro por producto activo */}
+                                <button
+                                    onClick={() => {
+                                        setMovementsSearch("");
+                                        setMovementsProductId("");
+                                        setMovementsProductName("");
+                                    }}
+                                >
+                                    Clear filter
+                                </button>
+                            </div>
+
+                            {/* Filtro por tipo de movimiento: entrada, salida o ajuste */}
+                            <select
+                                value={movementsTypeFilter}
+                                onChange={(e) => setMovementsTypeFilter(e.target.value as MovementTypeFilter)}
+                                className="glass-input"
+                            >
+                                <option value="all">All types</option>
+                                <option value="ENTRADA">Receipt</option>
+                                <option value="SALIDA">Issue</option>
+                                <option value="AJUSTE">Adjustment</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Contenido: pestaña Inventario ── */}
+                {activeTab === "inventory" && (
+                    inventoryLoading ? (
+                        <Loading label="Loading inventory..." />
+                    ) : (
+                        <div className="glass-card overflow-hidden rounded-[30px]">
+
+                            {/* Vista móvil: tarjetas individuales por producto */}
+                            <div className="md:hidden space-y-4">
+                                {inventoryItems.map((item) => {
+                                    const lowStock =
+                                        item.lowStock ||
+                                        Number(item.stock) <= Number(item.stockMinimo);
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className={`rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md ${
+                                                lowStock ? "bg-amber-50/75" : ""
+                                            }`}
+                                        >
+                                            {/* Cabecera de la tarjeta: nombre, SKU y estado */}
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-extrabold text-slate-900">
+                                                        {item.nombre}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        {item.sku}
+                                                    </p>
+                                                </div>
+                                                <span
+                                                    className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${
+                                                        item.activo
+                                                            ? "bg-emerald-200 text-emerald-700"
+                                                            : "bg-slate-200 text-slate-600"
+                                                    }`}
+                                                >
+                                                    {item.activo ? "Active" : "Inactive"}
+                                                </span>
+                                            </div>
+
+                                            {/* Datos clave del producto en cuadrícula */}
+                                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                                <MobileMeta label="Stock"    value={String(item.stock)} />
+                                                <MobileMeta label="Minimum"  value={String(item.stockMinimo)} />
+                                                <MobileMeta label="Category" value={item.categoria || "-"} />
+                                                <MobileMeta label="Updated"  value={formatDate(item.updatedAt)} />
+                                            </div>
+
+                                            {/* Acciones disponibles para el producto */}
+                                            <div className="mt-4 grid grid-cols-2 gap-2">
+                                                <button onClick={() => void openAdjust(item)}>
+                                                    Adjust
+                                                </button>
+                                                <button onClick={() => handleViewMovements(item)}>
+                                                    Movements
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Vista escritorio: tabla con todos los campos */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-white/25">
+                                        <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
+                                            <th className="px-5 py-4">SKU</th>
+                                            <th className="px-5 py-4">Name</th>
+                                            <th className="px-5 py-4">Category</th>
+                                            <th className="px-5 py-4">Stock</th>
+                                            <th className="px-5 py-4">Minimum</th>
+                                            <th className="px-5 py-4 text-center">Status</th>
+                                            <th className="px-5 py-4">Updated</th>
+                                            <th className="px-5 py-4 text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {inventoryItems.length > 0 ? (
+                                            inventoryItems.map((item) => {
+                                                const lowStock =
+                                                    item.lowStock ||
+                                                    Number(item.stock) <= Number(item.stockMinimo);
+
+                                                return (
+                                                    <tr
+                                                        key={item.id}
+                                                        className={`border-t border-white/18 transition ${
+                                                            lowStock ? "bg-amber-50/75" : "hover:bg-white/10"
+                                                        }`}
+                                                    >
+                                                        <td className="px-5 py-5 font-extrabold text-slate-800">
+                                                            {item.sku}
+                                                        </td>
+
+                                                        {/* Nombre del producto con badge "LOW" si el stock es crítico */}
+                                                        <td className="px-5 py-5">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-semibold text-slate-800">
+                                                                    {item.nombre}
+                                                                </span>
+                                                                {lowStock && (
+                                                                    <span className="inline-flex w-fit items-center rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-extrabold tracking-[0.22em] text-rose-500">
+                                                                        LOW
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="px-5 py-5 text-slate-700">
+                                                            {item.categoria || "-"}
+                                                        </td>
+
+                                                        {/* Stock resaltado en rojo si está por debajo del mínimo */}
+                                                        <td className="px-5 py-5">
+                                                            <span className={`font-extrabold ${
+                                                                lowStock ? "text-rose-600" : "text-slate-800"
+                                                            }`}>
+                                                                {item.stock}
+                                                            </span>
+                                                        </td>
+
+                                                        <td className="px-5 py-5 font-semibold text-slate-800">
+                                                            {item.stockMinimo}
+                                                        </td>
+
+                                                        {/* Badge de estado activo/inactivo */}
+                                                        <td className="px-5 py-5 text-center">
+                                                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                                                                item.activo
+                                                                    ? "bg-emerald-200/80 text-emerald-700"
+                                                                    : "bg-slate-200/80 text-slate-600"
+                                                            }`}>
+                                                                {item.activo ? "Active" : "Inactive"}
+                                                            </span>
+                                                        </td>
+
+                                                        <td className="px-5 py-5 text-slate-700">
+                                                            {formatDate(item.updatedAt)}
+                                                        </td>
+
+                                                        {/* Botones de acción por fila */}
+                                                        <td className="px-5 py-5 text-center">
+                                                            <div className="inline-flex items-center gap-2">
+                                                                <button onClick={() => void openAdjust(item)}>
+                                                                    Adjust
+                                                                </button>
+                                                                <button onClick={() => handleViewMovements(item)}>
+                                                                    Movements
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={8} className="px-5 py-14 text-center text-slate-500">
+                                                    No inventory registered
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Paginación del inventario */}
+                            <div className="mt-4 flex flex-col gap-3 border-t border-white/20 px-5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-gray-400">
+                                    Page {inventoryPage} of {inventoryTotalPages}
+                                </p>
+                                <div className="grid grid-cols-2 gap-2 p-3 sm:flex">
+                                    <button
+                                        onClick={() => setInventoryPage((page) => Math.max(page - 1, 1))}
+                                        disabled={!showInventoryPagination || inventoryPage === 1}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => setInventoryPage((page) => Math.min(page + 1, inventoryTotalPages))}
+                                        disabled={!showInventoryPagination || inventoryPage === inventoryTotalPages}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                )}
+
+                {/* ── Contenido: pestaña Movimientos ── */}
+                {activeTab === "movements" && (
+                    movementsLoading ? (
                         <Loading label="Loading movements..." />
                     ) : (
                         <div className="glass-card overflow-hidden rounded-[30px]">
-                            {/* En dispositivos pequeños se muestran tarjetas para facilitar la lectura. */}
+
+                            {/* Vista móvil: tarjetas individuales por movimiento */}
                             <div className="md:hidden space-y-4">
                                 {movements.length > 0 ? (
                                     movements.map((movement) => (
-                                        <div key={movement.id} className="rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md">
+                                        <div
+                                            key={movement.id}
+                                            className="rounded-3xl border border-white/30 bg-white/25 p-4 backdrop-blur-md"
+                                        >
+                                            {/* Cabecera: nombre del producto y tipo de movimiento */}
                                             <div className="flex items-start justify-between gap-3">
                                                 <div>
-                                                    <p className="text-sm font-extrabold text-slate-900">{movement.productNombre}</p>
-                                                    <p className="text-xs text-slate-500">SKU: {movement.sku}</p>
+                                                    <p className="text-sm font-extrabold text-slate-900">
+                                                        {movement.productNombre}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        SKU: {movement.sku}
+                                                    </p>
                                                 </div>
 
-                                                <span
-                                                    className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${movement.tipo === "ENTRADA"
+                                                {/* Badge de tipo con color según la operación */}
+                                                <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold ${
+                                                    movement.tipo === "ENTRADA"
                                                         ? "bg-emerald-200 text-emerald-700"
                                                         : movement.tipo === "SALIDA"
                                                             ? "bg-rose-200 text-rose-700"
                                                             : "bg-amber-200 text-amber-700"
-                                                        }`}
-                                                >
-                                                    { // Para que esten en ingles
-                                                        movement.tipo === "ENTRADA"
-                                                            ? "RECEIPT"
-                                                            : movement.tipo === "SALIDA"
-                                                                ? "ISSUE"
-                                                                : "ADJUSTMENT"
+                                                }`}>
+                                                    {movement.tipo === "ENTRADA"
+                                                        ? "RECEIPT"
+                                                        : movement.tipo === "SALIDA"
+                                                            ? "ISSUE"
+                                                            : "ADJUSTMENT"
                                                     }
                                                 </span>
                                             </div>
 
+                                            {/* Cantidades: actual, anterior y nueva */}
                                             <div className="mt-4 grid grid-cols-2 gap-3">
-                                                <MobileMeta label="Qty" value={String(movement.cantidad)} />
+                                                <MobileMeta label="Qty"  value={String(movement.cantidad)} />
                                                 <MobileMeta label="Prev" value={String(movement.stockAnterior)} />
-                                                <MobileMeta label="New" value={String(movement.stockNuevo)} />
+                                                <MobileMeta label="New"  value={String(movement.stockNuevo)} />
                                                 <MobileMeta label="Date" value={formatDate(movement.createdAt)} />
                                             </div>
 
+                                            {/* Motivo y usuario para trazabilidad del movimiento */}
                                             <div className="mt-4 grid gap-3">
                                                 <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
-                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">Reason</p>
-                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{movement.motivo || "-"}</p>
+                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                                                        Reason
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                                                        {movement.motivo || "-"}
+                                                    </p>
                                                 </div>
-
                                                 <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
-                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">User</p>
-                                                    <p className="mt-1 text-sm font-semibold text-slate-800">{movement.usuario || "-"}</p>
+                                                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                                                        User
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                                                        {movement.usuario || "-"}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -620,12 +760,10 @@ export default function InventoryPage() {
                                 )}
                             </div>
 
-                            {/* En escritorio se muestra una tabla con el historial completo de movimientos. */}
-                            {/* Tabla de movimientos para escritorio. */}
+                            {/* Vista escritorio: tabla con el historial completo */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="min-w-full text-sm">
                                     <thead className="bg-white/25">
-                                        {/* Encabezados de cada columna del listado de movimientos. */}
                                         <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
                                             <th className="px-5 py-4">SKU</th>
                                             <th className="px-5 py-4">Product</th>
@@ -640,45 +778,59 @@ export default function InventoryPage() {
                                     </thead>
 
                                     <tbody>
-                                        {/* Si hay datos, se pinta una fila por cada movimiento registrado. */}
                                         {movements.length > 0 ? (
                                             movements.map((movement) => (
-                                                <tr key={movement.id} className="border-t border-white/18 transition hover:bg-white/10">
-                                                    {/* SKU y nombre del producto afectado por el movimiento. */}
-                                                    <td className="px-5 py-5 font-extrabold text-slate-800">{movement.sku}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{movement.productNombre}</td>
-                                                    {/* El tipo se resalta con un color distinto para lectura rápida. */}
+                                                <tr
+                                                    key={movement.id}
+                                                    className="border-t border-white/18 transition hover:bg-white/10"
+                                                >
+                                                    <td className="px-5 py-5 font-extrabold text-slate-800">
+                                                        {movement.sku}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {movement.productNombre}
+                                                    </td>
+
+                                                    {/* Tipo de movimiento con color identificador */}
                                                     <td className="px-5 py-5">
-                                                        <span
-                                                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${movement.tipo === "ENTRADA"
+                                                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                                                            movement.tipo === "ENTRADA"
                                                                 ? "bg-emerald-200/80 text-emerald-700"
                                                                 : movement.tipo === "SALIDA"
                                                                     ? "bg-rose-200/80 text-rose-700"
                                                                     : "bg-amber-200/80 text-amber-700"
-                                                                }`}
-                                                        >
-                                                            { // Para que esten en ingles
-                                                                movement.tipo === "ENTRADA"
-                                                                    ? "RECEIPT"
-                                                                    : movement.tipo === "SALIDA"
-                                                                        ? "ISSUE"
-                                                                        : "ADJUSTMENT"
+                                                        }`}>
+                                                            {movement.tipo === "ENTRADA"
+                                                                ? "RECEIPT"
+                                                                : movement.tipo === "SALIDA"
+                                                                    ? "ISSUE"
+                                                                    : "ADJUSTMENT"
                                                             }
                                                         </span>
                                                     </td>
-                                                    {/* Cantidad y stock anterior/nuevo para entender el cambio exacto. */}
-                                                    <td className="px-5 py-5 font-semibold text-slate-800">{movement.cantidad}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{movement.stockAnterior}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{movement.stockNuevo}</td>
-                                                    {/* Motivo, usuario y fecha ayudan a auditar quién hizo el cambio y por qué. */}
-                                                    <td className="px-5 py-5 text-slate-700">{movement.motivo || "-"}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{movement.usuario || "-"}</td>
-                                                    <td className="px-5 py-5 text-slate-700">{formatDate(movement.createdAt)}</td>
+
+                                                    <td className="px-5 py-5 font-semibold text-slate-800">
+                                                        {movement.cantidad}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {movement.stockAnterior}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {movement.stockNuevo}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {movement.motivo || "-"}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {movement.usuario || "-"}
+                                                    </td>
+                                                    <td className="px-5 py-5 text-slate-700">
+                                                        {formatDate(movement.createdAt)}
+                                                    </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                {/* Estado vacío cuando todavía no hay movimientos para mostrar. */}
                                                 <td colSpan={9} className="px-5 py-14 text-center text-slate-500">
                                                     No movements registered
                                                 </td>
@@ -688,51 +840,54 @@ export default function InventoryPage() {
                                 </table>
                             </div>
 
-                            {/* Pie de paginación de movimientos. */}
-                            <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
+                            {/* Paginación de movimientos */}
+                            <div className="mt-4 flex flex-col gap-3 border-t border-white/20 px-5 pt-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-sm text-gray-400">
                                     Page {movementsPage} of {movementsTotalPages}
                                 </p>
-
                                 <div className="grid grid-cols-2 gap-2 p-3 sm:flex">
                                     <button
                                         onClick={() => setMovementsPage((page) => Math.max(page - 1, 1))}
                                         disabled={!showMovementsPagination || movementsPage === 1}
-                                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm text-[#9a7ef0]! disabled:opacity-20"
                                     >
                                         Previous
                                     </button>
-
                                     <button
                                         onClick={() => setMovementsPage((page) => Math.min(page + 1, movementsTotalPages))}
                                         disabled={!showMovementsPagination || movementsPage === movementsTotalPages}
-                                        className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm text-[#9a7ef0]! disabled:opacity-20"
                                     >
                                         Next
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </>)}
+                    )
+                )}
+
             </div>
 
-            {/* Modal para crear un movimiento de stock mediante ajuste. */}
+            {/* ── Modal de ajuste de inventario ── */}
             {adjustOpen && (
                 <div className="app-modal-overlay app-modal-overlay--bottom px-4 py-4 rounded-[40px]">
                     <div className="app-modal-shell app-modal-shell--lg glass-card rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+
+                        {/* Encabezado del modal */}
                         <div className="mb-5">
-                            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Adjust inventory</h2>
-                            <p className="mt-1 text-sm text-slate-600">Register an entry, exit, or adjustment movement.</p>
+                            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                                Adjust inventory
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-600">
+                                Register an entry, exit, or adjustment movement.
+                            </p>
                         </div>
 
-                        {/* Mientras se carga el detalle del producto se muestra un loader simple. */}
+                        {/* Mientras se recarga el producto se muestra un spinner */}
                         {adjustLoading ? (
                             <Loading label="Loading inventory detail..." />
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
-                                {/* Formulario del ajuste: muestra el producto y captura el nuevo movimiento. */}
-                                {/* Nombre y SKU del producto como referencia visual para el usuario. */}
+
+                                {/* Producto y stock actual (solo lectura, para referencia) */}
                                 <Field label="Product">
                                     <input
                                         value={`${adjustItem?.sku || ""} ${adjustItem?.nombre || ""}`.trim()}
@@ -741,12 +896,15 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
-                                {/* Stock actual antes de aplicar el ajuste. */}
                                 <Field label="Current stock">
-                                    <input value={adjustItem?.stock ?? "-"} readOnly className="glass-input w-full" />
+                                    <input
+                                        value={adjustItem?.stock ?? "-"}
+                                        readOnly
+                                        className="glass-input w-full"
+                                    />
                                 </Field>
 
-                                {/* Tipo de movimiento que se va a registrar. */}
+                                {/* Campos editables del ajuste */}
                                 <Field label="Movement type" error={adjustErrors.tipo}>
                                     <select
                                         name="tipo"
@@ -760,7 +918,6 @@ export default function InventoryPage() {
                                     </select>
                                 </Field>
 
-                                {/* Cantidad a sumar o restar del inventario. */}
                                 <Field label="Quantity" error={adjustErrors.cantidad}>
                                     <input
                                         name="cantidad"
@@ -772,7 +929,6 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
-                                {/* Motivo requerido para dejar trazabilidad del ajuste. */}
                                 <Field label="Reason" error={adjustErrors.motivo}>
                                     <input
                                         name="motivo"
@@ -783,7 +939,6 @@ export default function InventoryPage() {
                                     />
                                 </Field>
 
-                                {/* Referencia opcional para documentos, tickets o notas internas. */}
                                 <Field label="Reference">
                                     <input
                                         name="referencia"
@@ -796,19 +951,15 @@ export default function InventoryPage() {
                             </div>
                         )}
 
-                        {/* Botones para cancelar o guardar el ajuste registrado. */}
+                        {/* Acciones del modal: cancelar o confirmar el ajuste */}
                         <div className="mt-6 grid grid-cols-2 gap-3 sm:flex sm:justify-end">
-                            <button
-                                onClick={closeAdjust}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold text-[#9a7ef0]! shadow-sm transition hover:bg-white/55"
-                            >
+                            <button onClick={closeAdjust}>
                                 Cancel
                             </button>
-
                             <button
                                 onClick={() => void handleAdjustSubmit()}
                                 disabled={adjustSaving || adjustLoading}
-                                className="inline-flex h-10 items-center justify-center rounded-full bg-linear-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold text-[#9a7ef0]! shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="signin-btn"
                             >
                                 {adjustSaving ? "Saving..." : "Save"}
                             </button>
@@ -820,23 +971,37 @@ export default function InventoryPage() {
     );
 }
 
-// Contenedor pequeño que agrupa etiqueta, campo y mensaje de validación.
+// ── Componentes auxiliares ────────────────────────────────────────────────────
+
+// Agrupa etiqueta, campo de formulario y mensaje de error de validación
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
     return (
         <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
             <span>{label}</span>
             {children}
-            {error ? <span className="text-xs font-medium text-rose-600">{error}</span> : null}
+            {error && <span className="text-xs font-medium text-rose-600">{error}</span>}
         </label>
     );
 }
 
-// Bloque compacto de valores usado en el diseño móvil de inventario.
-function MobileMeta({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
+// Bloque compacto de dato+etiqueta usado en las tarjetas móviles
+function MobileMeta({
+    label,
+    value,
+    valueClassName,
+}: {
+    label: string;
+    value: string;
+    valueClassName?: string;
+}) {
     return (
         <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-            <p className={`mt-1 text-sm font-semibold text-slate-800 ${valueClassName || ""}`}>{value}</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                {label}
+            </p>
+            <p className={`mt-1 text-sm font-semibold text-slate-800 ${valueClassName || ""}`}>
+                {value}
+            </p>
         </div>
     );
 }
