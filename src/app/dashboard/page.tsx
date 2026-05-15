@@ -1,12 +1,12 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { Users, Package, Boxes, Truck, AlertTriangle, Activity, BarChart3, LayoutDashboard } from "lucide-react";
-import Loading from "@/components/ui/Loading";
+import { Users, Package, Truck, Inbox, AlertTriangle, Activity, LayoutDashboard, ArrowUpRight } from "lucide-react";
+import { Loading } from "@/components/ui/Loading";
 import { dashboardService } from "@/services/dashboard.service";
 import { DashboardSummary } from "@/types/dashboard";
 
 export default function DashboardPage() {
-
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,201 +16,148 @@ export default function DashboardPage() {
 
   const fetchDashboard = async () => {
     try {
-      const data =
-        await dashboardService.getSummary();
+      const data = await dashboardService.getSummary();
       setSummary(data);
     } catch (error) {
-      console.error(
-        "Error loading dashboard:",
-        error
-      );
+      console.error("Error loading dashboard:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  if (!summary) {
-    return (
-      <p className="text-gray-500">
-        Failed to load dashboard
-      </p>
-    );
-  }
+  if (isLoading) return <Loading label="Loading statistics..." />;
+  if (!summary) return <p className="text-gray-500 p-10 font-bold text-center">Failed to load dashboard</p>;
 
   const stats = [
     {
       title: "Users",
       value: summary.totals.users,
       subtitle: `${summary.totals.activeUsers} active users`,
-      icon: <Users size={18} />,
+      icon: <Users className="h-6 w-6 text-blue-600" />,
+      color: "bg-blue-100",
     },
-
     {
       title: "Products",
       value: summary.totals.products,
       subtitle: `${summary.lowStockCount} low stock`,
-      icon: <Package size={18} />,
+      icon: <Package className="h-6 w-6 text-indigo-600" />,
+      color: "bg-indigo-100",
     },
-
     {
       title: "Suppliers",
       value: summary.totals.suppliers,
-      subtitle: `${summary.totals.activeSuppliers} active suppliers`,
-      icon: <Boxes size={18} />,
+      subtitle: "Registered suppliers",
+      icon: <Truck className="h-6 w-6 text-amber-600" />,
+      color: "bg-amber-100",
     },
-
     {
       title: "Receptions",
       value: summary.totals.recepciones,
-      subtitle: "Recent receptions",
-      icon: <Truck size={18} />,
+      subtitle: "Inventory entries",
+      icon: <Inbox className="h-6 w-6 text-emerald-600" />,
+      color: "bg-emerald-100",
     },
   ];
 
-  const chartData = summary.recentAudit.slice(0, 7).reverse().map((item, index) => ({
-      name: `#${index + 1}`,
-      movements: index + 2,
-    }));
-
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto pr-1">
-      {/* HEADER */}
-      <div>
-        <div className="flex items-center gap-4">
-          <div className="bg-white/25 backdrop-blur-md p-3 rounded-2xl">
-            <LayoutDashboard
-              className="h-7 w-7 text-gray-800"
-            />
+    <div className="app-atmosphere relative h-full flex flex-col px-6 py-6 lg:px-10 rounded-[40px] overflow-hidden">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-10">
+        
+        {/* HEADER */}
+        <div className="flex items-center gap-5">
+          <div className="bg-white/15 p-3 rounded-2xl backdrop-blur-md border border-white/20">
+            <LayoutDashboard className="h-8 w-8 text-slate-900" />
           </div>
           <div>
-            <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-gray-500 mt-1">
-              General system overview
-            </p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Dashboard</h1>
+            <p className="text-slate-600 font-medium mt-1">Current system and inventory status.</p>
           </div>
         </div>
-      </div>
 
-      {/* KPI GRID */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <div key={index} className="glass-card rounded-2xl p-5 min-h-[130px] flex flex-col justify-between transition-all duration-300 hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl bg-white/30 flex items-center justify-center text-gray-800">
-                {stat.icon}
-              </div>
-
-              <BarChart3
-                size={16}
-                className="text-gray-400"
-              />
-            </div>
-
-            <div className="mt-3">
-              <p className="text-xs uppercase tracking-wide text-gray-500">
-                {stat.title}
-              </p>
-              <h2 className="text-4xl font-bold text-gray-800 leading-none mt-1">
-                {stat.value}
-              </h2>
-              <p className="text-sm text-cyan-700 mt-2">
-                {stat.subtitle}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* MAIN GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-
-        {/* LOW STOCK */}
-        <div className="glass-card rounded-2xl p-5 h-[340px] min-h-0 flex flex-col">
-          <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle
-              size={20}
-              className="text-red-400"
-            />
-            <h2 className="text-2xl font-semibold text-gray-800">
-              Low Stock Products
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
-            {summary.lowStockProducts.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No low stock products
-              </div>
-            ) : (
-
-              summary.lowStockProducts.map((product) => (
-                <div key={product.id} className="bg-white/30 rounded-2xl p-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      {product.nombre}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Minimum stock: {product.stockMinimo}
-                    </p>
-                  </div>
-                  <div className="bg-red-100 text-red-500 px-3 py-1 rounded-xl text-sm font-semibold">
-                    {product.stock} units
-                  </div>
+        {/* STATS GRID */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat, index) => (
+            <div key={index} className="glass-card group p-6 rounded-[35px] border border-white/40 shadow-xl transition hover:-translate-y-1">
+              <div className="flex justify-between items-start mb-4">
+                <div className={`${stat.color} p-3 rounded-2xl shadow-inner`}>
+                  {stat.icon}
                 </div>
-              ))
-            )}
-          </div>
+                <ArrowUpRight className="text-slate-300 group-hover:text-slate-600 transition-colors" size={20} />
+              </div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">{stat.title}</p>
+              <h2 className="text-4xl font-black text-slate-900 mt-1">{stat.value}</h2>
+              <p className="text-xs font-bold text-slate-500 mt-2">{stat.subtitle}</p>
+            </div>
+          ))}
         </div>
 
-        {/* RECENT ACTIVITY */}
-        <div className="glass-card rounded-2xl p-5 h-[340px] min-h-0 flex flex-col">
-          <div className="flex items-center gap-3 mb-4">
-            <Activity
-              size={20}
-              className="text-cyan-500"
-            />
-            <h2 className="text-2xl font-semibold text-gray-800">
-              Recent Activity
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
-            {summary.recentAudit.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                No recent activity
-              </div>
-            ) : (
-
-              summary.recentAudit.map((activity) => (
-                <div key={activity.id} className="bg-white/30 rounded-2xl p-4 flex items-center gap-3">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full bg-cyan-500"/>
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">
-                        {activity.usuario}
-                      </span>{" "}
-                      {activity.action.toLowerCase()}{" "}
-                      {activity.resource}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(
-                        activity.createdAt
-                      ).toLocaleString()}
-                    </p>
-                  </div>
+        {/* BOTTOM SECTION */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* LOW STOCK PRODUCTS */}
+          <div className="glass-card rounded-[40px] p-8 border border-white/40 shadow-2xl flex flex-col h-[290px]">
+            <div className="flex items-center gap-3 mb-6">
+              <AlertTriangle className="text-rose-500" size={28} />
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Low Stock Products</h2>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-3 space-y-4 custom-scrollbar">
+              {summary.lowStockProducts.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-slate-400 font-bold italic">
+                  All inventory is up to date
                 </div>
-              ))
-            )}
+              ) : (
+                summary.lowStockProducts.map((product) => (
+                  <div key={product.id} className="flex items-center justify-between bg-white/20 border border-white/30 rounded-[24px] p-5 transition hover:bg-white/40">
+                    <div>
+                      <p className="font-black text-slate-900">{product.nombre}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.sku}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-rose-600 font-black text-xl">{product.stock}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Units</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
+
+          {/* RECENT ACTIVITY */}
+          <div className="glass-card rounded-[40px] p-8 border border-white/40 shadow-2xl flex flex-col h-[290px]">
+            <div className="flex items-center gap-3 mb-6">
+              <Activity className="text-emerald-500" size={28} />
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Recent Activity</h2>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-3 space-y-4 custom-scrollbar">
+              {summary.recentAudit.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-slate-400 font-bold italic">
+                  No recent activity found
+                </div>
+              ) : (
+                summary.recentAudit.map((activity) => (
+                  <div key={activity.id} className="bg-white/20 border border-white/30 rounded-[24px] p-5 flex items-center gap-4 transition hover:bg-white/40">
+                    <div className="flex-1 text-sm">
+                      <p className="text-slate-800 leading-snug">
+                        <span className="font-black text-slate-900">{activity.usuario}</span>
+                        {" performed "}
+                        <span className="font-bold text-indigo-600">{activity.action.toLowerCase()}</span>
+                        {" on "}
+                        <span className="font-bold">{activity.resource}</span>
+                      </p>
+                      <p className="text-[10px] font-black text-slate-400 mt-1 uppercase">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
-
-      {/* CHART */}     
     </div>
   );
 }
