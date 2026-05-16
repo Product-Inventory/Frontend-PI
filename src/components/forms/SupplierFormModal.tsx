@@ -8,7 +8,7 @@ interface SupplierFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  supplier?: Supplier | null;   // ← esta línea faltaba
+  supplier?: Supplier | null;  
 }
 
 export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: SupplierFormModalProps) {

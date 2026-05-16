@@ -24,11 +24,10 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<{ id: string; nombre: string }[]>([]);
-  const [products, setProducts] = useState<{ id: string; nombre: string; sku?: string; precioCompra?: number }[]>([]);
+  const [products, setProducts] = useState<{ id: string; nombre: string; sku?: string; precioCompra?: number; precioVenta?: number }[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Cargar proveedores y productos (incluyendo precioCompra)
   useEffect(() => {
     if (!isOpen) return;
     Promise.all([
@@ -39,6 +38,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
           nombre: p.nombre,
           sku: p.sku,
           precioCompra: p.precioCompra ?? 0,
+          precioVenta: p.precioVenta ?? 0,
         }));
         setProducts(items);
       }),
@@ -55,7 +55,14 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
         fecha: recepcion.fecha.slice(0, 10),
         folio: recepcion.folio,
         comentarios: recepcion.comentarios || '',
-        items: recepcion.items,
+        items: recepcion.items.map(item => ({
+          productId: item.productId,
+          sku: item.sku,
+          productNombre: item.productNombre,
+          cantidad: item.cantidad,
+          costoUnitario: item.costoUnitario,
+          subtotal: item.subtotal,
+        })),
       });
     } else {
       setForm({
@@ -91,58 +98,54 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
     }));
   };
 
-  // Función tipada correctamente con genérico
-  const updateItem = <K extends keyof ReceptionItem>(
-    index: number,
-    field: K,
-    value: ReceptionItem[K]
-  ) => {
-    setForm(prev => ({
-      ...prev,
-      items: prev.items.map((item, i) => {
-        if (i !== index) return item;
-        const updated = { ...item, [field]: value };
+  const updateItem = <K extends keyof ReceptionItem>(index: number, field: K, value: ReceptionItem[K]) => {
+    setForm(prev => {
+      const updatedItems = [...prev.items];
+      const item = { ...updatedItems[index] };
+      item[field] = value;
 
-        // Si cambia el producto, cargar datos del producto
-        if (field === 'productId') {
-          const selectedProduct = products.find(p => p.id === value);
-          if (selectedProduct) {
-            updated.costoUnitario = selectedProduct.precioCompra ?? 0;
-            updated.productNombre = selectedProduct.nombre;
-            updated.sku = selectedProduct.sku || '';
-          } else {
-            updated.costoUnitario = 0;
-          }
+      if (field === 'productId') {
+        const selected = products.find(p => p.id === value);
+        if (selected) {
+          item.sku = selected.sku || '';
+          item.productNombre = selected.nombre;
+          const cost = selected.precioCompra ?? selected.precioVenta ?? 0;
+          item.costoUnitario = cost;
+        } else {
+          item.sku = '';
+          item.productNombre = '';
+          item.costoUnitario = 0;
         }
+        // Conversión a número para evitar errores de tipo
+        const cantidadNum = Number(item.cantidad) || 0;
+        const costoNum = Number(item.costoUnitario) || 0;
+        item.subtotal = cantidadNum * costoNum;
+      }
 
-        // Validar cantidad: mínimo 1
-        if (field === 'cantidad') {
-          let qty = typeof value === 'number' ? value : parseFloat(value as any);
-          if (isNaN(qty) || qty < 1) qty = 1;
-          updated.cantidad = qty;
-        }
+      if (field === 'cantidad' || field === 'costoUnitario') {
+        const cantidadNum = Number(item.cantidad) || 0;
+        const costoNum = Number(item.costoUnitario) || 0;
+        item.subtotal = cantidadNum * costoNum;
+      }
 
-        // Recalcular subtotal si cambia cantidad, costoUnitario o producto
-        if (field === 'cantidad' || field === 'costoUnitario' || field === 'productId') {
-          updated.subtotal = (updated.cantidad || 0) * (updated.costoUnitario || 0);
-        }
-
-        return updated;
-      }),
-    }));
+      updatedItems[index] = item;
+      return { ...prev, items: updatedItems };
+    });
   };
 
   const validate = (): boolean => {
     const err: Record<string, string> = {};
-    if (!form.supplierId) err.supplierId = 'Seleccione un proveedor';
-    if (!form.fecha) err.fecha = 'Fecha obligatoria';
-    if (!form.folio.trim()) err.folio = 'Folio obligatorio';
-    if (form.items.length === 0) err.items = 'Debe agregar al menos un producto';
+    if (!form.supplierId) err.supplierId = 'Supplier is required';
+    if (!form.fecha) err.fecha = 'Date is required';
+    if (!form.folio.trim()) err.folio = 'Folio is required';
+    if (form.items.length === 0) err.items = 'At least one product is required';
     for (let i = 0; i < form.items.length; i++) {
       const item = form.items[i];
-      if (!item.productId) err[`product_${i}`] = 'Seleccione producto';
-      if (item.cantidad <= 0) err[`cantidad_${i}`] = 'Cantidad > 0';
-      if (item.costoUnitario <= 0) err[`costo_${i}`] = 'Costo > 0';
+      if (!item.productId) err[`product_${i}`] = 'Product is required';
+      const cantidad = Number(item.cantidad);
+      const costo = Number(item.costoUnitario);
+      if (isNaN(cantidad) || cantidad <= 0) err[`cantidad_${i}`] = 'Quantity must be > 0';
+      if (isNaN(costo) || costo <= 0) err[`costo_${i}`] = 'Unit cost must be > 0';
     }
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -161,7 +164,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al guardar recepción');
+      alert(err.response?.data?.message || 'Error saving reception');
     } finally {
       setLoading(false);
     }
@@ -169,58 +172,68 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
 
   if (!isOpen) return null;
 
+  const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+
+  const totalGeneral = form.items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
+
   return (
     <div className="app-modal-overlay app-modal-overlay--padded">
-      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-white mb-4 sticky top-0 bg-inherit z-10">
-          {recepcion ? 'Edit Reception' : 'New Reception'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Proveedor, Fecha, Folio */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+        <div className="mb-5">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            {recepcion ? 'Edit Reception' : 'New Reception'}
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {recepcion ? 'Modify reception details.' : 'Register a new inventory reception.'}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Campos principales: proveedor, fecha, folio */}
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-white/80 text-sm mb-1">Proveedor *</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Supplier *</label>
               {loadingSuppliers ? (
-                <div className="glass-input w-full text-white/50">Cargando...</div>
+                <div className="glass-input w-full text-slate-400">Loading...</div>
               ) : (
                 <select
                   className="glass-input w-full"
                   value={form.supplierId}
                   onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
                 >
-                  <option value="">Choose</option>
+                  <option value="">Select supplier</option>
                   {suppliers.map(s => (
                     <option key={s.id} value={s.id}>{s.nombre}</option>
                   ))}
                 </select>
               )}
-              {errors.supplierId && <p className="text-red-300 text-xs mt-1">{errors.supplierId}</p>}
+              {errors.supplierId && <p className="text-red-500 text-xs mt-1">{errors.supplierId}</p>}
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Date *</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Date *</label>
               <input
                 type="date"
                 className="glass-input w-full"
                 value={form.fecha}
                 onChange={(e) => setForm({ ...form, fecha: e.target.value })}
               />
-              {errors.fecha && <p className="text-red-300 text-xs mt-1">{errors.fecha}</p>}
+              {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha}</p>}
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Folio *</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Folio *</label>
               <input
                 type="text"
                 className="glass-input w-full"
                 value={form.folio}
                 onChange={(e) => setForm({ ...form, folio: e.target.value })}
               />
-              {errors.folio && <p className="text-red-300 text-xs mt-1">{errors.folio}</p>}
+              {errors.folio && <p className="text-red-500 text-xs mt-1">{errors.folio}</p>}
             </div>
           </div>
 
           {/* Comentarios */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Comments</label>
+            <label className="block text-sm font-semibold text-slate-800 mb-1">Comments</label>
             <textarea
               className="glass-input w-full"
               rows={2}
@@ -231,59 +244,89 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
 
           {/* Productos */}
           <div>
-            <label className="block text-white/80 text-sm mb-1">Products *</label>
-            <div className="space-y-2 max-h-60 overflow-y-auto p-1">
-              {form.items.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center bg-white/5 p-2 rounded-xl">
-                  <select
-                    className="glass-input w-full"
-                    value={item.productId}
-                    onChange={(e) => updateItem(idx, 'productId', e.target.value)}
-                  >
-                    <option value="">Product</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} {p.sku ? `(${p.sku})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    placeholder="Amount"
-                    className="glass-input w-full"
-                    value={item.cantidad}
-                    onChange={(e) => updateItem(idx, 'cantidad', parseInt(e.target.value, 10) || 1)}
-                  />
-                  <div className="glass-input w-full bg-white/5 text-black/80 text-center py-2">
-                  ${item.costoUnitario.toFixed(2)}
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-white text-sm font-mono">Subtotal: ${(item.subtotal || 0).toFixed(2)}</span>
-                    <button type="button" onClick={() => removeItem(idx)} className="text-red-400">🗑️</button>
-                  </div>
-                </div>
-              ))}
+            <label className="block text-sm font-semibold text-slate-800 mb-2">Products *</label>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm border-collapse">
+                <thead className="bg-white/30">
+                  <tr className="text-left text-xs font-semibold text-slate-600">
+                    <th className="px-2 py-2">Product</th>
+                    <th className="px-2 py-2 text-center w-24">Quantity</th>
+                    <th className="px-2 py-2 text-right w-28">Unit Cost</th>
+                    <th className="px-2 py-2 text-right w-28">Subtotal</th>
+                    <th className="px-2 py-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.items.map((item, idx) => (
+                    <tr key={idx} className="border-t border-white/20">
+                      <td className="px-2 py-2">
+                        <select
+                          className="glass-input w-full"
+                          value={item.productId}
+                          onChange={(e) => updateItem(idx, 'productId', e.target.value)}
+                        >
+                          <option value="">Select product</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre} {p.sku ? `(${p.sku})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {errors[`product_${idx}`] && <p className="text-red-500 text-xs">{errors[`product_${idx}`]}</p>}
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          placeholder="Qty"
+                          className="glass-input w-full text-center"
+                          value={item.cantidad}
+                          onChange={(e) => updateItem(idx, 'cantidad', parseFloat(e.target.value) || 0)}
+                        />
+                        {errors[`cantidad_${idx}`] && <p className="text-red-500 text-xs">{errors[`cantidad_${idx}`]}</p>}
+                      </td>
+                      <td className="px-2 py-2">
+                        <div className="glass-input w-full bg-white/5 text-right py-2 px-3">
+                          ${item.costoUnitario}
+                        </div>
+                        {errors[`costo_${idx}`] && <p className="text-red-500 text-xs">{errors[`costo_${idx}`]}</p>}
+                      </td>
+                      <td className="px-2 py-2 text-right font-mono">
+                        ${(item.subtotal || 0).toFixed(2)}
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600">
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <button type="button" onClick={addItem} className="text-blue-300 text-sm mt-2">+ Add a product</button>
-            {errors.items && <p className="text-red-300 text-xs mt-1">{errors.items}</p>}
+            <button type="button" onClick={addItem} className="text-blue-500 text-sm mt-2 flex items-center gap-1">
+              + Add product
+            </button>
+            {errors.items && <p className="text-red-500 text-xs mt-1">{errors.items}</p>}
           </div>
 
-          {/* Total general */}
           {form.items.length > 0 && (
-            <div className="text-right text-white font-bold text-lg border-t border-white/20 pt-2">
-              Total: ${form.items.reduce((sum, i) => sum + (i.subtotal || 0), 0).toFixed(2)}
+            <div className="text-right text-lg font-bold text-slate-800 border-t border-white/30 pt-3">
+              Total: ${totalGeneral.toFixed(2)}
             </div>
           )}
 
-          {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-2 sticky bottom-0 bg-inherit pb-2">
-            <button type="button" onClick={onClose} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className={buttonBase}>
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
-              {loading ? 'Guardando...' : recepcion ? 'Update' : 'Create'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-60"
+            >
+              {loading ? 'Saving...' : recepcion ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
