@@ -307,7 +307,8 @@ export default function ProductsPage() {
                     type={toast.type}
                     duration={1000}
                     portal={false}
-                    overlayClassName="app-alert-overlay--module"
+                    overlayClassName="app-modal-overlay app-modal-overlay--padded"
+                    shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
                     onClose={() => setToast(null)}
                 />
             )}
@@ -317,7 +318,8 @@ export default function ProductsPage() {
                     type={statusToast.type}
                     duration={1000}
                     portal={false}
-                    overlayClassName="app-alert-overlay--module"
+                    overlayClassName="app-modal-overlay app-modal-overlay--padded app-alert-overlay--module"
+                    shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
                     onClose={() => setStatusToast(null)}
                 />
             )}
