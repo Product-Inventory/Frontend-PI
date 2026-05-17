@@ -132,7 +132,7 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
   };
 
   return (
-    <aside className={`sidebar-shell fixed left-0 top-0 z-[60] flex h-screen w-[274px] flex-col px-3 py-3 text-white transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`sidebar-shell fixed left-0 top-0 z-[60] flex h-screen w-[var(--sidebar-width)] flex-col px-3 py-3 text-white transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="sidebar-brand flex flex-shrink-0 items-center gap-3 px-4 py-4">
         <button
           type="button"

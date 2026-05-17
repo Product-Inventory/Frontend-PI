@@ -98,6 +98,7 @@ export default function ProductsPage() {
     const [formErrors, setFormErrors] = useState<ProductFormErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [statusToast, setStatusToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const [validationToast, setValidationToast] = useState<string | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -269,14 +270,14 @@ export default function ProductsPage() {
     const handleToggleActive = async (product: Product) => {
         try {
             await productsService.toggleActive(product.id, !product.activo);
-            setToast({
+            setStatusToast({
                 message: product.activo ? "Product deactivated successfully" : "Product activated successfully",
                 type: "success",
             });
             await fetchProducts();
         } catch (error: any) {
             console.error(error);
-            setToast({ message: error?.response?.data?.message || "Error changing product status", type: "error" });
+            setStatusToast({ message: error?.response?.data?.message || "Error changing product status", type: "error" });
         }
     };
 
@@ -310,8 +311,17 @@ export default function ProductsPage() {
                     onClose={() => setToast(null)}
                 />
             )}
-            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
-
+            {statusToast && (
+                <Toast
+                    message={statusToast.message}
+                    type={statusToast.type}
+                    duration={1000}
+                    portal={false}
+                    overlayClassName="app-alert-overlay--module"
+                    onClose={() => setStatusToast(null)}
+                />
+            )}
+            <div className="mx-auto relative flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 
                     {/* Left: icon and title */}
@@ -374,7 +384,7 @@ export default function ProductsPage() {
                 {isLoading ? (
                     <Loading label="Loading products..." />
                 ) : (
-                    <div className="glass-card overflow-hidden rounded-[40px]">
+                    <div className="glass-card overflow-hidden rounded-[40px] relative">
                         <div className="hidden overflow-x-auto md:block">
                             <table className="min-w-full text-sm">
                                 <thead className="bg-white/25">
