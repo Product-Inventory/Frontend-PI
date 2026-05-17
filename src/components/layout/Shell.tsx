@@ -11,7 +11,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <div
       className="app-atmosphere min-h-screen w-full flex flex-col overflow-hidden"
       style={{
-        ["--sidebar-width" as string]: "clamp(16rem, 18vw, 17.5rem)",
+        ["--sidebar-width" as string]: "272px",
       }}
     >
       <div className="flex min-h-screen flex-1 items-stretch overflow-visible relative">
