@@ -231,6 +231,8 @@ export default function RolesPage() {
                     type={toast.type}
                     duration={3000}
                     onClose={() => setToast(null)}
+                    portal={false}
+                    overlayClassName="app-alert-overlay--module"
                 />
             )}
 
@@ -415,9 +417,9 @@ export default function RolesPage() {
                 )}
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto rounded-[40px] bg-slate-950/35 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-6">
-                    <div className="app-modal-shell app-modal-shell--xl glass-card relative w-full max-w-5xl overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
-                        <div className="max-h-[calc(100vh-2rem)] overflow-y-auto p-6 md:p-8">
+                <div className="fixed inset-0 z-50 flex rounded-[40px] bg-slate-950/35 p-4 backdrop-blur-sm sm:p-6">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
+                        <div className="h-full overflow-y-auto p-6 md:p-8">
                             {modalToast && (
                                 <Toast
                                     message={modalToast.message}
