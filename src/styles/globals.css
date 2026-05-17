@@ -200,6 +200,11 @@ body {
 }
 .app-shell button:disabled::after { opacity: 0.35; }
 
+.app-shell .mx-auto.max-w-7xl {
+  width: 100%;
+  max-width: none;
+}
+
 
 .app-shell .signin-btn {
   border: 1px solid rgba(205, 186, 247, 0.52) !important;
@@ -280,8 +285,9 @@ body {
 .app-alert-overlay--module {
   border-radius: 40px;
   background: rgba(0, 0, 0, 0.12);
-  position: absolute;
+  position: fixed;
   inset: 0;
+  margin: 0 !important;
 }
 
 /* Este estilo es para alert de éxito del login. */
