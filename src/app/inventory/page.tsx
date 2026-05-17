@@ -296,7 +296,7 @@ export default function InventoryPage() {
         setAdjustErrors(nextErrors);
 
         if (Object.keys(nextErrors).length > 0) {
-            setToast({ message: "Review the highlighted fields before saving", type: "error" });
+            setToast({ message: "Review the fields", type: "error" });
             return;
         }
 
@@ -339,7 +339,7 @@ export default function InventoryPage() {
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10">
+        <div className="relative flex flex-col h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-10">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6">
 
                 {/* Toast: notificaciones de éxito y error de operaciones asíncronas */}
@@ -347,8 +347,10 @@ export default function InventoryPage() {
                     <Toast
                         message={toast.message}
                         type={toast.type}
-                        duration={3000}
+                        duration={1450}
                         onClose={() => setToast(null)}
+                        portal={false}
+                        overlayClassName="absolute inset-0"
                     />
                 )}
 
@@ -868,7 +870,7 @@ export default function InventoryPage() {
 
             {/* ── Modal de ajuste de inventario ── */}
             {adjustOpen && (
-                <div className="app-modal-overlay app-modal-overlay--bottom px-4 py-4 rounded-[40px]">
+                <div className="app-modal-overlay app-modal-overlay px-4 py-4 rounded-[40px]">
                     <div className="app-modal-shell app-modal-shell--lg glass-card rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
 
                         {/* Encabezado del modal */}
