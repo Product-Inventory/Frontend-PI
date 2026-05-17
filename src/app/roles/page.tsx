@@ -229,7 +229,7 @@ export default function RolesPage() {
                 <Toast
                     message={toast.message}
                     type={toast.type}
-                    duration={3000}
+                    duration={1000}
                     onClose={() => setToast(null)}
                     portal={false}
                     overlayClassName="app-alert-overlay--module"
@@ -424,7 +424,7 @@ export default function RolesPage() {
                                 <Toast
                                     message={modalToast.message}
                                     type={modalToast.type}
-                                    duration={3000}
+                                    duration={1000}
                                     onClose={() => {
                                         setModalToast(null);
                                         if (modalToast.type === "success") {
