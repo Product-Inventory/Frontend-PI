@@ -16,21 +16,21 @@ export default function Navbar({
   modules = ["all"],
 }: NavbarProps) {
   return (
-    <nav className="h-16 bg-transparent flex flex-col lg:flex-row items-center lg:items-center px-4 sm:px-10 z-30 relative">
+    <nav className="bg-transparent px-0 sm:px-2 lg:px-4 z-30 relative w-full">
       {/* Filtros y búsqueda */}
-      <div className="flex gap-4 items-center w-full justify-center lg:justify-start">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 lg:justify-start">
         <input
           type="text"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-72 px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-400 outline-none"
+          className="w-full min-w-0 px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-400 outline-none sm:w-72"
         />
 
         <select
           value={moduleFilter}
           onChange={(e) => setModuleFilter(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm"
+          className="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white shadow-sm sm:w-auto"
         >
           {(modules || []).map((m) => (
             <option key={m} value={m}>

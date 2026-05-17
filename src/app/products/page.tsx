@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
 import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
 import type { Product, ProductFormValues } from "@/types/product";
 import { ChevronLeft, ChevronRight, Box, Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -26,7 +27,7 @@ type ProductFormState = {
 
 type ProductFormErrors = Partial<Record<keyof ProductFormState, string>>;
 
-const itemsPerPage = 3;
+const itemsPerPage = 9;
 
 const emptyForm: ProductFormState = {
     sku: "",
@@ -100,37 +101,43 @@ export default function ProductsPage() {
     const [validationToast, setValidationToast] = useState<string | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const requestSeqRef = useRef(0);
+
+    // search and statusFilter already control list queries via buildQuery
 
     const showPagination = totalItems > itemsPerPage;
 
-    const buildQuery = () => {
+    const fetchProducts = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
+        const requestSeq = ++requestSeqRef.current;
+        const q = opts?.search !== undefined ? opts.search : search;
+        const status = opts?.status !== undefined ? opts.status : statusFilter;
+        const page = opts?.page !== undefined ? opts.page : currentPage;
+
         const query: Record<string, string | number | boolean> = {
-            page: currentPage,
+            page,
             limit: itemsPerPage,
         };
 
-        const trimmedSearch = search.trim();
-
+        const trimmedSearch = String(q || "").trim();
         if (trimmedSearch) query.q = trimmedSearch;
-        if (statusFilter === "active") query.activo = true;
-        if (statusFilter === "inactive") query.activo = false;
+        if (status === "active") query.activo = true;
+        if (status === "inactive") query.activo = false;
 
-        return query;
-    };
-
-    const fetchProducts = async () => {
         try {
             setIsLoading(true);
-            const data = await productsService.getAll(buildQuery());
+            const data = await productsService.getAll(query);
+            if (requestSeq !== requestSeqRef.current) return;
             const items = data.items || [];
 
             setProducts(items);
             setTotalItems(data.total || 0);
             setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || itemsPerPage))));
         } catch (error: any) {
+            if (requestSeq !== requestSeqRef.current) return;
             console.error("Error loading products:", error);
             setToast({ message: error?.response?.data?.message || "Error loading products", type: "error" });
         } finally {
+            if (requestSeq !== requestSeqRef.current) return;
             setIsLoading(false);
         }
     };
@@ -306,31 +313,64 @@ export default function ProductsPage() {
             <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
 
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+
+                    {/* Left: icon and title */}
                     <div className="flex items-center gap-4">
                         <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
                             <Box className="h-6 w-6 text-black" />
                         </div>
-
                         <div>
                             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
                                 Products
                             </h1>
-                            <p className="mt-1 text-sm text-slate-600">
-                                Catalog ready for inventory and receptions.
-                            </p>
+                            <p className="mt-1 text-sm text-slate-600">Catalog ready for inventory and receptions.</p>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-                        <div className="flex items-center justify-end gap-3">
-                            <button onClick={openCreate} className={buttonBase}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Create
-                            </button>
+                    {/* Right: Navbar + actions */}
+                    <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
+                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                            <div className="flex-1">
+                                <Navbar
+                                    search={search}
+                                    setSearch={(v: string) => {
+                                        setSearch(v);
+                                        setCurrentPage(1);
+                                        void fetchProducts({ search: v, status: statusFilter, page: 1 });
+                                    }}
+                                    moduleFilter={statusFilter}
+                                    setModuleFilter={(v: string) => {
+                                        const newStatus = v as StatusFilter;
+                                        setStatusFilter(newStatus);
+                                        setCurrentPage(1);
+                                        void fetchProducts({ search, status: newStatus, page: 1 });
+                                    }}
+                                    modules={["all", "active", "inactive"]}
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        setSearch("");
+                                        setStatusFilter("all");
+                                        setCurrentPage(1);
+                                        void fetchProducts({ search: "", status: "all", page: 1 });
+                                    }}
+                                    className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
+                                >
+                                    Clear filter
+                                </button>
+
+                                <button onClick={openCreate} className={`${buttonBase} w-full sm:w-auto`}>
+                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                                    Create
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
+                
                 {isLoading ? (
                     <Loading label="Loading products..." />
                 ) : (
