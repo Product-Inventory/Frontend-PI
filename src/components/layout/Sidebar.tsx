@@ -24,6 +24,7 @@ const navItems = [
   { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon },
   { label: "Products", href: "/products", icon: ProductsIcon },
   { label: "Inventory", href: "/inventory", icon: InventoryIcon },
+  { label: "Orders", href: "/orders", icon: OrdersIcon },
   { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon },
   { label: "Users", href: "/users", icon: UsersIcon },
   { label: "Roles", href: "/roles", icon: RolesIcon },
@@ -74,6 +75,14 @@ function ProductsIcon({ active, className }: SidebarIconProps) {
 }
 
 function InventoryIcon({ active, className }: SidebarIconProps) {
+  return (
+    <SidebarIconShell active={active} className={className}>
+      <Package size={20} />
+    </SidebarIconShell>
+  );
+}
+
+function OrdersIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
       <Package size={20} />

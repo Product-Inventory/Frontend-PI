@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
 import { Toast } from "@/components/ui/Toast";
 import { clientsService } from "@/services/clients.service";
 import type { Client } from "@/types/client";
 import { AlertTriangle, ChevronLeft, ChevronRight, User, Plus, Power } from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -71,7 +72,9 @@ export default function ClientsPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-
+  const [statusToast, setStatusToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  
+  const requestSeqRef = useRef(0);
   const showPagination = totalItems > itemsPerPage;
 
   const buildQuery = () => {
@@ -86,60 +89,47 @@ export default function ClientsPage() {
     return query;
   };
 
-  const fetchClients = async (
-    currentSearch = search,
-    currentStatus = statusFilter,
-    page = currentPage
-  ) => {
+  const fetchClients = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
+    const requestSeq = ++requestSeqRef.current;
+    const q = opts?.search !== undefined ? opts.search : search;
+    const status = opts?.status !== undefined ? opts.status : statusFilter;
+    const page = opts?.page !== undefined ? opts.page : currentPage;
+
+    const query: Record<string, string | number | boolean> = {
+      page,
+      limit: itemsPerPage,
+    };
+
+    const trimmedSearch = String(q || "").trim();
+    if (trimmedSearch) query.q = trimmedSearch;
+    if (status === "active") query.activo = true;
+    if (status === "inactive") query.activo = false;
+
     try {
-      const params: any = {
-        page,
-        limit: itemsPerPage,
-      };
-
-      if (currentSearch.trim()) {
-        params.q = currentSearch.trim();
-      }
-
-      if (currentStatus === "active") {
-        params.activo = true;
-      }
-
-      if (currentStatus === "inactive") {
-        params.activo = false;
-      }
-
       setIsLoading(true);
-
-      const data = await clientsService.getAll(params);
-
+      const data = await clientsService.getAll(query);
+      if (requestSeq !== requestSeqRef.current) return;
       const items = data.items || [];
-
       setClients(items);
       setTotalItems(data.total || 0);
-
-      setTotalPages(
-        Math.max(
-          1,
-          Math.ceil((data.total || 0) / (data.limit || itemsPerPage))
-        )
-      );
+      setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || itemsPerPage))));
     } catch (error: any) {
+      if (requestSeq !== requestSeqRef.current) return;
       setToast({
         message:
           error?.response?.data?.message || "Error loading clients",
         type: "error",
       });
     } finally {
+      if (requestSeq !== requestSeqRef.current) return;
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void fetchClients(search, statusFilter, currentPage);
+      void fetchClients();
     }, 250);
-
     return () => window.clearTimeout(timer);
   }, [search, statusFilter, currentPage]);
   useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
@@ -216,13 +206,18 @@ export default function ClientsPage() {
   const handleToggleActive = async (client: Client) => {
     try {
       await clientsService.toggleActive(client.id, !client.activo);
-      setToast({
-        message: client.activo ? "Client deactivated successfully" : "Client activated successfully",
+      setStatusToast({
+        message: client.activo
+          ? "Client deactivated successfully"
+          : "Client activated successfully",
         type: "success",
       });
       await fetchClients();
     } catch (error: any) {
-      setToast({ message: error?.response?.data?.message || "Error changing client status", type: "error" });
+      setStatusToast({
+        message: error?.response?.data?.message || "Error changing client status",
+        type: "error",
+      });
     }
   };
 
@@ -239,8 +234,8 @@ export default function ClientsPage() {
     }
   };
 
-  const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
-  const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 !text-[#9a7ef0] shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+  const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+  const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
   return (
     <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
@@ -248,7 +243,17 @@ export default function ClientsPage() {
         {toast && (
           <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} />
         )}
-
+        {statusToast && (
+          <Toast
+            message={statusToast.message}
+            type={statusToast.type}
+            duration={1000}
+            portal={false}
+            overlayClassName="app-modal-overlay app-modal-overlay--padded app-alert-overlay--module"
+            shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
+            onClose={() => setStatusToast(null)}
+          />
+        )}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
@@ -261,16 +266,45 @@ export default function ClientsPage() {
               <p className="mt-1 text-sm text-slate-600">Client directory.</p>
             </div>
           </div>
-          <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Total: {totalItems}
-              </span>
-              <button onClick={openCreate} className={buttonBase}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create
-              </button>
+          <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              <div className="flex-1">
+                <Navbar
+                  search={search}
+                  setSearch={(v: string) => {
+                    setSearch(v);
+                    setCurrentPage(1);
+                    void fetchClients({ search: v, status: statusFilter, page: 1 });
+                  }}
+                  moduleFilter={statusFilter}
+                  setModuleFilter={(v: string) => {
+                    const newStatus = v as StatusFilter;
+                    setStatusFilter(newStatus);
+                    setCurrentPage(1);
+                    void fetchClients({ search, status: newStatus, page: 1 });
+                  }}
+                  modules={["all", "active", "inactive"]}
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("all");
+                    setCurrentPage(1);
+                    void fetchClients({ search: "", status: "all", page: 1 });
+                  }}
+                  className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
+                >
+                  Clear filter
+                </button>
+
+                <button onClick={openCreate} className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}>
+                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Create
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -368,15 +402,26 @@ export default function ClientsPage() {
                       <MobileMeta label="Contact" value={client.contacto || "-"} />
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <button onClick={() => openEdit(client)} className={iconButtonBase}>
+                      <button 
+                        onClick={() => openEdit(client)} 
+                        className={iconButtonBase}
+                        title="Edit"
+                        aria-label="Edit client">
                         ✏️
                       </button>
-                      <button onClick={() => void handleToggleActive(client)} className={iconButtonBase}>
-                        <Power className="h-4 w-4" />
+                      <button 
+                        onClick={() => void handleToggleActive(client)} 
+                        className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                        title={client.activo ? "Deactivate" : "Activate"}
+                        aria-label={client.activo ? "Deactivate client" : "Activate client"}>
+                        <Power className="mr-1 h-3.5 w-3.5" />
+                        {client.activo ? "Off" : "On"}
                       </button>
                       <button
                         onClick={() => { setClientToDelete(client); setConfirmOpen(true); }}
                         className={iconButtonBase}
+                        title="Delete"
+                        aria-label="Delete client"
                       >🗑️</button>
                     </div>
                   </article>
@@ -397,14 +442,14 @@ export default function ClientsPage() {
                   onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                   disabled={!showPagination || currentPage === 1}
                   className={
-                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] 
-                    ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`
+                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button
+                    ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""} color="var(--product-violet-black)"`
                   }>Previous</button>
                 <button
                   onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                   disabled={!showPagination || currentPage === totalPages}
                   className={
-                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm !text-[#9a7ef0] 
+                    `px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button
                     ${currentPage === totalPages ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`
                   }>Next</button>
               </div>
