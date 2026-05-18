@@ -88,22 +88,22 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-  const { name, value, type } = e.target;
-  if (name === 'roleId') {
-    const selectedRole = roles.find(r => r.id === value);
-    setFormData(prev => ({
-      ...prev,
-      roleId: value,
-      role: selectedRole?.nombre || '',
-    }));
-  } else if (type === 'checkbox') {
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({ ...prev, [name]: checked }));
-  } else {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  }
-  if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-};
+    const { name, value, type } = e.target;
+    if (name === 'roleId') {
+      const selectedRole = roles.find(r => r.id === value);
+      setFormData(prev => ({
+        ...prev,
+        roleId: value,
+        role: selectedRole?.nombre || '',
+      }));
+    } else if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +120,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error(err);
+      alert(err.response?.data?.message || 'Error saving user');
     } finally {
       setLoading(false);
     }
@@ -128,63 +128,121 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
 
   if (!isOpen) return null;
 
+  const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+
   return (
     <div className="app-modal-overlay app-modal-overlay--padded">
-      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
-        <h2 className="text-xl font-bold text-white mb-4">
-          {user ? 'Edit User' : 'New User'}
-        </h2>
+      <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+        <div className="mb-5">
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            {user ? 'Edit User' : 'New User'}
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            {user ? 'Modify user details.' : 'Register a new system user.'}
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-white/80 text-sm mb-1">First name *</label>
-            <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} />
-            {errors.nombre && <p className="text-red-300 text-xs mt-1">{errors.nombre}</p>}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">First name *</label>
+              <input
+                type="text"
+                name="nombre"
+                className="glass-input w-full"
+                value={formData.nombre}
+                onChange={handleChange}
+              />
+              {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Last name *</label>
+              <input
+                type="text"
+                name="apellido"
+                className="glass-input w-full"
+                value={formData.apellido}
+                onChange={handleChange}
+              />
+              {errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Email *</label>
+              <input
+                type="email"
+                name="email"
+                className="glass-input w-full"
+                value={formData.email}
+                onChange={handleChange}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Username *</label>
+              <input
+                type="text"
+                name="usuario"
+                className="glass-input w-full"
+                value={formData.usuario}
+                onChange={handleChange}
+              />
+              {errors.usuario && <p className="text-red-500 text-xs mt-1">{errors.usuario}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">
+                {user ? 'Password (leave blank to keep)' : 'Password *'}
+              </label>
+              <input
+                type="password"
+                name="password"
+                className="glass-input w-full"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Role *</label>
+              {rolesLoading ? (
+                <div className="glass-input w-full text-slate-400">Loading roles...</div>
+              ) : (
+                <select
+                  name="roleId"
+                  className="glass-input w-full"
+                  value={formData.roleId}
+                  onChange={handleChange}
+                >
+                  <option value="">Select a role</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.id}>{role.nombre}</option>
+                  ))}
+                </select>
+              )}
+              {errors.roleId && <p className="text-red-500 text-xs mt-1">{errors.roleId}</p>}
+            </div>
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <input
+                  type="checkbox"
+                  name="activo"
+                  checked={formData.activo}
+                  onChange={handleChange}
+                  className="rounded border-white/60 text-indigo-600 focus:ring-indigo-500"
+                />
+                Active user
+              </label>
+            </div>
           </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Last name *</label>
-            <input type="text" name="apellido" className="glass-input w-full" value={formData.apellido} onChange={handleChange} />
-            {errors.apellido && <p className="text-red-300 text-xs mt-1">{errors.apellido}</p>}
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Email *</label>
-            <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange} />
-            {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email}</p>}
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Username *</label>
-            <input type="text" name="usuario" className="glass-input w-full" value={formData.usuario} onChange={handleChange} />
-            {errors.usuario && <p className="text-red-300 text-xs mt-1">{errors.usuario}</p>}
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">
-              {user ? 'Password (leave blank to keep)' : 'Password *'}
-            </label>
-            <input type="password" name="password" className="glass-input w-full" value={formData.password} onChange={handleChange} />
-            {errors.password && <p className="text-red-300 text-xs mt-1">{errors.password}</p>}
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-1">Role *</label>
-            {rolesLoading ? (
-              <div className="glass-input w-full text-white/50">Loading roles...</div>
-            ) : (
-              <select name="roleId" className="glass-input w-full" value={formData.roleId} onChange={handleChange}>
-                <option value="">Select a role</option>
-                {roles.map(role => (
-                  <option key={role.id} value={role.id}>{role.nombre}</option>
-                ))}
-              </select>
-            )}
-            {errors.roleId && <p className="text-red-300 text-xs mt-1">{errors.roleId}</p>}
-          </div>
-          <label className="flex items-center gap-2 text-white/80">
-            <input type="checkbox" name="activo" checked={formData.activo} onChange={handleChange} />
-            Active
-          </label>
-          <div className="flex justify-end space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition">
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className={buttonBase}>
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-60"
+            >
               {loading ? 'Saving...' : user ? 'Update' : 'Create'}
             </button>
           </div>

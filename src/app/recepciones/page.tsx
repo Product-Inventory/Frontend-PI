@@ -3,65 +3,37 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { receptionsService } from "@/services/receptions.service";
-import type { Reception, ReceptionFormValues } from "@/types/reception";
-import type { ReceptionStatus } from "@/types/reception";
+import { Reception } from "@/types/reception";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-
+import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { ClipboardList, Plus, CheckCircle, XCircle, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import { ClipboardList, Plus, Eye, Pencil, CheckCircle, Trash2 } from "lucide-react";
 
-type StatusFilter = "all" | ReceptionStatus;
-
-const itemsPerPage = 10;
-const CONFIRMED_STATUS: ReceptionStatus = "CONFIRMED" as const;
-const DRAFT_STATUS: ReceptionStatus = "DRAFT" as const;
-
-const emptyForm: ReceptionFormValues = {
-  supplierId: "",
-  fecha: "",
-  folio: "",
-  comentarios: "",
-  items: []
-};
+const itemsPerPage = 5;
 
 export default function ReceptionsPage() {
   const [receptions, setReceptions] = useState<Reception[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "DRAFT" | "CONFIRMED">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingReception, setEditingReception] = useState<Reception | null>(null);
-  const [form, setForm] = useState<ReceptionFormValues>(emptyForm);
-  const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [receptionToDelete, setReceptionToDelete] = useState<Reception | null>(null);
-
-  const showPagination = totalItems > itemsPerPage;
-
-  const buildQuery = () => {
-    const query: Record<string, string | number> = {
-      page: currentPage,
-      limit: itemsPerPage,
-    };
-    const trimmedSearch = search.trim();
-    if (trimmedSearch) query.q = trimmedSearch;
-    if (statusFilter === "DRAFT" || statusFilter === "CONFIRMED") query.status = statusFilter;
-    return query;
-  };
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const fetchReceptions = async () => {
     try {
       setIsLoading(true);
-      const data = await receptionsService.getAll(buildQuery());
-      const items = data.items || [];
-      setReceptions(items);
-      setTotalItems(data.total || 0);
-      setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || itemsPerPage))));
+      const data = await receptionsService.getAll();
+      setReceptions(data.items || []);
+      setTotalItems(data.items?.length || 0);
+      setTotalPages(Math.ceil((data.items?.length || 0) / itemsPerPage));
     } catch (error: any) {
       setToast({ message: error?.response?.data?.message || "Error loading receptions", type: "error" });
     } finally {
@@ -70,110 +42,75 @@ export default function ReceptionsPage() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchReceptions();
-    }, 250);
+    fetchReceptions();
+  }, []);
 
-    return () => window.clearTimeout(timer);
-  }, [search, statusFilter, currentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter]);
-
-  useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
-
-  const validateForm = () => {
-    if (!form.supplierId) return "Supplier is required";
-    if (!form.fecha) return "Date is required";
-    if (!form.folio) return "Folio is required";
-    if (!form.items || !form.items.length) return "At least one item is required";
-    return "";
-  };
-
-  const openCreate = () => {
+  const handleCreate = () => {
     setEditingReception(null);
-    setForm(emptyForm);
-    setIsModalOpen(true);
+    setModalOpen(true);
   };
 
-  const openEdit = (rec: Reception) => {
-    setEditingReception(rec);
-    setForm({
-      supplierId: rec.supplierId,
-      fecha: rec.fecha,
-      folio: rec.folio,
-      comentarios: rec.comentarios,
-      items: rec.items.map((item) => ({
-        productId: item.productId,
-        cantidad: item.cantidad,
-        costoUnitario: item.costoUnitario,
-      })),
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    const error = validateForm();
-    if (error) {
-      setToast({ message: error, type: "error" });
+  const handleEdit = (rec: Reception) => {
+    if (rec.status === "CONFIRMED") {
+      setToast({ message: "Cannot edit a confirmed reception", type: "error" });
       return;
     }
-    try {
-      setIsSaving(true);
-      if (editingReception) {
-        await receptionsService.update(editingReception.id, form);
-        setToast({ message: "Reception updated successfully", type: "success" });
-      } else {
-        await receptionsService.create(form);
-        setToast({ message: "Reception created successfully", type: "success" });
-      }
-      setIsModalOpen(false);
-      setEditingReception(null);
-      setForm(emptyForm);
-      await fetchReceptions();
-    } catch (error: any) {
-      setToast({ message: error?.response?.data?.message || "Error saving reception", type: "error" });
-    } finally {
-      setIsSaving(false);
-    }
+    setEditingReception(rec);
+    setModalOpen(true);
   };
 
-  const handleConfirm = async (rec: Reception) => {
+  const handleConfirm = async (id: string) => {
+    if (!confirm("Confirm this reception? Stock will be updated.")) return;
+    setConfirmingId(id);
     try {
-      setIsSaving(true);
-      await receptionsService.confirm(rec.id);
+      await receptionsService.confirm(id);
       setToast({ message: "Reception confirmed successfully", type: "success" });
-      await fetchReceptions();
+      fetchReceptions();
     } catch (error: any) {
       setToast({ message: error?.response?.data?.message || "Error confirming reception", type: "error" });
     } finally {
-      setIsSaving(false);
+      setConfirmingId(null);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = (rec: Reception) => {
+    if (rec.status === "CONFIRMED") {
+      setToast({ message: "Cannot delete a confirmed reception", type: "error" });
+      return;
+    }
+    setReceptionToDelete(rec);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
     if (!receptionToDelete) return;
     try {
       await receptionsService.delete(receptionToDelete.id);
       setToast({ message: "Reception deleted successfully", type: "success" });
+      fetchReceptions();
       setConfirmOpen(false);
       setReceptionToDelete(null);
-      await fetchReceptions();
     } catch (error: any) {
       setToast({ message: error?.response?.data?.message || "Error deleting reception", type: "error" });
     }
   };
+
+  // Filtro local
+  const filteredReceptions = receptions.filter((rec) => {
+    const term = search.toLowerCase();
+    const matchesSearch =
+      rec.folio.toLowerCase().includes(term) ||
+      rec.supplierNombre.toLowerCase().includes(term);
+    const matchesStatus = statusFilter === "all" || rec.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalFilteredPages = Math.ceil(filteredReceptions.length / itemsPerPage);
+  const paginatedReceptions = filteredReceptions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  const showPagination = filteredReceptions.length > itemsPerPage;
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
@@ -191,6 +128,7 @@ export default function ReceptionsPage() {
           />
         )}
 
+        {/* HEADER – idéntico al de inventory */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
@@ -201,16 +139,16 @@ export default function ReceptionsPage() {
                 Receptions
               </h1>
               <p className="mt-1 text-sm text-slate-600">
-                Inventory receipts registry.
+                Inventory receipt registry.
               </p>
             </div>
           </div>
           <div className="flex flex-col gap-3 lg:min-w-[31rem]">
             <div className="flex items-center justify-between gap-3">
               <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                Total: {totalItems}
+                Total: {receptions.length}
               </span>
-              <button onClick={openCreate} className={buttonBase}>
+              <button onClick={handleCreate} className={buttonBase}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create
               </button>
@@ -218,10 +156,42 @@ export default function ReceptionsPage() {
           </div>
         </div>
 
+        {/* BARRA DE FILTROS – copia exacta del estilo de inventory (misma estructura, sin estilos extra en el botón) */}
+       {/* BARRA DE FILTROS – estilo 1:1 con Inventory, limitando el ancho del input */}
+          {/* BARRA DE FILTROS – grid 50/50 con barra de búsqueda limitada */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+  {/* Mitad izquierda: input + botón con ancho máximo */}
+  <div className="flex items-center gap-2 sm:max-w-md">
+    <input
+      type="text"
+      placeholder="Search by folio or supplier..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="glass-input flex-1 min-w-0"
+    />
+    <button onClick={() => setSearch("")} className="whitespace-nowrap">
+      Clear filter
+    </button>
+  </div>
+  {/* Mitad derecha: select (sin cambios) */}
+  <div className="flex justify-end">
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value as "all" | "DRAFT" | "CONFIRMED")}
+      className="glass-input w-full sm:w-auto"
+    >
+      <option value="all">All statuses</option>
+      <option value="DRAFT">Draft</option>
+      <option value="CONFIRMED">Confirmed</option>
+    </select>
+  </div>
+</div>
+
         {isLoading ? (
           <Loading label="Loading receptions..." />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
+            {/* TABLA – escritorio */}
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-sm">
                 <thead className="bg-white/25">
@@ -229,59 +199,40 @@ export default function ReceptionsPage() {
                     <th className="px-5 py-4">Folio</th>
                     <th className="px-5 py-4">Date</th>
                     <th className="px-5 py-4">Supplier</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4">Items</th>
-                    <th className="px-5 py-4">Total</th>
-                    <th className="px-5 py-4 text-center">Actions</th>
+                    <th className="px-5 py-4 text-center">Status</th>
+                    <th className="px-5 py-4 text-center">Items</th>
+                    <th className="px-5 py-4 text-right">Total</th>
+                    <th className="px-5 py-4 text-center w-40">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {receptions.length > 0 ? (
-                    receptions.map((rec) => (
+                  {paginatedReceptions.length > 0 ? (
+                    paginatedReceptions.map((rec) => (
                       <tr key={rec.id} className="border-t border-white/18 transition hover:bg-white/10">
-                        <td className="px-5 py-5 font-extrabold text-slate-800">{rec.folio}</td>
-                        <td className="px-5 py-5 text-slate-700">{rec.fecha}</td>
+                        <td className="px-5 py-5 font-semibold text-slate-800">{rec.folio}</td>
+                        <td className="px-5 py-5 text-slate-700">{new Date(rec.fecha).toLocaleDateString()}</td>
                         <td className="px-5 py-5 text-slate-700">{rec.supplierNombre}</td>
-                        <td className="px-5 py-5">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${rec.status === CONFIRMED_STATUS ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"}`}>
-                            {rec.status === CONFIRMED_STATUS ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                            {rec.status}
+                        <td className="px-5 py-5 text-center">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${rec.status === "CONFIRMED" ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"}`}>
+                            {rec.status === "CONFIRMED" ? "Confirmed" : "Draft"}
                           </span>
                         </td>
-                        <td className="px-5 py-5">{rec.items.length}</td>
-                        <td className="px-5 py-5 font-semibold text-slate-800">${rec.total.toLocaleString()}</td>
+                        <td className="px-5 py-5 text-center">{rec.items.length}</td>
+                        <td className="px-5 py-5 text-right font-semibold">${rec.total.toLocaleString()}</td>
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
                             <Link href={`/recepciones/${rec.id}`} className="text-blue-200 hover:text-blue-100" title="View details">
                               <Eye className="h-4 w-4" />
                             </Link>
-                            {rec.status === DRAFT_STATUS && (
+                            {rec.status === "DRAFT" && (
                               <>
-                                <button
-                                  onClick={() => openEdit(rec)}
-                                  className={buttonBase}
-                                  disabled={rec.status === CONFIRMED_STATUS}
-                                  title="Edit"
-                                >
+                                <button onClick={() => handleEdit(rec)} className="text-yellow-200 hover:text-yellow-100" title="Edit">
                                   <Pencil className="h-4 w-4" />
                                 </button>
-                                <button
-                                  onClick={() => handleConfirm(rec)}
-                                  className={buttonBase}
-                                  disabled={rec.status === CONFIRMED_STATUS}
-                                  title="Confirm"
-                                >
-                                  Confirm
+                                <button onClick={() => handleConfirm(rec.id)} disabled={confirmingId === rec.id} className="text-green-200 hover:text-green-100" title="Confirm">
+                                  <CheckCircle className="h-4 w-4" />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setReceptionToDelete(rec);
-                                    setConfirmOpen(true);
-                                  }}
-                                  className={buttonBase}
-                                  disabled={rec.status === CONFIRMED_STATUS}
-                                  title="Delete"
-                                >
+                                <button onClick={() => handleDelete(rec)} className="text-red-200 hover:text-red-100" title="Delete">
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </>
@@ -301,51 +252,33 @@ export default function ReceptionsPage() {
               </table>
             </div>
 
-            {/* Móvil: cards simples */}
+            {/* VERSIÓN MÓVIL (cards) */}
             <div className="grid gap-4 p-4 md:hidden">
-              {receptions.length > 0 ? (
-                receptions.map((rec) => (
-                  <article
-                    key={rec.id}
-                    className="rounded-[24px] border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)]"
-                  >
+              {paginatedReceptions.length > 0 ? (
+                paginatedReceptions.map((rec) => (
+                  <article key={rec.id} className="rounded-[24px] border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-bold uppercase mb-1 text-slate-500">Folio</p>
                         <p className="truncate font-extrabold text-slate-900">{rec.folio}</p>
                         <p className="text-sm text-slate-700">{rec.supplierNombre}</p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${rec.status === CONFIRMED_STATUS ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"}`}>
-                        {rec.status}
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${rec.status === "CONFIRMED" ? "bg-emerald-200/80 text-emerald-700" : "bg-slate-200/80 text-slate-600"}`}>
+                        {rec.status === "CONFIRMED" ? "Confirmed" : "Draft"}
                       </span>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-                      <ReceptionMeta label="Date" value={rec.fecha} />
+                      <ReceptionMeta label="Date" value={new Date(rec.fecha).toLocaleDateString()} />
                       <ReceptionMeta label="Items" value={String(rec.items.length)} />
                       <ReceptionMeta label="Total" value={`$${rec.total.toLocaleString()}`} />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Link href={`/recepciones/${rec.id}`} className={buttonBase}>
-                        👁️
-                      </Link>
-                      {rec.status === DRAFT_STATUS && (
+                      <Link href={`/recepciones/${rec.id}`} className={buttonBase}>👁️</Link>
+                      {rec.status === "DRAFT" && (
                         <>
-                          <button onClick={() => openEdit(rec)} className={buttonBase} disabled={rec.status === CONFIRMED_STATUS}>
-                            ✏️
-                          </button>
-                          <button onClick={() => handleConfirm(rec)} className={buttonBase} disabled={rec.status === CONFIRMED_STATUS}>
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => {
-                              setReceptionToDelete(rec);
-                              setConfirmOpen(true);
-                            }}
-                            className={buttonBase}
-                            disabled={rec.status === CONFIRMED_STATUS}
-                          >
-                            🗑️
-                          </button>
+                          <button onClick={() => handleEdit(rec)} className={buttonBase}>✏️</button>
+                          <button onClick={() => handleConfirm(rec.id)} className={buttonBase}>✅</button>
+                          <button onClick={() => handleDelete(rec)} className={buttonBase}>🗑️</button>
                         </>
                       )}
                     </div>
@@ -358,23 +291,21 @@ export default function ReceptionsPage() {
               )}
             </div>
 
-            {/* Paginación */}
+            {/* PAGINACIÓN */}
             {showPagination && (
               <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
-                <p className="text-sm text-gray-400">
-                  Page {currentPage} of {totalPages}
-                </p>
+                <p className="text-sm text-gray-400">Page {currentPage} of {totalFilteredPages}</p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                     disabled={currentPage === 1}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalFilteredPages))}
+                    disabled={currentPage === totalFilteredPages}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
                   >
                     Next
@@ -385,91 +316,19 @@ export default function ReceptionsPage() {
           </div>
         )}
 
-        {/* MODAL CREAR/EDITAR */}
-        {isModalOpen && (
-          <div className="app-modal-overlay app-modal-overlay--padded">
-            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
-              <div className="mb-5">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {editingReception ? "Edit Reception" : "New Reception"}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  {editingReception
-                    ? "Modify the folio, date, supplier, items, or comments."
-                    : "Register a new inventory reception."}
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <ReceptionInput label="Folio *">
-                  <input
-                    name="folio"
-                    value={form.folio}
-                    onChange={handleChange}
-                    className="glass-input w-full"
-                    placeholder="Folio"
-                  />
-                </ReceptionInput>
-                <ReceptionInput label="Date *">
-                  <input
-                    name="fecha"
-                    type="date"
-                    value={form.fecha}
-                    onChange={handleChange}
-                    className="glass-input w-full"
-                  />
-                </ReceptionInput>
-                <ReceptionInput label="Supplier ID *">
-                  <input
-                    name="supplierId"
-                    value={form.supplierId}
-                    onChange={handleChange}
-                    className="glass-input w-full"
-                    placeholder="Supplier ID"
-                  />
-                </ReceptionInput>
-                <ReceptionInput label="Comments">
-                  <input
-                    name="comentarios"
-                    value={form.comentarios ?? ""}
-                    onChange={handleChange}
-                    className="glass-input w-full"
-                    placeholder="Comments"
-                  />
-                </ReceptionInput>
-                <div className="md:col-span-2">
-                  <ReceptionInput label="Items *">
-                    <p className="text-sm text-slate-600">{form.items.length} item(s)</p>
-                  </ReceptionInput>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className={buttonBase}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReceptionFormModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSuccess={fetchReceptions}
+          recepcion={editingReception}
+        />
 
         <ConfirmModal
           open={confirmOpen}
           title="Delete reception"
-          message={`Do you want to delete the reception "${receptionToDelete?.folio || ""}"?`}
-          onConfirm={() => void handleDelete()}
-          onCancel={() => {
-            setConfirmOpen(false);
-            setReceptionToDelete(null);
-          }}
+          message={`Are you sure you want to delete reception "${receptionToDelete?.folio}"?`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmOpen(false)}
           confirmButtonClassName="products-violet-black-button"
           cancelButtonClassName="products-violet-black-button"
         />
@@ -478,23 +337,11 @@ export default function ReceptionsPage() {
   );
 }
 
-function ReceptionInput({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800 mb-2">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
-
 function ReceptionMeta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/40 bg-white/25 px-3 py-2">
-      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">
-        {label}
-      </p>
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-800">{value}</p>
-    
     </div>
   );
 }
