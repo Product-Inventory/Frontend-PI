@@ -1,36 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DataTable } from "@/components/ui/DataTable";
-import { rolesService } from "@/services/roles.service";
-import { Role } from "@/types/role";
-import { Settings, Search, Plus } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Settings, Plus, Search } from "lucide-react";
 import { Toast } from "@/components/ui/Toast";
+import { rolesService } from "@/services/roles.service";
+import { permissionsService } from "@/services/permissions.service";
+import type { Role } from "@/types/role";
+import type { Permission } from "@/types/permissions";
 
 function RoleIcon({ className = "h-6 w-6 text-white" }: { className?: string }) {
     return <Settings className={className} size={24} />;
 }
 
+type RoleFormState = {
+    nombre: string;
+    descripcion: string;
+    permissions: string[];
+};
+
+type PermissionGroup = {
+    modulo: string;
+    items: Permission[];
+};
+
+const itemsPerPage = 5;
+
+const emptyForm: RoleFormState = {
+    nombre: "",
+    descripcion: "",
+    permissions: [],
+};
+
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
+    const [permissions, setPermissions] = useState<Permission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [permissionsLoading, setPermissionsLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
-
-    const [form, setForm] = useState({
-        nombre: "",
-        descripcion: "",
-    });
-
+    const [form, setForm] = useState<RoleFormState>(emptyForm);
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const [modalToast, setModalToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        fetchRoles();
+        void fetchRoles();
+        void fetchPermissions();
     }, []);
 
     useEffect(() => {
@@ -39,69 +56,60 @@ export default function RolesPage() {
 
     const fetchRoles = async () => {
         try {
+            setIsLoading(true);
             const data = await rolesService.getAll();
             setRoles(data.items || data);
         } catch (error) {
             console.error("Error loading roles:", error);
-            alert("Error loading roles");
+            setToast({ message: "Error loading roles", type: "error" });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const openCreate = () => {
-        setEditingRole(null);
-        setForm({ nombre: "", descripcion: "" });
-        setIsModalOpen(true);
-    };
-
-    const openEdit = (r: Role) => {
-        setEditingRole(r);
-        setForm({ nombre: r.nombre || "", descripcion: r.descripcion || "" });
-        setIsModalOpen(true);
-    };
-
-    const handleChange = (e: any) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-    };
-
-    const handleSave = async () => {
+    const fetchPermissions = async () => {
         try {
-            if (editingRole) {
-                await rolesService.update(String(editingRole.id), form);
-                setModalToast({ message: "Role updated successfully", type: "success" });
-            } else {
-                await rolesService.create(form);
-                setModalToast({ message: "Role created successfully", type: "success" });
-            }
-            fetchRoles();
-        } catch (err: any) {
-            console.error(err);
-            setModalToast({ message: err?.response?.data?.message || "Error saving role", type: "error" });
+            setPermissionsLoading(true);
+            const data = await permissionsService.getAll();
+            setPermissions(data.items || data);
+        } catch (error) {
+            console.error("Error loading permissions:", error);
+            setToast({ message: "Error loading permissions", type: "error" });
+        } finally {
+            setPermissionsLoading(false);
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Delete this role?")) return;
+    const permissionGroups = useMemo<PermissionGroup[]>(() => {
+        const grouped = new Map<string, Permission[]>();
 
-        try {
-            await rolesService.delete(String(id));
-            setToast({ message: "Role deleted successfully", type: "success" });
-            fetchRoles();
-        } catch (err) {
-            console.error(err);
-            setToast({ message: "Error deleting role", type: "error" });
+        for (const permission of permissions) {
+            const modulo = permission.modulo || "other";
+            const current = grouped.get(modulo) || [];
+            grouped.set(modulo, [...current, permission]);
         }
-    };
 
-    const filteredRoles = roles.filter((role) => {
-        const searchText = search.toLowerCase();
+        return Array.from(grouped.entries())
+            .map(([modulo, items]) => ({
+                modulo,
+                items: [...items].sort((a, b) => a.code.localeCompare(b.code)),
+            }))
+            .sort((a, b) => a.modulo.localeCompare(b.modulo));
+    }, [permissions]);
 
-        return (
-            role.nombre?.toLowerCase().includes(searchText) ||
-            role.descripcion?.toLowerCase().includes(searchText)
-        );
-    });
+    const filteredRoles = useMemo(() => {
+        const searchText = search.trim().toLowerCase();
+
+        if (!searchText) return roles;
+
+        return roles.filter((role) => {
+            return (
+                role.nombre.toLowerCase().includes(searchText) ||
+                (role.descripcion || "").toLowerCase().includes(searchText) ||
+                (role.permissions || []).some((permission) => permission.toLowerCase().includes(searchText))
+            );
+        });
+    }, [roles, search]);
 
     const totalPages = Math.max(Math.ceil(filteredRoles.length / itemsPerPage), 1);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -112,126 +120,468 @@ export default function RolesPage() {
         setCurrentPage((page) => Math.min(page, totalPages));
     }, [totalPages]);
 
-    const columns = [
-        { header: "Name", accessor: "nombre" as const },
-        { header: "Description", accessor: "descripcion" as const },
-        {
-            header: "",
-            render: (row: Role) => (
-                <div className="flex gap-2 justify-end">
-                    <button
-                        onClick={() => openEdit(row)}
-                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 products-violet-black-button"
-                        title="Edit"
-                    >
-                        ✏️
-                    </button>
+    const openCreate = () => {
+        setEditingRole(null);
+        setForm(emptyForm);
+        setIsModalOpen(true);
+        setModalToast(null);
+    };
 
-                    <button
-                        onClick={() => handleDelete(row.id)}
-                        className="btn btn-ghost btn-xs opacity-70 hover:opacity-100 products-violet-black-button"
-                        title="Delete"
-                    >
-                        🗑️
-                    </button>
-                </div>
-            ),
-        },
-    ];
+    const openEdit = (role: Role) => {
+        setEditingRole(role);
+        setForm({
+            nombre: role.nombre || "",
+            descripcion: role.descripcion || "",
+            permissions: Array.isArray(role.permissions) ? role.permissions : [],
+        });
+        setIsModalOpen(true);
+        setModalToast(null);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setForm((current) => ({
+            ...current,
+            [name]: value,
+        }));
+    };
+
+    const togglePermission = (code: string) => {
+        setForm((current) => {
+            const hasPermission = current.permissions.includes(code);
+            return {
+                ...current,
+                permissions: hasPermission
+                    ? current.permissions.filter((item) => item !== code)
+                    : [...current.permissions, code],
+            };
+        });
+    };
+
+    const toggleModulePermissions = (modulePermissions: Permission[]) => {
+        const codes = modulePermissions.map((permission) => permission.code);
+
+        setForm((current) => {
+            const selectedSet = new Set(current.permissions);
+            const allSelected = codes.every((code) => selectedSet.has(code));
+
+            return {
+                ...current,
+                permissions: allSelected
+                    ? current.permissions.filter((code) => !codes.includes(code))
+                    : Array.from(new Set([...current.permissions, ...codes])),
+            };
+        });
+    };
+
+    const handleSave = async () => {
+        if (!form.nombre.trim()) {
+            setModalToast({ message: "Name is required", type: "error" });
+            return;
+        }
+
+        const payload = {
+            nombre: form.nombre.trim(),
+            descripcion: form.descripcion.trim(),
+            permissions: form.permissions,
+        };
+
+        try {
+            setIsSaving(true);
+
+            if (editingRole) {
+                await rolesService.update(String(editingRole.id), payload);
+                setToast({ message: "Role updated successfully", type: "success" });
+            } else {
+                await rolesService.create(payload);
+                setToast({ message: "Role created successfully", type: "success" });
+            }
+
+            setIsModalOpen(false);
+            setEditingRole(null);
+            setForm(emptyForm);
+            setModalToast(null);
+            await fetchRoles();
+        } catch (err: any) {
+            console.error(err);
+            setModalToast({ message: err?.response?.data?.message || "Error saving role", type: "error" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete this role?")) return;
+
+        try {
+            await rolesService.delete(id);
+            setToast({ message: "Role deleted successfully", type: "success" });
+            await fetchRoles();
+        } catch (err) {
+            console.error(err);
+            setToast({ message: "Error deleting role", type: "error" });
+        }
+    };
 
     return (
-        <div className="flex min-h-full flex-col gap-6">
+        <div className="app-atmosphere relative min-h-full rounded-3xl overflow-hidden px-6 py-6 lg:px-10">
             {toast && (
                 <Toast
                     message={toast.message}
                     type={toast.type}
-                       duration={3000}
+                    duration={1000}
                     onClose={() => setToast(null)}
+                    portal={false}
+                    overlayClassName="app-alert-overlay--module"
                 />
             )}
-                <div className="flex justify-between items-center">
+
+            <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+                        <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
                             <RoleIcon className="h-6 w-6 text-black" />
                         </div>
-                        <h1 className="text-4xl font-semibold text-gray-800 tracking-tight">Roles</h1>
+                        <div>
+                            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">Roles</h1>
+                            <p className="mt-1 text-sm text-slate-600">Assign permissions to each role.</p>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={openCreate}
-                            className="px-5 py-2 text-sm products-violet-black-button"
-                        >
-                            + Create
-                        </button>
-                    </div>
-                </div>
-
-            {isLoading ? (
-                <div className="p-10 text-center">Loading...</div>
-            ) : (
-                <div className="glass-card rounded-2xl p-6">
-                    <DataTable columns={columns} data={paginatedRoles} />
-                    <div className="flex justify-between items-center mt-4">
-                        <p className="text-sm text-gray-400">
-                            Page {currentPage} of {totalPages}
-                        </p>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
-                                disabled={currentPage === 1}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
-                            >
-                                Previous
-                            </button>
+                    <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
+                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 shadow-sm w-full">
+                                    <Search className="h-4 w-4 text-slate-400" />
+                                    <input
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Search roles..."
+                                        className="w-full bg-transparent py-2 outline-none"
+                                    />
+                                </div>
+                            </div>
 
                             <button
-                                onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+                                onClick={openCreate}
+                                className="inline-flex h-10 w-full items-center justify-center rounded-full border border-white/50 bg-white/35 px-5 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50 sm:w-auto"
                             >
-                                Next
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create
                             </button>
                         </div>
                     </div>
                 </div>
-            )}
+
+                {isLoading ? (
+                    <div className="p-10 text-center">Loading...</div>
+                ) : (
+                    <div className="glass-card overflow-hidden rounded-[40px]">
+                        <div className="hidden overflow-x-auto md:block">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-white/25">
+                                    <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
+                                        <th className="px-5 py-4">Name</th>
+                                        <th className="px-5 py-4">Description</th>
+                                        <th className="px-5 py-4">Permissions</th>
+                                        <th className="px-5 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedRoles.length > 0 ? (
+                                        paginatedRoles.map((role) => (
+                                            <tr key={role.id} className="border-t border-white/18 transition hover:bg-white/10">
+                                                <td className="px-5 py-5 font-semibold text-slate-800">{role.nombre}</td>
+                                                <td className="px-5 py-5 text-slate-700">{role.descripcion || "-"}</td>
+                                                <td className="px-5 py-5 text-slate-700">
+                                                    <span className="rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold text-slate-700">
+                                                        {(role.permissions || []).length} selected
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-5 text-right">
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => openEdit(role)}
+                                                            className="inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            onClick={() => void handleDelete(String(role.id))}
+                                                            className="inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={4} className="px-5 py-14 text-center text-slate-500">
+                                                No roles registered
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="grid gap-4 p-4 md:hidden">
+                            {paginatedRoles.length > 0 ? (
+                                paginatedRoles.map((role) => (
+                                    <article
+                                        key={role.id}
+                                        className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)]"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-slate-500">
+                                                    Role
+                                                </p>
+                                                <p className="mt-1 truncate text-lg font-extrabold text-slate-900">{role.nombre}</p>
+                                                <p className="mt-1 text-base font-semibold text-slate-800">
+                                                    {role.descripcion || "-"}
+                                                </p>
+                                            </div>
+
+                                            <span className="shrink-0 rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold text-slate-700">
+                                                {(role.permissions || []).length} perms
+                                            </span>
+                                        </div>
+
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {(role.permissions || []).slice(0, 4).map((permission) => (
+                                                <span
+                                                    key={permission}
+                                                    className="rounded-full border border-white/40 bg-white/35 px-3 py-1 text-xs font-semibold text-slate-700"
+                                                >
+                                                    {permission}
+                                                </span>
+                                            ))}
+                                            {(role.permissions || []).length > 4 && (
+                                                <span className="rounded-full border border-white/40 bg-white/35 px-3 py-1 text-xs font-semibold text-slate-700">
+                                                    +{(role.permissions || []).length - 4}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() => openEdit(role)}
+                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                            >
+                                                ✏️
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() => void handleDelete(String(role.id))}
+                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    </article>
+                                ))
+                            ) : (
+                                <div className="rounded-3xl border border-white/45 bg-white/35 px-4 py-10 text-center text-slate-500">
+                                    No roles registered
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between border-t border-white/20 px-5 pt-4">
+                            <p className="text-sm text-gray-400">
+                                Page {currentPage} of {totalPages}
+                            </p>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             {isModalOpen && (
-                <div className="app-modal-overlay">
-                    <div className="app-modal-shell app-modal-shell--sm relative bg-white/20 backdrop-blur-xl border border-white/30 p-6 shadow-xl">
-                        {modalToast && (
-                            <Toast
-                                message={modalToast.message}
-                                type={modalToast.type}
-                                duration={3000}
-                                onClose={() => {
-                                    setModalToast(null);
-                                    setIsModalOpen(false);
-                                    setEditingRole(null);
-                                    setForm({ nombre: "", descripcion: "" });
-                                }}
-                                portal={false}
-                                overlayClassName="app-alert-overlay--module"
-                            />
-                        )}
+                <div className="fixed inset-0 z-50 flex rounded-[40px] bg-slate-950/35 p-4 backdrop-blur-sm sm:p-6">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
+                        <div className="h-full overflow-y-auto p-6 md:p-8">
+                            {modalToast && (
+                                <Toast
+                                    message={modalToast.message}
+                                    type={modalToast.type}
+                                    duration={1000}
+                                    onClose={() => {
+                                        setModalToast(null);
+                                        if (modalToast.type === "success") {
+                                            setIsModalOpen(false);
+                                            setEditingRole(null);
+                                            setForm(emptyForm);
+                                        }
+                                    }}
+                                    portal={false}
+                                    overlayClassName="app-alert-overlay--module"
+                                />
+                            )}
 
-                        <h2 className="text-xl font-semibold text-white mb-4">{editingRole ? "Edit Role" : "New Role"}</h2>
+                            <h2 className="text-2xl font-extrabold tracking-tight text-[#392750]">
+                                {editingRole ? "Edit Role" : "New Role"}
+                            </h2>
+                            <p className="mt-1 text-sm text-[#392750]">
+                                Select the permissions that this role can use.
+                            </p>
 
-                        <div className="flex flex-col gap-3">
-                            <input name="nombre" placeholder="Name" value={form.nombre} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
-                            <textarea name="descripcion" placeholder="Description" value={form.descripcion} onChange={handleChange} className="px-4 py-2 rounded-lg bg-white/80 focus:outline-none" />
-                        </div>
+                            <div className="mt-5 grid gap-4 md:grid-cols-2">
+                                <Field label="Name *">
+                                    <input
+                                        name="nombre"
+                                        value={form.nombre}
+                                        onChange={handleChange}
+                                        className="glass-input w-full"
+                                        placeholder="Manager"
+                                    />
+                                </Field>
 
-                        <div className="flex justify-end gap-2 mt-5">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-white/30 products-violet-black-button">Cancel</button>
-                            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 products-violet-black-button shadow-md">Save</button>
+                                <Field label="Description">
+                                    <input
+                                        name="descripcion"
+                                        value={form.descripcion}
+                                        onChange={handleChange}
+                                        className="glass-input w-full"
+                                        placeholder="Optional description"
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="mt-6">
+                                <div className="mb-3 flex items-center justify-between gap-3">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[#392750]">Permissions</h3>
+                                        <p className="text-sm text-[#392750]">
+                                            {form.permissions.length} selected
+                                            {permissionsLoading ? " · Loading permissions..." : ""}
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm((current) => ({ ...current, permissions: [] }))}
+                                        className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-4 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
+                                    >
+                                        Clear permissions
+                                    </button>
+                                </div>
+
+                                {permissionsLoading ? (
+                                    <div className="rounded-3xl border border-white/40 bg-white/25 px-4 py-10 text-center text-slate-500">
+                                        Loading permissions...
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-4 lg:grid-cols-2">
+                                        {permissionGroups.map((group) => {
+                                            const allSelected = group.items.length > 0 && group.items.every((permission) => form.permissions.includes(permission.code));
+
+                                            return (
+                                                <div key={group.modulo} className="rounded-3xl border border-white/40 bg-white/25 p-4">
+                                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-500">
+                                                                {group.modulo}
+                                                            </p>
+                                                            <p className="text-sm font-semibold text-[#392750]">
+                                                                {group.items.length} permissions
+                                                            </p>
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleModulePermissions(group.items)}
+                                                            className="inline-flex h-9 items-center justify-center rounded-full border border-white/45 bg-white/45 px-3 text-xs font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
+                                                        >
+                                                            {allSelected ? "Unselect module" : "Select module"}
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="grid gap-2 sm:grid-cols-2">
+                                                        {group.items.map((permission) => {
+                                                            const checked = form.permissions.includes(permission.code);
+
+                                                            return (
+                                                                <label
+                                                                    key={permission.code}
+                                                                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 transition ${checked ? "border-blue-400 bg-blue-50/80" : "border-white/40 bg-white/35 hover:bg-white/50"}`}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={checked}
+                                                                        onChange={() => togglePermission(permission.code)}
+                                                                        className="mt-1 h-4 w-4 rounded border-white/60 text-[#9a7ef0] focus:ring-[#9a7ef0]"
+                                                                    />
+                                                                    <div className="min-w-0">
+                                                                        <p className="truncate text-sm font-bold text-[#392750]">{permission.nombre}</p>
+                                                                        <p className="truncate text-xs text-slate-500">{permission.code}</p>
+                                                                    </div>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="inline-flex h-10 w-full items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55 sm:w-auto"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    onClick={() => void handleSave()}
+                                    disabled={isSaving}
+                                    className="inline-flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                                >
+                                    {isSaving ? "Saving..." : "Save"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
         </div>
+        </div>
     );
 }
 
+function Field({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <label className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+            <span>{label}</span>
+            {children}
+        </label>
+    );
+}

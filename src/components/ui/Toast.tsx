@@ -64,7 +64,7 @@ export function Toast({
       className={
         portal
           ? `app-modal-overlay z-[2147483647] ${overlayClassName}`
-          : `absolute inset-0 z-[2147483647] flex items-center justify-center rounded-[40px] ${overlayClassName}`
+          : `${overlayClassName} z-[2147483647] flex items-center justify-center rounded-[40px]`
       }
     >
       <div className={`app-modal-shell app-alert-shell ${shellTypeClass} relative backdrop-blur-xl border px-10 py-7 ${shellClassName}`}>

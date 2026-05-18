@@ -1,7 +1,8 @@
 export interface Role {
-  id: number;
+  id: string;
   nombre: string;
   descripcion?: string;
+  permissions: string[];
   createdAt?: string;
   updatedAt?: string;
 }

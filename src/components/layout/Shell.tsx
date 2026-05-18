@@ -8,7 +8,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="app-atmosphere min-h-screen w-full flex flex-col overflow-hidden">
+    <div
+      className="app-atmosphere min-h-screen w-full flex flex-col overflow-hidden"
+      style={{
+        ["--sidebar-width" as string]: "272px",
+      }}
+    >
       <div className="flex min-h-screen flex-1 items-stretch overflow-visible relative">
         {!sidebarOpen && (
           <button
@@ -22,7 +27,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         )}
         
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className={`relative z-0 flex min-h-screen flex-1 flex-col pr-4 pt-16 pb-4 sm:pr-5 sm:pt-20 sm:pb-5 transition-all duration-300 rounded-[40px] overflow-hidden ${sidebarOpen ? 'pl-80 md:pl-80 lg:pl-80' : 'pl-16 sm:pl-20'}`}>
+        <main className={`relative z-0 flex min-h-screen flex-1 flex-col pr-4 pt-16 pb-4 sm:pr-5 sm:pt-20 sm:pb-5 transition-all duration-300 rounded-[40px] overflow-hidden ${sidebarOpen ? 'pl-[var(--sidebar-width)]' : 'pl-16 sm:pl-20'}`}>
           <div className="app-shell flex flex-1 flex-col rounded-[40px] shadow-lg p-0 sm:p-1 min-h-0">
             {children}
           </div>
