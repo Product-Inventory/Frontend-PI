@@ -378,7 +378,6 @@ export default function ClientsPage() {
                 </tbody>
               </table>
             </div>
-            {/* Móvil: cards sencillas, puedes inspirarte en el responsive de productos */}
             <div className="grid gap-4 p-4 md:hidden">
               {clients.length > 0 ? (
                 clients.map((client) => (
@@ -511,12 +510,12 @@ export default function ClientsPage() {
                 </div>
               </div>
               <div className="md:col-span-3 flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className={buttonBase}>Cancel</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55">Cancel</button>
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold !text-[#9a7ef0] shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
@@ -539,7 +538,6 @@ export default function ClientsPage() {
   );
 }
 
-// Form field component
 function Field({
   label,
   error,

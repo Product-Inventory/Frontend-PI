@@ -15,7 +15,8 @@ function toNumber(value: number | string) {
 function buildPayload(data: OrderFormValues) {
   return {
     folio: String(data.folio || "").trim().toUpperCase(),
-    fecha: data.fecha,
+    fechaOrden: data.fechaOrden,
+    fechaEntrega: data.fechaEntrega ?? null,
     clienteId: String(data.clienteId || "").trim(),
     comentarios: normalizeOptionalText(data.comentarios),
     items: (data.items || []).map((item) => ({
@@ -29,12 +30,13 @@ function buildPayload(data: OrderFormValues) {
 function buildUpdatePayload(data: Partial<OrderFormValues>) {
   const payload: Record<string, unknown> = {};
   if (data.folio !== undefined) {
-    payload.folio = String(data.folio || "")
-      .trim()
-      .toUpperCase();
+    payload.folio = String(data.folio || "").trim().toUpperCase();
   }
-  if (data.fecha !== undefined) {
-    payload.fecha = data.fecha;
+  if (data.fechaOrden !== undefined) {
+    payload.fechaOrden = data.fechaOrden;
+  }
+  if (data.fechaEntrega !== undefined) {
+    payload.fechaEntrega = data.fechaEntrega ?? null;
   }
   if (data.clienteId !== undefined) {
     payload.clienteId = String(data.clienteId || "").trim();
@@ -112,4 +114,9 @@ export const ordersService = {
     }>(`/orders/${id}`);
     return res.data;
   },
+
+  async deliver(id: string, fechaEntrega: string) {
+    const res = await api.patch<{ message: string; item: Order }>(`/orders/${id}/deliver`, { fechaEntrega });
+    return res.data;
+  }
 };

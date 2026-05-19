@@ -85,7 +85,7 @@ function InventoryIcon({ active, className }: SidebarIconProps) {
 function OrdersIcon({ active, className }: SidebarIconProps) {
   return (
     <SidebarIconShell active={active} className={className}>
-      <Package size={20} />
+      <ClipboardList size={20} />
     </SidebarIconShell>
   );
 }

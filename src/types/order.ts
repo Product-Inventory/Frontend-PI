@@ -10,18 +10,19 @@ export interface OrderItem {
   productNombre: string;
   cantidad: number;
   precioUnitario: number;
-  subtotal: number;
+  subtotal?: number;
 }
+
 export interface Order {
   id: string;
   folio: string;
-  fecha: string;
+  fechaOrden: string; 
+  fechaEntrega: string | null;
   clienteId: string;
   clienteNombre: string;
   comentarios: string | null;
   status: OrderStatus;
   items: OrderItem[];
-  subtotal: number;
   impuestos: number;
   total: number;
   confirmedAt: string | null;
@@ -33,7 +34,8 @@ export interface Order {
 
 export interface OrderFormValues {
   folio: string;
-  fecha: string;
+  fechaOrden: string;
+  fechaEntrega: string | null; 
   clienteId: string;
   comentarios: string | null;
   items: Array<{
@@ -42,7 +44,6 @@ export interface OrderFormValues {
     precioUnitario: number | string;
     productNombre?: string;
     sku?: string;
-    subtotal?: number;
   }>;
 }
 
