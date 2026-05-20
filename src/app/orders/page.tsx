@@ -11,7 +11,7 @@ import type { Product } from "@/types/product";
 import { clientsService } from "@/services/clients.service";
 import { productsService } from "@/services/products.service";
 import { ordersService } from "@/services/orders.service";
-import { Box, ClipboardList, Pencil, Plus, Power, Trash2 } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 
 type StatusFilter = "all" | OrderStatus;
 
@@ -271,9 +271,6 @@ export default function OrdersPage() {
             message={statusToast.message}
             type={statusToast.type}
             duration={1000}
-            portal={false}
-            overlayClassName="app-modal-overlay app-modal-overlay--padded app-alert-overlay--module"
-            shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
             onClose={() => setStatusToast(null)}
           />
         )}

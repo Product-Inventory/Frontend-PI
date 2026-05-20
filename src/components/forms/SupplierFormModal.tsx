@@ -98,7 +98,7 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
 
   return (
     <Portal>
-    <div className="app-modal-overlay app-modal-overlay--padded">
+    <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
       <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
 
         <h2 className="text-xl font-bold text-white mb-4">

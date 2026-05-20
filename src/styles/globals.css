@@ -279,6 +279,11 @@ body {
   align-items: flex-end;
 }
 
+.app-modal-overlay--form {
+  background: rgba(2, 6, 23, 0.35);
+  backdrop-filter: blur(4px);
+}
+
 .app-modal-shell {
   width: 100%;
   /* esquinas redondeadas en el contenedor del modal/formulario */
