@@ -249,9 +249,6 @@ export default function ClientsPage() {
             message={statusToast.message}
             type={statusToast.type}
             duration={1000}
-            portal={false}
-            overlayClassName="app-modal-overlay app-modal-overlay--padded app-alert-overlay--module"
-            shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
             onClose={() => setStatusToast(null)}
           />
         )}
@@ -461,7 +458,7 @@ export default function ClientsPage() {
       {/* MODAL CREAR/EDITAR */}
       {isModalOpen && (
         <Portal>
-        <div className="app-modal-overlay app-modal-overlay--padded">
+        <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
           <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
             <div className="mb-5">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">

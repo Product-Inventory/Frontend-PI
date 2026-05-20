@@ -7,7 +7,7 @@ import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
 import type { Product, ProductFormValues } from "@/types/product";
-import { ChevronLeft, ChevronRight, Box, CheckCircle2, Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Box, CheckCircle2, Plus, Power, Search } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -583,7 +583,7 @@ export default function ProductsPage() {
 
             {isModalOpen && (
                 <Portal>
-                <div className="app-modal-overlay app-modal-overlay--padded">
+                <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
                     <div className="app-modal-shell app-modal-shell--xl glass-card relative p-6 md:p-8">
                         {validationToast && (
                             <Toast

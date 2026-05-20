@@ -870,7 +870,7 @@ export default function InventoryPage() {
             {/* ── Modal de ajuste de inventario ── */}
             {adjustOpen && (
                 <Portal>
-                <div className="app-modal-overlay app-modal-overlay px-4 py-4">
+                <div className="app-modal-overlay app-modal-overlay--form px-4 py-4">
                     <div className="app-modal-shell app-modal-shell--lg glass-card rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
 
                         {/* Encabezado del modal */}

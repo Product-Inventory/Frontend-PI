@@ -250,7 +250,7 @@ export default function RolesPage() {
                     <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
                         <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                             <div className="relative w-full md:w-80">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                                
                                 <input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -415,7 +415,7 @@ export default function RolesPage() {
 
             {isModalOpen && (
                 <Portal>
-                <div className="app-modal-overlay bg-slate-950/35 backdrop-blur-sm p-4 sm:p-6">
+                <div className="app-modal-overlay app-modal-overlay--form p-4 sm:p-6">
                     <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
                         <div className="h-full overflow-y-auto p-6 md:p-8">
                             {modalToast && (
