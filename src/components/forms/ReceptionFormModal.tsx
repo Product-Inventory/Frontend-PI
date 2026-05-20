@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Portal } from '@/components/ui/Portal';
 import { receptionsService } from '@/services/receptions.service';
 import { suppliersService } from '@/services/suppliers.service';
 import { productsService } from '@/services/products.service';
@@ -177,6 +178,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
   const totalGeneral = form.items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
 
   return (
+    <Portal>
     <div className="app-modal-overlay app-modal-overlay--padded">
       <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
         <div className="mb-5">
@@ -332,5 +334,6 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

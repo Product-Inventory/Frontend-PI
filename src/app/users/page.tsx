@@ -7,6 +7,8 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import UserFormModal from "@/components/forms/UserFormModal";
 import { Toast } from "@/components/ui/Toast";
+import { Plus, Power } from "lucide-react";
+
 import { Users, Plus, Pencil, Power, Trash2, Search } from "lucide-react";
 
 const itemsPerPage = 5;
@@ -95,6 +97,42 @@ export default function UsersPage() {
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const showPagination = filteredUsers.length > itemsPerPage;
 
+  const columns = [
+    { header: "Name", accessor: "nombre" as const, render: (row: User) => `${row.nombre} ${row.apellido}` },
+    { header: "Username", accessor: "usuario" as const },
+    { header: "Email", accessor: "email" as const },
+    {
+      header: "Role",
+      accessor: "role" as const,
+      render: (row: User) => row.role || (row.roleId === 'role_admin' ? 'Admin' : row.roleId === 'role_user' ? 'User' : 'No role'),
+    },
+    {
+      header: "Status",
+      accessor: "activo" as const,
+      render: (row: User) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.activo ? "bg-green-400/30 text-green-100" : "bg-red-400/30 text-red-100"}`}>
+          {row.activo ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      render: (row: User) => (
+        <div className="flex gap-2 justify-end">
+          <button onClick={() => handleEdit(row)} className="text-blue-200 hover:text-blue-100" title="Edit">
+            ✏️
+          </button>
+          <button onClick={() => handleToggleActive(row)} className="text-yellow-200 hover:text-yellow-100 flex items-center gap-1" title={row.activo ? "Deactivate" : "Activate"}>
+            <Power className="h-4 w-4" />
+            <span className="text-xs">{row.activo ? "Off" : "On"}</span>
+          </button>
+          <button onClick={() => handleDelete(row)} className="text-red-200 hover:text-red-100" title="Delete">
+            🗑️
+          </button>
+        </div>
+      ),
+    },
+  ];
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
   return (
@@ -168,6 +206,26 @@ export default function UsersPage() {
             </select>
           </div>
         </div>
+      )}
+
+      <UserFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchUsers} user={editingUser} />
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete user"
+        message={`Are you sure you want to delete "${userToDelete?.nombre} ${userToDelete?.apellido}"?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        confirmButtonClassName="products-violet-black-button"
+        cancelButtonClassName="products-violet-black-button"
+      />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={1000}
+          onClose={() => setToast(null)}
 
         {isLoading ? (
           <Loading label="Loading users..." />

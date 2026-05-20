@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
+import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { clientsService } from "@/services/clients.service";
 import type { Client } from "@/types/client";
@@ -241,7 +242,7 @@ export default function ClientsPage() {
     <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
       <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
         {toast && (
-          <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} />
+          <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
         )}
         {statusToast && (
           <Toast
@@ -459,6 +460,7 @@ export default function ClientsPage() {
       </div>
       {/* MODAL CREAR/EDITAR */}
       {isModalOpen && (
+        <Portal>
         <div className="app-modal-overlay app-modal-overlay--padded">
           <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
             <div className="mb-5">
@@ -523,6 +525,7 @@ export default function ClientsPage() {
             </form>
           </div>
         </div>
+        </Portal>
       )}
       <ConfirmModal
         open={confirmOpen}

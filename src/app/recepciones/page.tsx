@@ -6,7 +6,11 @@ import { receptionsService } from "@/services/receptions.service";
 import { Reception } from "@/types/reception";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+
+import { Portal } from "@/components/ui/Portal";
+
 import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
+
 import { Toast } from "@/components/ui/Toast";
 import { ClipboardList, Plus, Eye, Pencil, CheckCircle, Trash2 } from "lucide-react";
 
@@ -121,14 +125,11 @@ export default function ReceptionsPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
-        {/* HEADER – idéntico al de inventory */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
@@ -316,12 +317,92 @@ export default function ReceptionsPage() {
           </div>
         )}
 
+
+        {/* MODAL CREAR/EDITAR */}
+        {isModalOpen && (
+          <Portal>
+          <div className="app-modal-overlay app-modal-overlay--padded">
+            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+              <div className="mb-5">
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                  {editingReception ? "Edit Reception" : "New Reception"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {editingReception
+                    ? "Modify the folio, date, supplier, items, or comments."
+                    : "Register a new inventory reception."}
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <ReceptionInput label="Folio *">
+                  <input
+                    name="folio"
+                    value={form.folio}
+                    onChange={handleChange}
+                    className="glass-input w-full"
+                    placeholder="Folio"
+                  />
+                </ReceptionInput>
+                <ReceptionInput label="Date *">
+                  <input
+                    name="fecha"
+                    type="date"
+                    value={form.fecha}
+                    onChange={handleChange}
+                    className="glass-input w-full"
+                  />
+                </ReceptionInput>
+                <ReceptionInput label="Supplier ID *">
+                  <input
+                    name="supplierId"
+                    value={form.supplierId}
+                    onChange={handleChange}
+                    className="glass-input w-full"
+                    placeholder="Supplier ID"
+                  />
+                </ReceptionInput>
+                <ReceptionInput label="Comments">
+                  <input
+                    name="comentarios"
+                    value={form.comentarios ?? ""}
+                    onChange={handleChange}
+                    className="glass-input w-full"
+                    placeholder="Comments"
+                  />
+                </ReceptionInput>
+                <div className="md:col-span-2">
+                  <ReceptionInput label="Items *">
+                    <p className="text-sm text-slate-600">{form.items.length} item(s)</p>
+                  </ReceptionInput>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className={buttonBase}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+          </Portal>
+        )}
+
         <ReceptionFormModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           onSuccess={fetchReceptions}
           recepcion={editingReception}
         />
+
 
         <ConfirmModal
           open={confirmOpen}
