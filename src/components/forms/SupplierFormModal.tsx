@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Portal } from '@/components/ui/Portal';
 import { suppliersService } from '@/services/suppliers.service';
 import { Supplier } from '@/types/supplier';
 
@@ -96,6 +97,7 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
   if (!isOpen) return null;
 
   return (
+    <Portal>
     <div className="app-modal-overlay app-modal-overlay--padded">
       <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
 
@@ -158,5 +160,6 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

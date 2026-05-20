@@ -7,6 +7,7 @@ import type { Reception, ReceptionFormValues } from "@/types/reception";
 import type { ReceptionStatus } from "@/types/reception";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { Portal } from "@/components/ui/Portal";
 
 import { Toast } from "@/components/ui/Toast";
 import { ClipboardList, Plus, CheckCircle, XCircle, Search, Eye, Pencil, Trash2 } from "lucide-react";
@@ -184,10 +185,8 @@ export default function ReceptionsPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
@@ -387,6 +386,7 @@ export default function ReceptionsPage() {
 
         {/* MODAL CREAR/EDITAR */}
         {isModalOpen && (
+          <Portal>
           <div className="app-modal-overlay app-modal-overlay--padded">
             <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
               <div className="mb-5">
@@ -459,6 +459,7 @@ export default function ReceptionsPage() {
               </div>
             </div>
           </div>
+          </Portal>
         )}
 
         <ConfirmModal

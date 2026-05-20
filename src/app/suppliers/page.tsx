@@ -7,7 +7,7 @@ import Loading from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { Plus, Pencil, Power, Trash2 } from "lucide-react";
+import { Plus, Power } from "lucide-react";
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -145,14 +145,14 @@ export default function SuppliersPage() {
                       <td className="px-5 py-5 text-right">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => handleEdit(row)} className="text-blue-200 hover:text-blue-100" title="Edit">
-                            <Pencil className="h-4 w-4" />
+                            ✏️
                           </button>
                           <button onClick={() => handleToggleActive(row)} className="text-yellow-200 hover:text-yellow-100 flex items-center gap-1" title={row.activo ? "Deactivate" : "Activate"}>
                             <Power className="h-4 w-4" />
                             <span className="text-xs">{row.activo ? "Off" : "On"}</span>
                           </button>
                           <button onClick={() => handleDelete(row)} className="text-red-200 hover:text-red-100" title="Delete">
-                            <Trash2 className="h-4 w-4" />
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -196,10 +196,8 @@ export default function SuppliersPage() {
         <Toast
           message={toast.message}
           type={toast.type}
-          duration={3000}
+          duration={1000}
           onClose={() => setToast(null)}
-          portal={false}
-          overlayClassName="app-alert-overlay--module"
         />
       )}
     </div>

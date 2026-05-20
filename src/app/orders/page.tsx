@@ -53,7 +53,7 @@ export default function OrdersPage() {
     <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
       <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
         {toast && (
-          <Toast message={toast.message} type={toast.type} duration={3000} onClose={() => setToast(null)} />
+          <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
         )}
 
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">

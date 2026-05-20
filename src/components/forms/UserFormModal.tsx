@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Portal } from '@/components/ui/Portal';
 import { usersService } from '@/services/users.service';
 import { rolesService } from '@/services/roles.service';
 import { User } from '@/types/user';
@@ -129,6 +130,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   if (!isOpen) return null;
 
   return (
+    <Portal>
     <div className="app-modal-overlay app-modal-overlay--padded">
       <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl p-6 shadow-2xl">
         <h2 className="text-xl font-bold text-white mb-4">
@@ -191,5 +193,6 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

@@ -18,7 +18,7 @@ interface ToastProps {
 export function Toast({
   message,
   type = "success",
-  duration = 3000,
+  duration = 1000,
   onClose,
   portal = true,
   overlayClassName = "",
