@@ -7,11 +7,9 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
 import { Toast } from "@/components/ui/Toast";
-
 import { Truck, Plus, Power, Search } from "lucide-react";
 
 const itemsPerPage = 5;
-
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -79,7 +77,6 @@ export default function SuppliersPage() {
     }
   };
 
-  // Filtro local (búsqueda + estado activo/inactivo)
   const filteredSuppliers = suppliers.filter((s) => {
     const term = search.toLowerCase();
     const matchesSearch =
@@ -139,7 +136,7 @@ export default function SuppliersPage() {
           </div>
         </div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS (grid 50/50) */}
+        {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 sm:max-w-md">
             <div className="relative flex-1">
@@ -168,51 +165,6 @@ export default function SuppliersPage() {
             </select>
           </div>
         </div>
-
-      {isLoading ? (
-        <Loading />
-      ) : (
-        <div className="glass-card rounded-2xl p-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-white/10">
-                <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
-                  <th className="px-5 py-4">Company</th>
-                  <th className="px-5 py-4">RFC</th>
-                  <th className="px-5 py-4">Contact</th>
-                  <th className="px-5 py-4">Email</th>
-                  <th className="px-5 py-4">Phone</th>
-                  <th className="px-5 py-4 text-center">Status</th>
-                  <th className="px-5 py-4 text-right w-48">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedSuppliers.length > 0 ? (
-                  paginatedSuppliers.map((row) => (
-                    <tr key={row.id} className="border-t border-white/18 hover:bg-white/5 transition">
-                      <td className="px-5 py-5 font-semibold">{row.nombre}</td>
-                      <td className="px-5 py-5">{row.rfc || "-"}</td>
-                      <td className="px-5 py-5">{row.contacto || "-"}</td>
-                      <td className="px-5 py-5">{row.email || "-"}</td>
-                      <td className="px-5 py-5">{row.telefono || "-"}</td>
-                      <td className="px-5 py-5 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.activo ? "bg-green-400/30 text-green-100" : "bg-red-400/30 text-red-100"}`}>
-                          {row.activo ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-5 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => handleEdit(row)} className="text-blue-200 hover:text-blue-100" title="Edit">
-                            ✏️
-                          </button>
-                          <button onClick={() => handleToggleActive(row)} className="text-yellow-200 hover:text-yellow-100 flex items-center gap-1" title={row.activo ? "Deactivate" : "Activate"}>
-                            <Power className="h-4 w-4" />
-                            <span className="text-xs">{row.activo ? "Off" : "On"}</span>
-                          </button>
-                          <button onClick={() => handleDelete(row)} className="text-red-200 hover:text-red-100" title="Delete">
-                            🗑️
-                          </button>
-                        </div>
 
         {isLoading ? (
           <Loading label="Loading suppliers..." />
@@ -248,13 +200,13 @@ export default function SuppliersPage() {
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
                             <button onClick={() => handleEdit(supplier)} className={buttonBase} title="Edit">
-                              <Pencil className="h-4 w-4" />
+                              ✏️
                             </button>
                             <button onClick={() => handleToggleActive(supplier)} className={buttonBase} title={supplier.activo ? "Deactivate" : "Activate"}>
                               <Power className="h-4 w-4" />
                             </button>
                             <button onClick={() => handleDelete(supplier)} className={buttonBase} title="Delete">
-                              <Trash2 className="h-4 w-4" />
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -270,30 +222,7 @@ export default function SuppliersPage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-      )}
 
-      <SupplierFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchSuppliers} supplier={editingSupplier} />
-
-      <ConfirmModal
-        open={confirmOpen}
-        title="Delete supplier"
-        message={`Are you sure you want to delete "${supplierToDelete?.nombre}"?`}
-        onConfirm={confirmDelete}
-        onCancel={() => setConfirmOpen(false)}
-        confirmButtonClassName="products-violet-black-button"
-        cancelButtonClassName="products-violet-black-button"
-      />
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          duration={1000}
-          onClose={() => setToast(null)}
-
-            {/* Versión móvil (cards) */}
             <div className="grid gap-4 p-4 md:hidden">
               {paginatedSuppliers.length > 0 ? (
                 paginatedSuppliers.map((supplier) => (
@@ -327,7 +256,6 @@ export default function SuppliersPage() {
               )}
             </div>
 
-            {/* Paginación */}
             {showPagination && (
               <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
                 <p className="text-sm text-gray-400">Page {currentPage} of {totalPages}</p>
