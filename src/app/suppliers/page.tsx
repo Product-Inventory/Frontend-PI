@@ -8,9 +8,7 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
 import { Toast } from "@/components/ui/Toast";
 
-import { Plus, Power } from "lucide-react";
-
-import { Truck, Plus, Pencil, Power, Trash2, Search } from "lucide-react";
+import { Truck, Plus, Power, Search } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -108,10 +106,8 @@ export default function SuppliersPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
