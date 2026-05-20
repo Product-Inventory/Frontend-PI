@@ -137,8 +137,6 @@ body {
 
 .app-shell button,
 .app-modal-overlay button {
-
-.app-shell button {
   position: relative;
   overflow: hidden;
   isolation: isolate;
