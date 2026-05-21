@@ -7,7 +7,7 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { Truck, Plus, Pencil, Power, Trash2, Search } from "lucide-react";
+import { Truck, Plus, Power, Search } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -77,7 +77,6 @@ export default function SuppliersPage() {
     }
   };
 
-  // Filtro local (búsqueda + estado activo/inactivo)
   const filteredSuppliers = suppliers.filter((s) => {
     const term = search.toLowerCase();
     const matchesSearch =
@@ -104,10 +103,8 @@ export default function SuppliersPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
@@ -139,7 +136,7 @@ export default function SuppliersPage() {
           </div>
         </div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS (grid 50/50) */}
+        {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 sm:max-w-md">
             <div className="relative flex-1">
@@ -203,13 +200,13 @@ export default function SuppliersPage() {
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
                             <button onClick={() => handleEdit(supplier)} className={buttonBase} title="Edit">
-                              <Pencil className="h-4 w-4" />
+                              ✏️
                             </button>
                             <button onClick={() => handleToggleActive(supplier)} className={buttonBase} title={supplier.activo ? "Deactivate" : "Activate"}>
                               <Power className="h-4 w-4" />
                             </button>
                             <button onClick={() => handleDelete(supplier)} className={buttonBase} title="Delete">
-                              <Trash2 className="h-4 w-4" />
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -226,7 +223,6 @@ export default function SuppliersPage() {
               </table>
             </div>
 
-            {/* Versión móvil (cards) */}
             <div className="grid gap-4 p-4 md:hidden">
               {paginatedSuppliers.length > 0 ? (
                 paginatedSuppliers.map((supplier) => (
@@ -260,7 +256,6 @@ export default function SuppliersPage() {
               )}
             </div>
 
-            {/* Paginación */}
             {showPagination && (
               <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
                 <p className="text-sm text-gray-400">Page {currentPage} of {totalPages}</p>

@@ -5,8 +5,9 @@ import { permissionsService } from "@/services/permissions.service";
 import { Permission } from "@/types/permissions";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
-import { Shield, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Shield, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -114,6 +115,7 @@ export default function PermissionsPage() {
         <Toast
           message={toast.message}
           type={toast.type}
+          duration={1000}
           onClose={() => setToast(null)}
         />
       )}
@@ -224,7 +226,8 @@ export default function PermissionsPage() {
       </div>
 
       {isModalOpen && (
-        <div className="app-modal-overlay app-modal-overlay--padded">
+        <Portal>
+        <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
           <div className="app-modal-shell app-modal-shell--md glass-card p-8">
             <h2 className="text-2xl font-extrabold text-slate-900 mb-6">
               {editingPermission ? "Edit Permission" : "New Permission"}
@@ -279,6 +282,7 @@ export default function PermissionsPage() {
             </div>
           </div>
         </div>
+        </Portal>
       )}
 
       <ConfirmModal

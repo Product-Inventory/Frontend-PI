@@ -41,6 +41,8 @@ body {
 .app-atmosphere {
   position: relative;
   isolation: isolate;
+  /* sin esquinas redondeadas en el contenedor principal del modulo */
+  border-radius: 0;
 }
 
 .app-atmosphere::before,
@@ -73,7 +75,8 @@ body {
 .app-shell {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.24) 0%, rgba(213, 228, 255, 0.14) 100%);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 3rem;
+  /* sin esquinas redondeadas en el contenedor principal del modulo */
+  border-radius: 0;
   box-shadow: var(--crystal-shadow), var(--crystal-inner);
   backdrop-filter: blur(24px) saturate(140%);
 }
@@ -99,6 +102,26 @@ body {
   box-shadow: 0 6px 15px rgba(49, 70, 140, 0.15);
 }
 
+/* barra de busqueda: misma tonalidad que glass-input, tamaño h-12, espacio para icono a la izquierda */
+.search-input {
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.65) 0%, rgba(233, 241, 255, 0.4) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border-radius: 1rem;
+  height: 3rem;
+  width: 100%;
+  outline: none;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+.search-input:focus {
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.82) 0%, rgba(233, 241, 255, 0.58) 100%);
+  box-shadow: 0 0 0 2px rgba(132, 162, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.search-input::placeholder {
+  color: rgba(100, 116, 139, 0.65);
+}
+
 /* Inputs */
 .glass-input {
   background: linear-gradient(140deg, rgba(255, 255, 255, 0.65) 0%, rgba(233, 241, 255, 0.4) 100%);
@@ -111,7 +134,9 @@ body {
   box-shadow: 0 0 0 2px rgba(132, 162, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.app-shell button {
+
+.app-shell button,
+.app-modal-overlay button {
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -131,7 +156,8 @@ body {
 }
 
 
-.app-shell button::before {
+.app-shell button::before,
+.app-modal-overlay button::before {
   content: '';
   position: absolute;
   left: 8%;
@@ -144,7 +170,8 @@ body {
 }
 
 
-.app-shell button::after {
+.app-shell button::after,
+.app-modal-overlay button::after {
   content: '';
   position: absolute;
   left: 12%;
@@ -159,7 +186,8 @@ body {
   transition: opacity 220ms ease;
 }
 
-.app-shell button:hover {
+.app-shell button:hover,
+.app-modal-overlay button:hover {
   transform: translateY(-1px);
   background:
     linear-gradient(165deg, rgba(255, 255, 255, 0.18) 0%, rgba(242, 236, 255, 0.14) 50%, rgba(216, 203, 255, 0.12) 100%) !important;
@@ -170,19 +198,25 @@ body {
     0 6px 16px rgba(176, 145, 236, 0.12),
     0 0 14px rgba(255, 255, 255, 0.18);
 }
-.app-shell button:hover::after {
+.app-shell button:hover::after,
+.app-modal-overlay button:hover::after {
   opacity: 0.62;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(223, 213, 255, 0.18));
 }
-.app-shell button:active { transform: translateY(1px) scale(0.995); }
+.app-shell button:active,
+.app-modal-overlay button:active { transform: translateY(1px) scale(0.995); }
 .app-shell button:hover,
 .app-shell button:focus-visible,
-.app-shell button:active {
+.app-shell button:active,
+.app-modal-overlay button:hover,
+.app-modal-overlay button:focus-visible,
+.app-modal-overlay button:active {
   color: var(--product-violet-black) !important;
 }
 
 
-.app-shell button:focus-visible {
+.app-shell button:focus-visible,
+.app-modal-overlay button:focus-visible {
   outline: none;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.74),
@@ -192,12 +226,14 @@ body {
     0 0 24px rgba(134, 237, 255, 0.34);
 }
 
-.app-shell button:disabled {
+.app-shell button:disabled,
+.app-modal-overlay button:disabled {
   opacity: 0.62;
   cursor: not-allowed;
   filter: grayscale(0.12);
 }
-.app-shell button:disabled::after { opacity: 0.35; }
+.app-shell button:disabled::after,
+.app-modal-overlay button:disabled::after { opacity: 0.35; }
 
 .app-shell .mx-auto.max-w-7xl {
   width: 100%;
@@ -224,13 +260,15 @@ body {
 .app-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* encima de todo */
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.4);
   padding: 1rem;
-  border-radius: 40px;
+  /* sin esquinas redondeadas */
+  border-radius: 0;
 }
 
 .app-modal-overlay--padded {
@@ -241,9 +279,15 @@ body {
   align-items: flex-end;
 }
 
+.app-modal-overlay--form {
+  background: rgba(2, 6, 23, 0.35);
+  backdrop-filter: blur(4px);
+}
+
 .app-modal-shell {
   width: 100%;
-  border-radius: 40px;
+  /* esquinas redondeadas en el contenedor del modal/formulario */
+  border-radius: 2.5rem;
   box-shadow: 0 24px 60px rgba(17, 24, 39, 0.24);
 }
 
@@ -267,26 +311,31 @@ body {
   max-width: 24rem;
 }
 
+/* esquinas redondeadas en el contenedor del alert */
 .app-alert-shell {
   max-width: 21rem;
-  border-radius: 40px;
+  border-radius: 2.5rem;
 }
 
 /* Este estilo es para alert de error. */
 .app-alert-overlay--error {
-  border-radius: 40px;
+  border-radius: 0;
   background: rgba(0, 0, 0, 0.12);
 }
 
-/* Overlay para alertas dentro de módulos/páginas. Cubre toda la shell de esquina a esquina
-   con un fondo semi-transparente. Se usa con portal=false para renderizar inline relativo
-   al contenedor padre (app-atmosphere). Este overlay centra el alerta en el módulo completo. */
+/* overlay de alerts: cubre toda la pantalla y centra el contenido */
 .app-alert-overlay--module {
-  border-radius: 40px;
+  /* sin esquinas redondeadas */
+  border-radius: 0;
   background: rgba(0, 0, 0, 0.12);
   position: fixed;
   inset: 0;
   margin: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* encima de todo */
+  z-index: 9999;
 }
 
 /* Este estilo es para alert de éxito del login. */
@@ -362,6 +411,24 @@ body {
   background: #60a5fa;
 }
 
+
+/* barra de navegacion fija en la parte superior */
+.app-topbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 4rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: 0 2px 12px rgba(40, 62, 128, 0.1);
+  transition: left 300ms ease;
+}
 
 /* Sidebar / Navbar style used in dashboard */
 .sidebar-shell {

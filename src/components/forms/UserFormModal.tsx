@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Portal } from '@/components/ui/Portal';
 import { usersService } from '@/services/users.service';
 import { rolesService } from '@/services/roles.service';
 import { User } from '@/types/user';
@@ -131,7 +132,8 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
   return (
-    <div className="app-modal-overlay app-modal-overlay--padded">
+    <Portal>
+    <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
       <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
         <div className="mb-5">
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
@@ -249,5 +251,6 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
