@@ -130,9 +130,6 @@ export default function PermissionsPage() {
               <p className="mt-1 text-sm text-slate-600">Manage system access levels and modules.</p>
             </div>
           </div>
-          <button onClick={openCreate} className={buttonBase}>
-            <Plus className="mr-2 h-4 w-4" /> Create
-          </button>
         </div>
 
         {isLoading ? (

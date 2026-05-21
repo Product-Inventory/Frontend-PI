@@ -21,7 +21,8 @@ const statusOptions: StatusFilter[] = ["all", "DRAFT", "CONFIRMED", "DELIVERED",
 
 const orderEmptyForm: OrderFormValues = {
   folio: "",
-  fecha: "",
+  fechaOrden: "",
+  fechaEntrega: null, // puede iniciar null
   clienteId: "",
   comentarios: "",
   items: [
@@ -31,7 +32,6 @@ const orderEmptyForm: OrderFormValues = {
       precioUnitario: 0,
       productNombre: "",
       sku: "",
-      subtotal: 0,
     },
   ],
 };
@@ -215,11 +215,13 @@ export default function OrdersPage() {
     setIsOrderSaving(true);
     try {
       const cleanItems = orderForm.items.map((item) => ({
-        productId: item.productId,
+        productId: String(item.productId || ""),
         cantidad: +item.cantidad,
+        precioUnitario: +item.precioUnitario,
       }));
       const data: OrderFormValues = {
         ...orderForm,
+        fechaEntrega: orderForm.fechaEntrega ?? null,
         items: cleanItems,
       };
       if (editingOrder) {
@@ -242,7 +244,8 @@ export default function OrdersPage() {
     setEditingOrder(order);
     setOrderForm({
       folio: order.folio,
-      fecha: order.fecha,
+      fechaOrden: order.fechaOrden,
+      fechaEntrega: order.fechaEntrega ?? null,
       clienteId: order.clienteId,
       comentarios: order.comentarios ?? "",
       items: order.items.map(item => ({
@@ -251,7 +254,6 @@ export default function OrdersPage() {
         precioUnitario: item.precioUnitario,
         productNombre: item.productNombre,
         sku: item.sku,
-        subtotal: item.subtotal,
       })),
     });
     setIsOrderModalOpen(true);
@@ -259,7 +261,11 @@ export default function OrdersPage() {
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
   const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
-
+  const total = orderForm.items.reduce((acc, item) => {
+  const qty = Number(item.cantidad || 0);
+  const price = Number(item.precioUnitario || 0);
+  return acc + qty * price;
+}, 0);
   return (
     <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
       <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
@@ -362,7 +368,7 @@ export default function OrdersPage() {
                     orders.map((order) => (
                       <tr key={order.id} className="border-t border-white/18 transition hover:bg-white/10">
                         <td className="px-5 py-5 font-extrabold text-slate-800">{order.folio}</td>
-                        <td className="px-5 py-5 text-slate-700">{order.fecha}</td>
+                        <td className="px-5 py-5 text-slate-700">{order.fechaOrden}</td>
                         <td className="px-5 py-5 text-slate-700">{order.clienteNombre}</td>
                         <td className="px-5 py-5">
                           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
@@ -464,7 +470,7 @@ export default function OrdersPage() {
                       </div>
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                      <MobileMeta label="Date" value={order.fecha} />
+                      <MobileMeta label="Date" value={order.fechaOrden} />
                       <MobileMeta label="Total" value={`$${order.total.toFixed(2)}`} />
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -569,16 +575,31 @@ export default function OrdersPage() {
                   required
                 />
               </Field>
-              <Field label="Date" className="md:col-span-1">
-                <input
-                  type="date"
-                  name="fecha"
-                  className="glass-input w-full"
-                  value={orderForm.fecha}
-                  onChange={handleOrderField}
-                  required
-                />
-              </Field>
+              <Field label="Order date" className="md:col-span-1">
+                  <input
+                    type="date"
+                    name="fechaOrden"
+                    className="glass-input w-full"
+                    value={orderForm.fechaOrden}
+                    onChange={handleOrderField}
+                    required
+                  />
+                </Field>
+
+                <Field label="Delivery date" className="md:col-span-1">
+                  <input
+                    type="date"
+                    name="fechaEntrega"
+                    className="glass-input w-full"
+                    value={orderForm.fechaEntrega ?? ""}
+                    onChange={(e) =>
+                      setOrderForm((prev) => ({
+                        ...prev,
+                        fechaEntrega: e.target.value ? e.target.value : null,
+                      }))
+                    }
+                  />
+                </Field>
               <Field label="Client" className="md:col-span-1">
                 <select
                   name="clienteId"
@@ -647,6 +668,11 @@ export default function OrdersPage() {
                 <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
                   + Add product
                 </button>
+                <div className="md:col-span-3 flex justify-end">
+                  <div className="rounded-2xl border border-white/40 bg-white/25 px-4 py-2 text-sm font-bold text-slate-800">
+                    Total: ${total.toFixed(2)}
+                  </div>
+                </div>
               </div>
               <div className="md:col-span-3 flex justify-end gap-3 mt-4">
                 <button type="button" onClick={() => setIsOrderModalOpen(false)} className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55">Cancel</button>

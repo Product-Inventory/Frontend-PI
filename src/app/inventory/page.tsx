@@ -27,8 +27,8 @@ type AdjustFormErrors = Partial<Record<keyof AdjustFormState, string>>;
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 // Cuántos registros mostrar por página en cada tabla
-const inventoryItemsPerPage = 4;
-const movementItemsPerPage  = 4;
+const inventoryItemsPerPage = 3;
+const movementItemsPerPage  = 3;
 
 // Estado vacío que se usa al abrir o resetear el modal de ajuste
 const emptyAdjustForm: AdjustFormState = {
@@ -347,7 +347,7 @@ export default function InventoryPage() {
                     <Toast
                         message={toast.message}
                         type={toast.type}
-                        duration={1450}
+                        duration={1000}
                         onClose={() => setToast(null)}
                         portal={false}
                         overlayClassName="absolute inset-0"
