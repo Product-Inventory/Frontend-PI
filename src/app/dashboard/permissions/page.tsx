@@ -7,7 +7,7 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
-import { Shield, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Shield, Search } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -16,6 +16,7 @@ export default function PermissionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
@@ -99,12 +100,25 @@ export default function PermissionsPage() {
     }
   };
 
+  const filteredPermissions = permissions.filter((p) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      p.code.toLowerCase().includes(term) ||
+      p.nombre.toLowerCase().includes(term) ||
+      (p.modulo && p.modulo.toLowerCase().includes(term))
+    );
+  });
 
-  const totalPages = Math.ceil(permissions.length / itemsPerPage);
-  const paginatedPermissions = permissions.slice(
+  const totalPages = Math.ceil(filteredPermissions.length / itemsPerPage) || 1;
+  const paginatedPermissions = filteredPermissions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
   const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
@@ -122,7 +136,7 @@ export default function PermissionsPage() {
 
       <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
 
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
               <Shield className="h-6 w-6 text-black" />
@@ -132,9 +146,17 @@ export default function PermissionsPage() {
               <p className="mt-1 text-sm text-slate-600">Manage system access levels and modules.</p>
             </div>
           </div>
-          <button onClick={openCreate} className={buttonBase}>
-            <Plus className="mr-2 h-4 w-4" /> Create
-          </button>
+
+          <div className="relative w-full lg:w-80">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search permissions..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full rounded-full border border-white/50 bg-white/35 py-2.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-500 outline-none backdrop-blur-sm transition focus:border-indigo-500 focus:bg-white/50 shadow-sm"
+            />
+          </div>
         </div>
 
         {isLoading ? (
@@ -143,66 +165,65 @@ export default function PermissionsPage() {
           <div className="glass-card overflow-hidden rounded-[40px]">
 
             <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full table-fixed text-sm">
                 <thead className="bg-white/25">
                   <tr className="text-left text-xs font-extrabold uppercase tracking-[0.22em] text-slate-600">
-                    <th className="px-5 py-4">Code</th>
-                    <th className="px-5 py-4">Name</th>
-                    <th className="px-5 py-4">Module</th>
-                    <th className="px-5 py-4">Description</th>
-                    <th className="px-5 py-4 text-center">Actions</th>
+                    <th className="w-1/5 px-5 py-4">Code</th>
+                    <th className="w-1/4 px-5 py-4">Name</th>
+                    <th className="w-40 px-5 py-4">Module</th>
+                    <th className="w-auto px-16 py-4">Description</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedPermissions.map((p) => (
-                    <tr key={p.id} className="border-t border-white/18 transition hover:bg-white/10">
-                      <td className="px-5 py-5 font-extrabold text-slate-800">{p.code}</td>
-                      <td className="px-5 py-5 font-semibold text-slate-800">{p.nombre}</td>
-                      <td className="px-5 py-5 text-slate-700">
-                        <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
-                          {p.modulo}
-                        </span>
-                      </td>
-                      <td className="px-5 py-5 text-slate-600">{p.descripcion || "-"}</td>
-                      <td className="px-5 py-5 text-center">
-                        <div className="inline-flex gap-2">
-                          <button onClick={() => openEdit(p)} className={iconButtonBase}>✏️</button>
-                          <button 
-                            onClick={() => { setPermissionToDelete(p); setConfirmOpen(true); }} 
-                            className={iconButtonBase}
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                  {paginatedPermissions.length > 0 ? (
+                    paginatedPermissions.map((p) => (
+                      <tr key={p.id} className="border-t border-white/18 transition hover:bg-white/10">
+                        <td className="px-5 py-5 font-extrabold text-slate-800 break-words">{p.code}</td>
+                        <td className="px-5 py-5 font-semibold text-slate-800 break-words">{p.nombre}</td>
+                        <td className="px-5 py-5 text-slate-700">
+                          <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
+                            {p.modulo}
+                          </span>
+                        </td>
+                        <td className="px-16 py-5 text-slate-600 pr-10 leading-relaxed">{p.descripcion || "-"}</td>
+                        <td className="px-5 py-5 text-center">
+                          <div className="inline-flex gap-2">
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-500">
+                        No permissions found matching "{searchTerm}"
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="grid gap-4 p-4 md:hidden">
-              {paginatedPermissions.map((p) => (
-                <article key={p.id} className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">CODE</p>
-                      <p className="text-lg font-extrabold text-slate-900">{p.code}</p>
+              {paginatedPermissions.length > 0 ? (
+                paginatedPermissions.map((p) => (
+                  <article key={p.id} className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">CODE</p>
+                        <p className="text-lg font-extrabold text-slate-900">{p.code}</p>
+                      </div>
+                      <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">{p.modulo}</span>
                     </div>
-                    <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">{p.modulo}</span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-800">{p.nombre}</p>
-                  <div className="mt-4 flex gap-2">
-                    <button onClick={() => openEdit(p)} className={`${buttonBase} flex-1`}>✏️ Edit</button>
-                    <button 
-                      onClick={() => { setPermissionToDelete(p); setConfirmOpen(true); }} 
-                      className={iconButtonBase}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{p.nombre}</p>
+                    <div className="mt-4 flex gap-2">
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="text-center py-6 text-sm text-slate-500">
+                  No permissions found matching "{searchTerm}"
+                </p>
+              )}
             </div>
 
             <div className="flex justify-between items-center border-t border-white/20 px-5 py-4">
