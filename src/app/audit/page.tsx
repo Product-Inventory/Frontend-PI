@@ -34,11 +34,16 @@ export default function AuditPage() {
     log.action.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const paginatedLogs = filteredLogs.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const paginationBtnBase = "flex h-11 w-11 items-center justify-center rounded-full border border-white/45 bg-white/30 shadow-lg backdrop-blur-md transition hover:bg-white/50 disabled:opacity-20 disabled:hover:translate-y-0 active:scale-95";
 
@@ -61,13 +66,14 @@ export default function AuditPage() {
             </div>
           </div>
 
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full lg:w-80">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder="Search logs..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="glass-input w-full pl-12 h-12 rounded-2xl bg-white/20 border-white/30 placeholder:text-slate-400 focus:bg-white/40 transition-all"
+              onChange={handleSearchChange}
+              className="w-full rounded-full border border-white/50 bg-white/35 py-2.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-500 outline-none backdrop-blur-sm transition focus:border-indigo-500 focus:bg-white/50 shadow-sm"
             />
           </div>
         </div>
@@ -78,33 +84,41 @@ export default function AuditPage() {
           <div className="glass-card flex flex-col rounded-[45px] overflow-hidden shadow-2xl border border-white/40">
             
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full table-fixed text-left border-collapse">
                 <thead className="bg-white/10">
                   <tr className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-500">
-                    <th className="px-8 py-6">User</th>
-                    <th className="px-8 py-6">Action</th>
-                    <th className="px-8 py-6">Resource</th>
-                    <th className="px-8 py-6">Date</th>
+                    <th className="w-1/5 px-8 py-6">User</th>
+                    <th className="w-1/5 px-8 py-6">Action</th>
+                    <th className="w-auto px-16 py-6">Resource</th>
+                    <th className="w-72 px-8 py-6">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {paginatedLogs.map((log, idx) => (
-                    <tr key={idx} className="group transition hover:bg-white/10">
-                      <td className="px-8 py-5 font-black text-slate-800">{log.usuario}</td>
-                      <td className="px-8 py-5 font-bold text-slate-700">{log.action}</td>
-                      <td className="px-8 py-5">
-                        <span className="rounded-full bg-indigo-100/50 border border-indigo-200/50 px-4 py-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest">
-                          {log.resource}
-                        </span>
-                      </td>
-                      <td className="px-8 py-5 font-medium text-slate-500">
-                        {new Date(log.createdAt).toLocaleString('en', { 
-                          day: '2-digit', month: '2-digit', year: 'numeric', 
-                          hour: '2-digit', minute: '2-digit' 
-                        })}
+                  {paginatedLogs.length > 0 ? (
+                    paginatedLogs.map((log, idx) => (
+                      <tr key={idx} className="group transition hover:bg-white/10">
+                        <td className="px-8 py-5 font-black text-slate-800 break-words">{log.usuario}</td>
+                        <td className="px-8 py-5 font-bold text-slate-700 break-words">{log.action}</td>
+                        <td className="px-16 py-5">
+                          <span className="rounded-full bg-indigo-100/50 border border-indigo-200/50 px-4 py-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest block w-fit break-all">
+                            {log.resource}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5 font-medium text-slate-500 whitespace-nowrap">
+                          {new Date(log.createdAt).toLocaleString('en', { 
+                            day: '2-digit', month: '2-digit', year: 'numeric', 
+                            hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-8 py-10 text-center text-sm text-slate-500">
+                        No logs found matching "{searchTerm}"
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
