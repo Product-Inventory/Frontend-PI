@@ -7,6 +7,7 @@ import { Toast } from "@/components/ui/Toast";
 import { inventoryService } from "@/services/inventory.service";
 import type { InventoryAdjustmentPayload, InventoryItem, InventoryMovement } from "@/types/inventory";
 import { Activity, AlertTriangle, Box } from "lucide-react";
+import { useAuthStore } from "@/store/auth.store";
 
 // ── Tipos de filtro ────────────────────────────────────────────────────────────
 
@@ -72,6 +73,8 @@ function normalizeOptionalText(value: string) {
 export default function InventoryPage() {
 
     // ── Estado global de UI ──────────────────────────────────────────────────
+
+    const hasPermission = useAuthStore((state) => state.hasPermission);
 
     // Canal ligero para mostrar éxitos y errores al usuario
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -324,6 +327,15 @@ export default function InventoryPage() {
         }
     };
 
+    // Verifica permisos antes de abrir el modal de ajuste
+    const handleAdjustClick = (item: InventoryItem) => {
+        if (!hasPermission('inventory:update')) {
+            setToast({ message: "You don't have permission to adjust the inventory", type: "error" });
+            return;
+        }
+        void openAdjust(item);
+    };
+
     // ── Navegación entre pestañas ────────────────────────────────────────────
 
     // Cambia a la pestaña de movimientos y prefiltra por el producto seleccionado.
@@ -459,7 +471,14 @@ export default function InventoryPage() {
                                     type="text"
                                     placeholder="Search movements..."
                                     value={movementsSearch}
-                                    onChange={(e) => setMovementsSearch(e.target.value)}
+                                    onChange={(e) => {
+                                    const value = e.target.value;
+                                    setMovementsSearch(value);
+                                    if (value.trim() === "") {
+                                        setMovementsProductId("");
+                                        setMovementsProductName("");
+                                    }
+                                }}
                                     className="glass-input"
                                 />
                                 {/* Limpia el texto y el filtro por producto activo */}
@@ -541,7 +560,7 @@ export default function InventoryPage() {
 
                                             {/* Acciones disponibles para el producto */}
                                             <div className="mt-4 grid grid-cols-2 gap-2">
-                                                <button onClick={() => void openAdjust(item)}>
+                                                <button onClick={() => handleAdjustClick(item)}>
                                                     Adjust
                                                 </button>
                                                 <button onClick={() => handleViewMovements(item)}>
@@ -636,7 +655,7 @@ export default function InventoryPage() {
                                                         {/* Botones de acción por fila */}
                                                         <td className="px-5 py-5 text-center">
                                                             <div className="inline-flex items-center gap-2">
-                                                                <button onClick={() => void openAdjust(item)}>
+                                                                <button onClick={() => handleAdjustClick(item)}>
                                                                     Adjust
                                                                 </button>
                                                                 <button onClick={() => handleViewMovements(item)}>
@@ -885,7 +904,7 @@ export default function InventoryPage() {
 
                         {/* Mientras se recarga el producto se muestra un spinner */}
                         {adjustLoading ? (
-                            <Loading label="Loading inventory detail..." />
+                            <Loading label="Loading..." />
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
 
