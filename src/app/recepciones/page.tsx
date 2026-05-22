@@ -8,7 +8,7 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { ClipboardList, Plus, Eye, Pencil, CheckCircle, Trash2 } from "lucide-react";
+import { ClipboardList, Plus, Eye, CheckCircle } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -18,8 +18,6 @@ export default function ReceptionsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "DRAFT" | "CONFIRMED">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingReception, setEditingReception] = useState<Reception | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -32,8 +30,6 @@ export default function ReceptionsPage() {
       setIsLoading(true);
       const data = await receptionsService.getAll();
       setReceptions(data.items || []);
-      setTotalItems(data.items?.length || 0);
-      setTotalPages(Math.ceil((data.items?.length || 0) / itemsPerPage));
     } catch (error: any) {
       setToast({ message: error?.response?.data?.message || "Error loading receptions", type: "error" });
     } finally {
@@ -95,7 +91,6 @@ export default function ReceptionsPage() {
     }
   };
 
-  // Filtro local
   const filteredReceptions = receptions.filter((rec) => {
     const term = search.toLowerCase();
     const matchesSearch =
@@ -121,14 +116,12 @@ export default function ReceptionsPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
-        {/* HEADER – idéntico al de inventory */}
+        {/* HEADER */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
@@ -156,42 +149,38 @@ export default function ReceptionsPage() {
           </div>
         </div>
 
-        {/* BARRA DE FILTROS – copia exacta del estilo de inventory (misma estructura, sin estilos extra en el botón) */}
-       {/* BARRA DE FILTROS – estilo 1:1 con Inventory, limitando el ancho del input */}
-          {/* BARRA DE FILTROS – grid 50/50 con barra de búsqueda limitada */}
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-  {/* Mitad izquierda: input + botón con ancho máximo */}
-  <div className="flex items-center gap-2 sm:max-w-md">
-    <input
-      type="text"
-      placeholder="Search by folio or supplier..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      className="glass-input flex-1 min-w-0"
-    />
-    <button onClick={() => setSearch("")} className="whitespace-nowrap">
-      Clear filter
-    </button>
-  </div>
-  {/* Mitad derecha: select (sin cambios) */}
-  <div className="flex justify-end">
-    <select
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value as "all" | "DRAFT" | "CONFIRMED")}
-      className="glass-input w-full sm:w-auto"
-    >
-      <option value="all">All statuses</option>
-      <option value="DRAFT">Draft</option>
-      <option value="CONFIRMED">Confirmed</option>
-    </select>
-  </div>
-</div>
+        {/* FILTERS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex items-center gap-2 sm:max-w-md">
+            <input
+              type="text"
+              placeholder="Search by folio or supplier..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="glass-input flex-1 min-w-0"
+            />
+            <button onClick={() => setSearch("")} className="whitespace-nowrap">
+              Clear filter
+            </button>
+          </div>
+          <div className="flex justify-end">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "DRAFT" | "CONFIRMED")}
+              className="glass-input w-full sm:w-auto"
+            >
+              <option value="all">All statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CONFIRMED">Confirmed</option>
+            </select>
+          </div>
+        </div>
 
         {isLoading ? (
           <Loading label="Loading receptions..." />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
-            {/* TABLA – escritorio */}
+            {/* Desktop table */}
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-sm">
                 <thead className="bg-white/25">
@@ -227,13 +216,13 @@ export default function ReceptionsPage() {
                             {rec.status === "DRAFT" && (
                               <>
                                 <button onClick={() => handleEdit(rec)} className="text-yellow-200 hover:text-yellow-100" title="Edit">
-                                  <Pencil className="h-4 w-4" />
+                                  ✏️
                                 </button>
                                 <button onClick={() => handleConfirm(rec.id)} disabled={confirmingId === rec.id} className="text-green-200 hover:text-green-100" title="Confirm">
                                   <CheckCircle className="h-4 w-4" />
                                 </button>
                                 <button onClick={() => handleDelete(rec)} className="text-red-200 hover:text-red-100" title="Delete">
-                                  <Trash2 className="h-4 w-4" />
+                                  🗑️
                                 </button>
                               </>
                             )}
@@ -252,7 +241,7 @@ export default function ReceptionsPage() {
               </table>
             </div>
 
-            {/* VERSIÓN MÓVIL (cards) */}
+            {/* Mobile cards */}
             <div className="grid gap-4 p-4 md:hidden">
               {paginatedReceptions.length > 0 ? (
                 paginatedReceptions.map((rec) => (
@@ -291,7 +280,7 @@ export default function ReceptionsPage() {
               )}
             </div>
 
-            {/* PAGINACIÓN */}
+            {/* Pagination */}
             {showPagination && (
               <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
                 <p className="text-sm text-gray-400">Page {currentPage} of {totalFilteredPages}</p>

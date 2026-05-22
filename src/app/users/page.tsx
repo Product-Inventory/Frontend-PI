@@ -7,7 +7,7 @@ import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import UserFormModal from "@/components/forms/UserFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { Users, Plus, Pencil, Power, Trash2, Search } from "lucide-react";
+import { Users, Plus, Power, Search } from "lucide-react";
 
 const itemsPerPage = 5;
 
@@ -77,7 +77,6 @@ export default function UsersPage() {
     }
   };
 
-  // Filtro local con búsqueda y estado
   const filteredUsers = users.filter((u) => {
     const fullName = `${u.nombre} ${u.apellido}`.toLowerCase();
     const term = search.toLowerCase();
@@ -104,10 +103,8 @@ export default function UsersPage() {
           <Toast
             message={toast.message}
             type={toast.type}
-            duration={3000}
+            duration={1000}
             onClose={() => setToast(null)}
-            portal={false}
-            overlayClassName="app-alert-overlay--module"
           />
         )}
 
@@ -139,7 +136,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS (grid 50/50) */}
+        {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 sm:max-w-md">
             <div className="relative flex-1">
@@ -205,13 +202,13 @@ export default function UsersPage() {
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
                             <button onClick={() => handleEdit(user)} className={buttonBase} title="Edit">
-                              <Pencil className="h-4 w-4" />
+                              ✏️
                             </button>
                             <button onClick={() => handleToggleActive(user)} className={buttonBase} title={user.activo ? "Deactivate" : "Activate"}>
                               <Power className="h-4 w-4" />
                             </button>
                             <button onClick={() => handleDelete(user)} className={buttonBase} title="Delete">
-                              <Trash2 className="h-4 w-4" />
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -228,7 +225,6 @@ export default function UsersPage() {
               </table>
             </div>
 
-            {/* Versión móvil (cards) */}
             <div className="grid gap-4 p-4 md:hidden">
               {paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user) => (
@@ -261,7 +257,6 @@ export default function UsersPage() {
               )}
             </div>
 
-            {/* Paginación */}
             {showPagination && (
               <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
                 <p className="text-sm text-gray-400">Page {currentPage} of {totalPages}</p>

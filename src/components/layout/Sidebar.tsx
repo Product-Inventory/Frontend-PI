@@ -146,7 +146,7 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
       className={`sidebar-shell fixed left-0 top-0 z-[60] flex h-screen w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-none overflow-hidden text-white transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full'}`}
     >
       <div className="flex h-full w-full flex-col px-3 py-3">
-        <div className="sidebar-brand flex flex-shrink-0 items-center gap-3 px-4 py-4">
+        <div className="sidebar-brand flex flex-shrink-0 items-center justify-center px-4 py-4">
           <button
             type="button"
             onClick={onClose}
@@ -160,7 +160,6 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
               <path d="M20 7.5V16.5L12 21" />
             </svg>
           </button>
-          <p className="text-[1.5rem] font-extrabold tracking-tight text-white">Inventory Pro</p>
         </div>
 
         <div className="sidebar-divider mx-2 my-4 flex-shrink-0" />

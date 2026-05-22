@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Loading } from "@/components/ui/Loading";
+import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { inventoryService } from "@/services/inventory.service";
 import type { InventoryAdjustmentPayload, InventoryItem, InventoryMovement } from "@/types/inventory";
@@ -347,10 +348,8 @@ export default function InventoryPage() {
                     <Toast
                         message={toast.message}
                         type={toast.type}
-                        duration={1450}
+                        duration={1000}
                         onClose={() => setToast(null)}
-                        portal={false}
-                        overlayClassName="absolute inset-0"
                     />
                 )}
 
@@ -870,7 +869,8 @@ export default function InventoryPage() {
 
             {/* ── Modal de ajuste de inventario ── */}
             {adjustOpen && (
-                <div className="app-modal-overlay app-modal-overlay px-4 py-4 rounded-[40px]">
+                <Portal>
+                <div className="app-modal-overlay app-modal-overlay--form px-4 py-4">
                     <div className="app-modal-shell app-modal-shell--lg glass-card rounded-t-[28px] sm:rounded-[28px] p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
 
                         {/* Encabezado del modal */}
@@ -968,6 +968,7 @@ export default function InventoryPage() {
                         </div>
                     </div>
                 </div>
+                </Portal>
             )}
         </div>
     );

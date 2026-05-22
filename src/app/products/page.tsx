@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
+import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
 import type { Product, ProductFormValues } from "@/types/product";
-import { ChevronLeft, ChevronRight, Box, Pencil, Plus, Power, Search, Trash2 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
+import { ChevronLeft, ChevronRight, Box, CheckCircle2, Plus, Power, Search } from "lucide-react";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -27,7 +27,7 @@ type ProductFormState = {
 
 type ProductFormErrors = Partial<Record<keyof ProductFormState, string>>;
 
-const itemsPerPage = 9;
+const itemsPerPage = 4;
 
 const emptyForm: ProductFormState = {
     sku: "",
@@ -92,6 +92,7 @@ export default function ProductsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [totalActive, setTotalActive] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [form, setForm] = useState<ProductFormState>(emptyForm);
@@ -142,6 +143,17 @@ export default function ProductsPage() {
             setIsLoading(false);
         }
     };
+
+    const fetchActiveCount = async () => {
+        try {
+            const data = await productsService.getAll({ activo: true, limit: 1 });
+            setTotalActive(data.total || 0);
+        } catch {}
+    };
+
+    useEffect(() => {
+        void fetchActiveCount();
+    }, []);
 
     useEffect(() => {
         const timer = window.setTimeout(() => {
@@ -259,6 +271,7 @@ export default function ProductsPage() {
             setEditingProduct(null);
             setForm(emptyForm);
             await fetchProducts();
+            void fetchActiveCount();
         } catch (error: any) {
             console.error(error);
             setToast({ message: error?.response?.data?.message || "Error saving product", type: "error" });
@@ -275,6 +288,7 @@ export default function ProductsPage() {
                 type: "success",
             });
             await fetchProducts();
+            void fetchActiveCount();
         } catch (error: any) {
             console.error(error);
             setStatusToast({ message: error?.response?.data?.message || "Error changing product status", type: "error" });
@@ -290,6 +304,7 @@ export default function ProductsPage() {
             setConfirmOpen(false);
             setProductToDelete(null);
             await fetchProducts();
+            void fetchActiveCount();
         } catch (error: any) {
             console.error(error);
             setToast({ message: error?.response?.data?.message || "Error deleting product", type: "error" });
@@ -306,9 +321,6 @@ export default function ProductsPage() {
                     message={toast.message}
                     type={toast.type}
                     duration={1000}
-                    portal={false}
-                    overlayClassName="app-modal-overlay app-modal-overlay--padded"
-                    shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
                     onClose={() => setToast(null)}
                 />
             )}
@@ -317,16 +329,11 @@ export default function ProductsPage() {
                     message={statusToast.message}
                     type={statusToast.type}
                     duration={1000}
-                    portal={false}
-                    overlayClassName="app-modal-overlay app-modal-overlay--padded app-alert-overlay--module"
-                    shellClassName="app-modal-shell--xl glass-card p-6 md:p-8"
                     onClose={() => setStatusToast(null)}
                 />
             )}
             <div className="mx-auto relative flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-
-                    {/* Left: icon and title */}
                     <div className="flex items-center gap-4">
                         <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
                             <Box className="h-6 w-6 text-black" />
@@ -338,48 +345,59 @@ export default function ProductsPage() {
                             <p className="mt-1 text-sm text-slate-600">Catalog ready for inventory and receptions.</p>
                         </div>
                     </div>
+                </div>
 
-                    {/* Right: Navbar + actions */}
-                    <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
-                        <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                            <div className="flex-1">
-                                <Navbar
-                                    search={search}
-                                    setSearch={(v: string) => {
-                                        setSearch(v);
-                                        setCurrentPage(1);
-                                        void fetchProducts({ search: v, status: statusFilter, page: 1 });
-                                    }}
-                                    moduleFilter={statusFilter}
-                                    setModuleFilter={(v: string) => {
-                                        const newStatus = v as StatusFilter;
-                                        setStatusFilter(newStatus);
-                                        setCurrentPage(1);
-                                        void fetchProducts({ search, status: newStatus, page: 1 });
-                                    }}
-                                    modules={["all", "active", "inactive"]}
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => {
-                                        setSearch("");
-                                        setStatusFilter("all");
-                                        setCurrentPage(1);
-                                        void fetchProducts({ search: "", status: "all", page: 1 });
-                                    }}
-                                    className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
-                                >
-                                    Clear filter
-                                </button>
-
-                                <button onClick={openCreate} className={`${buttonBase} w-full sm:w-auto`}>
-                                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                                    Create
-                                </button>
-                            </div>
+                {/* Badge + filters */}
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            Active products: {totalActive}
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <div className="flex flex-1 items-center gap-2">
+                            <input
+                                type="text"
+                                placeholder="Search by name, sku..."
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setCurrentPage(1);
+                                    void fetchProducts({ search: e.target.value, status: statusFilter, page: 1 });
+                                }}
+                                className="glass-input"
+                            />
+                            <button
+                                onClick={() => {
+                                    setSearch("");
+                                    setStatusFilter("all");
+                                    setCurrentPage(1);
+                                    void fetchProducts({ search: "", status: "all", page: 1 });
+                                }}
+                                className={`${buttonBase} whitespace-nowrap`}
+                            >
+                                Clear filter
+                            </button>
                         </div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                const v = e.target.value as StatusFilter;
+                                setStatusFilter(v);
+                                setCurrentPage(1);
+                                void fetchProducts({ search, status: v, page: 1 });
+                            }}
+                            className="glass-input"
+                        >
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <button onClick={openCreate} className={`${buttonBase} whitespace-nowrap`}>
+                            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                            Create
+                        </button>
                     </div>
                 </div>
                 
@@ -564,7 +582,8 @@ export default function ProductsPage() {
             </div>
 
             {isModalOpen && (
-                <div className="app-modal-overlay app-modal-overlay--padded">
+                <Portal>
+                <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
                     <div className="app-modal-shell app-modal-shell--xl glass-card relative p-6 md:p-8">
                         {validationToast && (
                             <Toast
@@ -572,11 +591,6 @@ export default function ProductsPage() {
                                 type="error"
                                 duration={1000}
                                 onClose={() => setValidationToast(null)}
-                                portal={false}
-                                overlayClassName="app-alert-overlay--module"
-                                shellClassName="app-alert-shell--error"
-                                subtitleClassName="app-alert-subtitle--error"
-                                progressClassName="app-alert-progress--error"
                             />
                         )}
 
@@ -659,6 +673,7 @@ export default function ProductsPage() {
                         </div>
                     </div>
                 </div>
+                </Portal>
             )}
 
             <ConfirmModal

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Settings, Plus, Search } from "lucide-react";
+import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { rolesService } from "@/services/roles.service";
 import { permissionsService } from "@/services/permissions.service";
@@ -231,8 +232,6 @@ export default function RolesPage() {
                     type={toast.type}
                     duration={1000}
                     onClose={() => setToast(null)}
-                    portal={false}
-                    overlayClassName="app-alert-overlay--module"
                 />
             )}
 
@@ -250,16 +249,14 @@ export default function RolesPage() {
 
                     <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
                         <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 shadow-sm w-full">
-                                    <Search className="h-4 w-4 text-slate-400" />
-                                    <input
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search roles..."
-                                        className="w-full bg-transparent py-2 outline-none"
-                                    />
-                                </div>
+                            <div className="relative w-full md:w-80">
+                                
+                                <input
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Search by name or description"
+                                    className="search-input"
+                                />
                             </div>
 
                             <button
@@ -417,7 +414,8 @@ export default function RolesPage() {
                 )}
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex rounded-[40px] bg-slate-950/35 p-4 backdrop-blur-sm sm:p-6">
+                <Portal>
+                <div className="app-modal-overlay app-modal-overlay--form p-4 sm:p-6">
                     <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
                         <div className="h-full overflow-y-auto p-6 md:p-8">
                             {modalToast && (
@@ -433,8 +431,6 @@ export default function RolesPage() {
                                             setForm(emptyForm);
                                         }
                                     }}
-                                    portal={false}
-                                    overlayClassName="app-alert-overlay--module"
                                 />
                             )}
 
@@ -565,6 +561,7 @@ export default function RolesPage() {
                         </div>
                     </div>
                 </div>
+                </Portal>
             )}
         </div>
         </div>
