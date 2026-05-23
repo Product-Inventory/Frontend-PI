@@ -168,6 +168,11 @@ export default function InventoryPage() {
 
     // Obtiene la lista de inventario con los filtros y página actuales
     const fetchInventory = async () => {
+        if (!hasPermission('inventory:read')) {
+            setInventoryLoading(false);
+            setToast({ message: "You don't have permission to view the inventory", type: "error" });
+            return;
+        }
         try {
             // Para que se vea el indicar de carga
             setInventoryLoading(true);
@@ -189,6 +194,10 @@ export default function InventoryPage() {
 
     // Obtiene el historial de movimientos con los filtros y página actuales
     const fetchMovements = async () => {
+        if (!hasPermission('inventory:read')) {
+            setMovementsLoading(false);
+            return;
+        }
         try {
             // Para que se vea el indicador de carga
             setMovementsLoading(true);
