@@ -478,7 +478,7 @@ export default function InventoryPage() {
                             <div className="flex flex-1 items-center gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Search movements..."
+                                    placeholder="Search by name, sku..."
                                     value={movementsSearch}
                                     onChange={(e) => {
                                     const value = e.target.value;
