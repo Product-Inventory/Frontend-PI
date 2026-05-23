@@ -180,28 +180,28 @@ export default function ClientsPage() {
     const contacto = (form.contacto ?? "").trim();
 
     // Nombre: requerido, al menos 2 caracteres
-    if (!nombre) nextErrors.nombre = "El nombre es requerido";
-    else if (nombre.length < 2) nextErrors.nombre = "El nombre debe tener al menos 2 caracteres";
+    if (!nombre) nextErrors.nombre = "Name is required";
+    else if (nombre.length < 2) nextErrors.nombre = "Name must be at least 2 characters long";
 
     // RFC: requerido, 12 o 13 caracteres
-    if (!rfc) nextErrors.rfc = "El RFC es requerido";
-    else if (!(rfc.length === 12 || rfc.length === 13)) nextErrors.rfc = "El RFC debe tener 12 o 13 caracteres";
+    if (!rfc) nextErrors.rfc = "RFC is required";
+    else if (!(rfc.length === 12 || rfc.length === 13)) nextErrors.rfc = "RFC must have 12 or 13 characters";
 
     // Email: requerido, formato válido
-    if (!email) nextErrors.email = "El correo es requerido";
-    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) nextErrors.email = "Correo no válido";
+    if (!email) nextErrors.email = "Email is required";
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) nextErrors.email = "Invalid email format";
 
     // Teléfono: requerido, exactamente 10 dígitos numéricos
-    if (!telefono) nextErrors.telefono = "El teléfono es requerido";
-    else if (!/^\d{10}$/.test(telefono)) nextErrors.telefono = "El teléfono debe tener exactamente 10 dígitos";
+    if (!telefono) nextErrors.telefono = "Phone is required";
+    else if (!/^\d{10}$/.test(telefono)) nextErrors.telefono = "Phone must have exactly 10 digits";
 
     // Dirección: requerido, al menos 4 caracteres
-    if (!direccion) nextErrors.direccion = "La dirección es requerida";
-    else if (direccion.length < 4) nextErrors.direccion = "La dirección debe tener al menos 4 caracteres";
+    if (!direccion) nextErrors.direccion = "Address is required";
+    else if (direccion.length < 4) nextErrors.direccion = "Address must be at least 4 characters long";
 
     // Contacto: requerido, al menos 4 caracteres
-    if (!contacto) nextErrors.contacto = "El contacto es requerido";
-    else if (contacto.length < 4) nextErrors.contacto = "El contacto debe tener al menos 4 caracteres";
+    if (!contacto) nextErrors.contacto = "Contact is required";
+    else if (contacto.length < 4) nextErrors.contacto = "Contact must be at least 4 characters long";
 
     // Notas: opcional
 
