@@ -74,21 +74,12 @@ export default function ClientsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [statusToast, setStatusToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  
+  type TouchedState = Partial<Record<keyof ClientFormState, boolean>>;
+  const [touched, setTouched] = useState<TouchedState>({});
+  const [submitted, setSubmitted] = useState(false);
+
   const requestSeqRef = useRef(0);
   const showPagination = totalItems > itemsPerPage;
-
-  const buildQuery = () => {
-    const query: Record<string, string | number | boolean> = {
-      page: currentPage,
-      limit: itemsPerPage,
-    };
-    const trimmedSearch = search.trim();
-    if (trimmedSearch) query.q = trimmedSearch;
-    if (statusFilter === "active") query.activo = true;
-    if (statusFilter === "inactive") query.activo = false;
-    return query;
-  };
 
   const fetchClients = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
     const requestSeq = ++requestSeqRef.current;
@@ -136,12 +127,84 @@ export default function ClientsPage() {
   useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
   useEffect(() => { setCurrentPage((page) => Math.min(page, totalPages)); }, [totalPages]);
 
+  function validateField(name: keyof ClientFormState, value: any, form: ClientFormState): string | undefined {
+    const v = String(value ?? "").trim();
+
+    switch (name) {
+      case "nombre":
+        if (!v) return "El nombre es requerido";
+        if (v.length < 2) return "El nombre debe tener al menos 2 caracteres";
+        return;
+
+      case "rfc":
+        if (!v) return "El RFC es requerido";
+        if (!(v.length === 12 || v.length === 13)) return "El RFC debe tener 12 o 13 caracteres";
+        return;
+
+      case "email":
+        if (!v) return "El correo es requerido";
+        if (!/^[^@]+@[^@]+\.[^@]+$/.test(v)) return "Correo no válido";
+        return;
+
+      case "telefono":
+        if (!v) return "El teléfono es requerido";
+        if (!/^\d{10}$/.test(v)) return "El teléfono debe tener exactamente 10 dígitos";
+        return;
+
+      case "direccion":
+        if (!v) return "La dirección es requerida";
+        if (v.length < 4) return "La dirección debe tener al menos 4 caracteres";
+        return;
+
+      case "contacto":
+        if (!v) return "El contacto es requerido";
+        if (v.length < 4) return "El contacto debe tener al menos 4 caracteres";
+        return;
+
+      // notas es opcional
+      case "notas":
+      case "activo":
+      default:
+        return;
+    }
+  }
+
   const validateForm = () => {
     const nextErrors: ClientFormErrors = {};
-    const nombre = form.nombre.trim();
-    if (!nombre) nextErrors.nombre = "Name is required";
-    else if (nombre.length < 2) nextErrors.nombre = "Name must have at least 2 characters";
-    if (form.email && !form.email.match(/^[^@]+@[^@]+\.[^@]+$/)) nextErrors.email = "Invalid email";
+
+    const nombre = (form.nombre ?? "").trim();
+    const rfc = (form.rfc ?? "").trim();
+    const email = (form.email ?? "").trim();
+    const telefono = (form.telefono ?? "").trim();
+    const direccion = (form.direccion ?? "").trim();
+    const contacto = (form.contacto ?? "").trim();
+
+    // Nombre: requerido, al menos 2 caracteres
+    if (!nombre) nextErrors.nombre = "El nombre es requerido";
+    else if (nombre.length < 2) nextErrors.nombre = "El nombre debe tener al menos 2 caracteres";
+
+    // RFC: requerido, 12 o 13 caracteres
+    if (!rfc) nextErrors.rfc = "El RFC es requerido";
+    else if (!(rfc.length === 12 || rfc.length === 13)) nextErrors.rfc = "El RFC debe tener 12 o 13 caracteres";
+
+    // Email: requerido, formato válido
+    if (!email) nextErrors.email = "El correo es requerido";
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) nextErrors.email = "Correo no válido";
+
+    // Teléfono: requerido, exactamente 10 dígitos numéricos
+    if (!telefono) nextErrors.telefono = "El teléfono es requerido";
+    else if (!/^\d{10}$/.test(telefono)) nextErrors.telefono = "El teléfono debe tener exactamente 10 dígitos";
+
+    // Dirección: requerido, al menos 4 caracteres
+    if (!direccion) nextErrors.direccion = "La dirección es requerida";
+    else if (direccion.length < 4) nextErrors.direccion = "La dirección debe tener al menos 4 caracteres";
+
+    // Contacto: requerido, al menos 4 caracteres
+    if (!contacto) nextErrors.contacto = "El contacto es requerido";
+    else if (contacto.length < 4) nextErrors.contacto = "El contacto debe tener al menos 4 caracteres";
+
+    // Notas: opcional
+
     return nextErrors;
   };
 
@@ -159,19 +222,39 @@ export default function ClientsPage() {
     setIsModalOpen(true);
   };
 
+  const handleBlur = (event: any) => {
+    const { name, value, type, checked } = event.target;
+    const field = name as keyof ClientFormState;
+    const fieldValue = type === "checkbox" ? checked : value;
+
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
+    const message = validateField(field, fieldValue, form);
+    setFormErrors((prev) => ({ ...prev, [field]: message }));
+  };
+
   const handleChange = (event: any) => {
     const { name, value, type, checked } = event.target;
-    setForm((current) => ({
-      ...current,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const field = name as keyof ClientFormState;
+    const nextValue = type === "checkbox" ? checked : value;
+
+    setForm((current) => {
+      const nextForm = { ...current, [field]: nextValue };
+
+      if (submitted || touched[field]) {
+        const message = validateField(field, nextValue, nextForm);
+        setFormErrors((prev) => ({ ...prev, [field]: message }));
+      }
+
+      return nextForm;
+    });
   };
 
   const handleSave = async () => {
     const nextErrors = validateForm();
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      setToast({ message: "Review fields before saving", type: "error" });
+      setToast({ message: "Complete fields before saving", type: "error" });
       return;
     }
     const payload = {
@@ -237,24 +320,48 @@ export default function ClientsPage() {
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
   const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
+  const activeCount   = clients.filter(c => c.activo).length;
+  const inactiveCount = clients.filter(c => !c.activo).length;
+  let counterValue = 0;
+  let counterLabel = "";
+  let counterIcon = <User className="h-4 w-4 text-indigo-500" />;
+  let counterClass = "bg-blue-50 text-indigo-900";
+
+  if (statusFilter === "all") {
+    counterLabel = "REGISTERED CLIENTS";
+    counterValue = totalItems;
+    counterIcon = <User className="h-4 w-4 text-indigo-500" />;
+    counterClass = "bg-blue-50 text-indigo-900";
+  } else if (statusFilter === "active") {
+    counterLabel = "ACTIVE CLIENTS";
+    counterValue = activeCount;
+    counterIcon = <Power className="h-4 w-4 text-emerald-600" />;
+    counterClass = "bg-emerald-50 text-emerald-700";
+  } else if (statusFilter === "inactive") {
+    counterLabel = "INACTIVE CLIENTS";
+    counterValue = inactiveCount;
+    counterIcon = <Power className="h-4 w-4 text-gray-400" />;
+    counterClass = "bg-gray-100 text-slate-600";
+  }
 
   return (
-    <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
-      <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
-        {toast && (
-          <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
-        )}
-        {statusToast && (
-          <Toast
-            message={statusToast.message}
-            type={statusToast.type}
-            duration={1000}
-            onClose={() => setStatusToast(null)}
-          />
-        )}
+    <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+      {toast && (
+        <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
+      )}
+      {statusToast && (
+        <Toast
+          message={statusToast.message}
+          type={statusToast.type}
+          duration={1000}
+          onClose={() => setStatusToast(null)}
+        />
+      )}
+      <div className="mx-auto relative flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
+        {/* HEADER */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+            <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
               <User className="h-6 w-6 text-black" />
             </div>
             <div>
@@ -264,46 +371,60 @@ export default function ClientsPage() {
               <p className="mt-1 text-sm text-slate-600">Client directory.</p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex-1">
-                <Navbar
-                  search={search}
-                  setSearch={(v: string) => {
-                    setSearch(v);
-                    setCurrentPage(1);
-                    void fetchClients({ search: v, status: statusFilter, page: 1 });
-                  }}
-                  moduleFilter={statusFilter}
-                  setModuleFilter={(v: string) => {
-                    const newStatus = v as StatusFilter;
-                    setStatusFilter(newStatus);
-                    setCurrentPage(1);
-                    void fetchClients({ search, status: newStatus, page: 1 });
-                  }}
-                  modules={["all", "active", "inactive"]}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                    setCurrentPage(1);
-                    void fetchClients({ search: "", status: "all", page: 1 });
-                  }}
-                  className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
-                >
-                  Clear filter
-                </button>
-
-                <button onClick={openCreate} className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}>
-                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Create
-                </button>
-              </div>
+          <button
+            onClick={openCreate}
+            className="rounded-full px-6 py-2 text-base font-semibold bg-gradient-to-r from-indigo-100 to-purple-100 text-[#392750] border border-white/50 shadow hover:bg-white/80 transition inline-flex items-center gap-2"
+          >
+            <Plus className="h-5 w-5" /> Create
+          </button>
+        </div>
+        {/* Counter CHIP */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className={`glass-chip inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-[0.22em] shadow border border-white/50 ${counterClass}`}>
+                {counterIcon}
+                {counterLabel}: 
+                <span className="ml-1 font-extrabold tracking-wide">{counterValue}</span>
+              </span>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex flex-1 items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search by name, email, rfc..."
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                  void fetchClients({ search: e.target.value, status: statusFilter, page: 1 });
+                }}
+                className="glass-input w-full max-w-xs"
+                style={{ minWidth: 0 }}
+              />
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                  void fetchClients({ search: "", status: statusFilter, page: 1 });
+                }}
+                className={`${buttonBase} whitespace-nowrap`}
+              >
+                Clear filter
+              </button>
             </div>
+            <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as StatusFilter);
+                  setCurrentPage(1);
+                  void fetchClients({ search, status: e.target.value as StatusFilter, page: 1 });
+                }}
+                className="w-full sm:w-26 max-w-xs px-4 py-2 rounded-xl border glass-input shadow-sm text-base bg-white/70"
+              >
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
           </div>
         </div>
 
@@ -453,8 +574,8 @@ export default function ClientsPage() {
             </div>
           </div>
         )}
-
       </div>
+
       {/* MODAL CREAR/EDITAR */}
       {isModalOpen && (
         <Portal>
@@ -473,25 +594,25 @@ export default function ClientsPage() {
                 md:gap-y-3"
             >
               <Field label="Name" error={formErrors.nombre} className="md:col-span-1">
-                <input name="nombre" value={form.nombre} onChange={handleChange} className="glass-input w-full" placeholder="Name" />
+                <input name="nombre" value={form.nombre} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="Name" />
               </Field>
-              <Field label="RFC" className="md:col-span-1">
-                <input name="rfc" value={form.rfc || ""} onChange={handleChange} className="glass-input w-full" placeholder="RFC" />
+              <Field label="RFC" error={formErrors.rfc} className="md:col-span-1">
+                <input name="rfc" value={form.rfc || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="RFC" />
               </Field>
               <Field label="Email" error={formErrors.email} className="md:col-span-1">
-                <input name="email" value={form.email || ""} onChange={handleChange} className="glass-input w-full" placeholder="Email" />
+                <input name="email" value={form.email || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="Email" />
               </Field>
-              <Field label="Contact" className="md:col-span-1">
-                <input name="contacto" value={form.contacto || ""} onChange={handleChange} className="glass-input w-full" placeholder="Contact" />
+              <Field label="Contact" error={formErrors.contacto} className="md:col-span-1">
+                <input name="contacto" value={form.contacto || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="Contact" />
               </Field>
-              <Field label="Phone" className="md:col-span-1">
-                <input name="telefono" value={form.telefono || ""} onChange={handleChange} className="glass-input w-full" placeholder="Phone" />
+              <Field label="Phone" error={formErrors.telefono} className="md:col-span-1">
+                <input name="telefono" value={form.telefono || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="Phone" />
               </Field>
-              <Field label="Address" className="md:col-span-1">
-                <input name="direccion" value={form.direccion || ""} onChange={handleChange} className="glass-input w-full" placeholder="Address" />
+              <Field label="Address" error={formErrors.direccion} className="md:col-span-1">
+                <input name="direccion" value={form.direccion || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full" placeholder="Address" />
               </Field>
-              <Field label="Notes" className="md:col-span-3">
-                <textarea name="notas" value={form.notas || ""} onChange={handleChange} className="glass-input w-full min-h-20" placeholder="Any notes" />
+              <Field label="Notes" error={formErrors.notas} className="md:col-span-3">
+                <textarea name="notas" value={form.notas || ""} onChange={handleChange} onBlur={handleBlur} className="glass-input w-full min-h-20" placeholder="Any notes" />
               </Field>
               <div className="md:col-span-3 flex items-center gap-3 rounded-2xl border border-white/40 bg-white/25 px-4 py-3">
                 <input
