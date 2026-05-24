@@ -41,6 +41,9 @@ export default function AppRouter({ children }: { children: ReactNode }) {
     }
 
     return (
+        <ProtectedRoute>
+            {/* Layout de administracion para rutas protegidas */}
             <Shell>{children}</Shell>
+        </ProtectedRoute>
     );
 }

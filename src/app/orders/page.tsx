@@ -12,6 +12,7 @@ import { clientsService } from "@/services/clients.service";
 import { productsService } from "@/services/products.service";
 import { ordersService } from "@/services/orders.service";
 import { ClipboardList, Plus } from "lucide-react";
+import { Portal } from "@/components/ui/Portal";
 
 type StatusFilter = "all" | OrderStatus;
 
@@ -36,6 +37,22 @@ const orderEmptyForm: OrderFormValues = {
   ],
 };
 
+function canConfirm(order: Order): boolean {
+  return order.status === "DRAFT" && !!order.fechaEntrega;
+}
+function canEdit(order: Order): boolean {
+  return order.status === "DRAFT";
+}
+function canDeliver(order: Order): boolean {
+  return order.status === "CONFIRMED";
+}
+function canCancel(order: Order): boolean {
+  return order.status === "CONFIRMED";
+}
+function canDelete(order: Order): boolean {
+  return true;
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +74,6 @@ export default function OrdersPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const requestSeqRef = useRef(0);
-
   const showPagination = totalItems > itemsPerPage;
 
   const fetchOrders = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
@@ -116,7 +132,7 @@ export default function OrdersPage() {
     setOrderForm((prev) => ({ ...prev, clienteId: e.target.value }));
   };
 
-  const handleOrderItemChange = (idx, field, value) => {
+  const handleOrderItemChange = (idx: number, field: string, value: any) => {
     setOrderForm((prev) => {
       const items = prev.items.map((item, i) =>
         i === idx ? { ...item, [field]: value } : item
@@ -125,7 +141,7 @@ export default function OrdersPage() {
     });
   };
 
-  const handleOrderItemProductSelect = (idx, productId) => {
+  const handleOrderItemProductSelect = (idx: number, productId: string) => {
     const product = products.find((p) => p.id === productId);
     setOrderForm((prev) => {
       const items = prev.items.map((item, i) =>
@@ -161,6 +177,25 @@ export default function OrdersPage() {
     }
   };
 
+  const handleDelivered = async (order: Order) => {
+    if (order.status !== "CONFIRMED") return;
+    if (!order.fechaEntrega) {
+      setStatusToast({ message: "Order must have a delivery date.", type: "error" });
+      setIsProcessing(false);
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await ordersService.deliver(order.id, order.fechaEntrega ?? "");
+      setStatusToast({ message: "Order delivered successfully", type: "success" });
+      await fetchOrders();
+    } catch (error: any) {
+      setStatusToast({ message: error?.response?.data?.message || "Error delivering order", type: "error" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCancel = async (order: Order) => {
     if (order.status !== "CONFIRMED") return;
     setIsProcessing(true);
@@ -177,7 +212,6 @@ export default function OrdersPage() {
 
   const handleDelete = async () => {
     if (!orderToDelete) return;
-    if (orderToDelete.status !== "DRAFT") return;
     setIsProcessing(true);
     try {
       await ordersService.delete(orderToDelete.id);
@@ -203,16 +237,16 @@ export default function OrdersPage() {
           precioUnitario: 0,
           productNombre: "",
           sku: "",
-          subtotal: 0,
         },
       ],
     }));
 
-  const handleRemoveOrderItem = (idx) =>
+  const handleRemoveOrderItem = (idx: number) =>
     setOrderForm((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== idx),
-    }));
+    })
+  );
 
   function validateOrderForm(form: OrderFormValues, clients: Client[], products: Product[]) {
     const errors: Record<string, string> = {};
@@ -237,6 +271,8 @@ export default function OrdersPage() {
           errors[`items.${idx}.cantidad`] = "Quantity must be at least 1";
         } else if (!Number.isInteger(Number(item.cantidad))) {
           errors[`items.${idx}.cantidad`] = "Quantity must be an integer";
+        } else if (product && Number(item.cantidad) > Number(product.stock)) {
+          errors[`items.${idx}.cantidad`] = `Maximum in stock: ${product.stock}`;
         }
         if (item.precioUnitario === undefined || item.precioUnitario === null || Number(item.precioUnitario) < 0) {
           errors[`items.${idx}.precioUnitario`] = "Price is required";
@@ -246,12 +282,11 @@ export default function OrdersPage() {
     return errors;
   }
 
-  // Guardar la orden
   const handleOrderSave = async () => {
     const errors = validateOrderForm(orderForm, activeClients, availableProducts);
     setOrderFormErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setToast({ message: "Please review the fields", type: "error" });
+      setToast({ message: "Please complete the fields", type: "error" });
       return;
     }
     setIsOrderSaving(true);
@@ -268,14 +303,20 @@ export default function OrdersPage() {
       };
       if (editingOrder) {
         await ordersService.update(editingOrder.id, data);
+        setToast({ message: "Order updated successfully", type: "success" });
       } else {
         await ordersService.create(data);
+        setToast({ message: "Order created successfully", type: "success" });
       }
       setIsOrderModalOpen(false);
       setOrderForm(orderEmptyForm);
       setEditingOrder(null);
       await fetchOrders();
-    } catch (e) {
+    } catch (e: any) {
+      setToast({
+        message: e?.response?.data?.message || "Error saving order",
+        type: "error",
+      });
     } finally {
       setIsOrderSaving(false);
     }
@@ -301,97 +342,138 @@ export default function OrdersPage() {
     setIsOrderModalOpen(true);
   };
 
-  // Para mostrar solo clientes activos
+  // Activos y filtrados
   const activeClients = clients.filter(c => !!c.activo);
-
-  // Filtrar productos activos y con stock > 0
   const availableProducts = products.filter(p => p.activo && Number(p.stock) > 0);
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
   const iconButtonBase = "inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
-  const total = orderForm.items.reduce((acc, item) => {
-  const qty = Number(item.cantidad || 0);
-  const price = Number(item.precioUnitario || 0);
-  return acc + qty * price;
-}, 0);
-  return (
-    <div className="app-atmosphere min-h-full px-6 py-6 lg:px-10">
-      <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col gap-6">
-        {toast && (
-          <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
-        )}
-        {statusToast && (
-          <Toast
-            message={statusToast.message}
-            type={statusToast.type}
-            duration={1000}
-            onClose={() => setStatusToast(null)}
-          />
-        )}
+  
+  // Counter chip setup (similar UX as in clients)
+  let counterValue = totalItems;
+  let counterLabel = "REGISTERED ORDERS";
+  let counterClass = "bg-blue-50 text-indigo-900";
+  let counterIcon = <ClipboardList className="h-4 w-4 text-indigo-500" />;
+  if (statusFilter === "DRAFT") {
+    counterLabel = "DRAFT ORDERS";
+    counterValue = orders.filter(o => o.status === "DRAFT").length;
+    counterClass = "bg-yellow-100 text-yellow-900";
+  } else if (statusFilter === "CONFIRMED") {
+    counterLabel = "CONFIRMED ORDERS";
+    counterValue = orders.filter(o => o.status === "CONFIRMED").length;
+    counterClass = "bg-blue-100 text-blue-900";
+  } else if (statusFilter === "DELIVERED") {
+    counterLabel = "DELIVERED ORDERS";
+    counterValue = orders.filter(o => o.status === "DELIVERED").length;
+    counterClass = "bg-emerald-200/80 text-emerald-700";
+  } else if (statusFilter === "CANCELLED") {
+    counterLabel = "CANCELLED ORDERS";
+    counterValue = orders.filter(o => o.status === "CANCELLED").length;
+    counterClass = "bg-rose-100 text-rose-800";
+  }
 
-        {/* TOP BAR */}
+  const total = orderForm.items.reduce((acc, item) => {
+    const qty = Number(item.cantidad || 0);
+    const price = Number(item.precioUnitario || 0);
+    return acc + qty * price;
+  }, 0);
+
+  return (
+    <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+      {toast && (
+        <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
+      )}
+      {statusToast && (
+        <Toast
+          message={statusToast.message}
+          type={statusToast.type}
+          duration={1000}
+          onClose={() => setStatusToast(null)}
+        />
+      )}
+      <div className="mx-auto relative flex min-h-full w-full max-w-7xl flex-col gap-6 rounded-3xl">
+        {/* HEADER */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+            <div className="bg-white/10 p-2 rounded-2xl flex items-center justify-center">
               <ClipboardList className="h-6 w-6 text-black" />
             </div>
             <div>
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
                 Orders
               </h1>
-              <p className="mt-1 text-sm text-slate-600">Control and track your sales orders.</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Control and track your sales orders.
+              </p>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-3 lg:min-w-[31rem]">
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <div className="flex-1">
-                <Navbar
-                  search={search}
-                  setSearch={(v: string) => {
-                    setSearch(v);
-                    setCurrentPage(1);
-                    void fetchOrders({ search: v, status: statusFilter, page: 1 });
-                  }}
-                  moduleFilter={statusFilter}
-                  setModuleFilter={(v: string) => {
-                    const newStatus = v as StatusFilter;
-                    setStatusFilter(newStatus);
-                    setCurrentPage(1);
-                    void fetchOrders({ search, status: newStatus, page: 1 });
-                  }}
-                  modules={statusOptions}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                    setCurrentPage(1);
-                    void fetchOrders({ search: "", status: "all", page: 1 });
-                  }}
-                  className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
-                  disabled={isLoading}
-                >
-                  Clear filter
-                </button>
-                <button
-                  onClick={() => {
-                    setOrderForm(orderEmptyForm);
-                    setIsOrderModalOpen(true);
-                  }}
-                  className={`${buttonBase} w-full whitespace-nowrap min-w-[9rem] sm:w-auto`}
-                  disabled={isLoading}
-                >
-                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Create
-                </button>
-              </div>
+          <button
+            onClick={() => {
+              setOrderForm(orderEmptyForm);
+              setIsOrderModalOpen(true);
+              setEditingOrder(null);
+            }}
+            className="rounded-full px-6 py-2 text-base font-semibold bg-gradient-to-r from-indigo-100 to-purple-100 text-[#392750] border border-white/50 shadow hover:bg-white/80 transition inline-flex items-center gap-2"
+            disabled={isLoading}
+          >
+            <Plus className="h-5 w-5" /> Create
+          </button>
+        </div>
+        {/* Counter CHIP */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className={`glass-chip inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-[0.22em] shadow border border-white/50 ${counterClass}`}>
+              {counterIcon}
+              {counterLabel}: <span className="ml-1 font-extrabold tracking-wide">{counterValue}</span>
+            </span>
+          </div>
+
+          {/* PURE SEARCH + FILTER SELECT */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex flex-1 items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search by folio, client, comments..."
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                  void fetchOrders({ search: e.target.value, status: statusFilter, page: 1 });
+                }}
+                className="glass-input w-full max-w-xs"
+                style={{ minWidth: 0 }}
+              />
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setCurrentPage(1);
+                  void fetchOrders({ search: "", status: statusFilter, page: 1 });
+                }}
+                className={`${buttonBase} whitespace-nowrap`}
+                disabled={isLoading}
+              >
+                Clear filter
+              </button>
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as StatusFilter);
+                setCurrentPage(1);
+                void fetchOrders({ search, status: e.target.value as StatusFilter, page: 1 });
+              }}
+              className="w-full sm:w-28 max-w-xs px-4 py-2 rounded-xl border glass-input shadow-sm text-base bg-white/70"
+            >
+              <option value="all">All</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
           </div>
         </div>
 
-        {/* TABLA DESKTOP */}
+        {/* TABLES / CARDS */}
         {isLoading ? (
           <Loading label="Loading orders..." />
         ) : (
@@ -424,33 +506,45 @@ export default function OrdersPage() {
                               : order.status === "DELIVERED"
                               ? "bg-emerald-200/80 text-emerald-700"
                               : "bg-rose-100 text-rose-800"
-                          }`}>
-                            {order.status}
-                          </span>
+                          }`}>{order.status}</span>
                         </td>
                         <td className="px-5 py-5 text-slate-800">${order.total.toFixed(2)}</td>
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
-                            {order.status === "DRAFT" && (
-                              <>
-                                <button
-                                  onClick={() => handleEditOrder(order)}
-                                  className={iconButtonBase}
-                                  title="Edit"
-                                  aria-label="Edit order"
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  onClick={() => handleConfirm(order)}
-                                  className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
-                                  disabled={isProcessing}
-                                >
-                                  Confirm
-                                </button>
-                              </>
+                            {canEdit(order) && (
+                              <button
+                                onClick={() => handleEditOrder(order)}
+                                className={iconButtonBase}
+                                title="Edit"
+                                aria-label="Edit order"
+                              >
+                                ✏️
+                              </button>
                             )}
-                            {order.status === "CONFIRMED" && (
+                            {!order.fechaEntrega && (
+                              <span className="inline-flex items-center px-2 py-1 ml-2 text-xs font-bold text-yellow-800 bg-yellow-100 rounded-full">
+                                Missing delivery date
+                              </span>
+                            )}
+                            {canConfirm(order) && (
+                              <button
+                                onClick={() => handleConfirm(order)}
+                                className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                                disabled={isProcessing}
+                              >
+                                Confirm
+                              </button>
+                            )}
+                            {canDeliver(order) && (
+                              <button
+                                onClick={() => handleDelivered(order)}
+                                className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                                disabled={isProcessing}
+                              >
+                                Delivered
+                              </button>
+                            )}
+                            {canCancel(order) && (
                               <button
                                 onClick={() => handleCancel(order)}
                                 className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
@@ -461,25 +555,27 @@ export default function OrdersPage() {
                                 Cancel
                               </button>
                             )}
-                            <button
-                              onClick={() => {
-                                setOrderToDelete(order);
-                                setConfirmOpen(true);
-                              }}
-                              className={iconButtonBase}
-                              title="Delete order"
-                              aria-label="Delete order"
-                              disabled={isProcessing}
-                            >
-                              🗑️
-                            </button>
+                            {canDelete(order) && (
+                              <button
+                                onClick={() => {
+                                  setOrderToDelete(order);
+                                  setConfirmOpen(true);
+                                }}
+                                className={iconButtonBase}
+                                title="Delete order"
+                                aria-label="Delete order"
+                                disabled={isProcessing}
+                              >
+                                🗑️
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-5 py-14 text-center text-slate-500">
+                      <td colSpan={6} className="px-5 py-14 text-center text-slate-500">
                         No orders registered
                       </td>
                     </tr>
@@ -508,9 +604,7 @@ export default function OrdersPage() {
                               : order.status === "DELIVERED"
                               ? "bg-emerald-200/80 text-emerald-700"
                               : "bg-rose-100 text-rose-800"
-                          }`}>
-                            {order.status}
-                          </span>
+                          }`}>{order.status}</span>
                         </div>
                       </div>
                     </div>
@@ -519,39 +613,46 @@ export default function OrdersPage() {
                       <MobileMeta label="Total" value={`$${order.total.toFixed(2)}`} />
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                        {order.status === "DRAFT" && (
-                          <>
-                            <button
-                              onClick={() => handleEditOrder(order)}
-                              className={iconButtonBase}
-                              title="Edit"
-                              aria-label="Edit order"
-                            >
-                              ✏️
-                            </button>
-
-                            <button
-                              onClick={() => handleConfirm(order)}
-                              className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
-                              disabled={isProcessing}
-                            >
-                              Confirm
-                            </button>
-                          </>
-                        )}
-
-                        {order.status === "CONFIRMED" && (
-                          <button
-                            onClick={() => handleCancel(order)}
-                            className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
-                            disabled={isProcessing}
-                            title="Cancel order"
-                            aria-label="Cancel order"
-                          >
-                            Cancel
-                          </button>
-                        )}
-
+                      {canEdit(order) && (
+                        <button
+                          onClick={() => handleEditOrder(order)}
+                          className={iconButtonBase}
+                          title="Edit"
+                          aria-label="Edit order"
+                        >
+                          ✏️
+                        </button>
+                      )}
+                      {canConfirm(order) && (
+                        <button
+                          onClick={() => handleConfirm(order)}
+                          className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                          disabled={isProcessing}
+                        >
+                          Confirm
+                        </button>
+                      )}
+                      {canDeliver(order) && (
+                        <button
+                          onClick={() => handleDelivered(order)}
+                          className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                          disabled={isProcessing}
+                        >
+                          Delivered
+                        </button>
+                      )}
+                      {canCancel(order) && (
+                        <button
+                          onClick={() => handleCancel(order)}
+                          className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
+                          disabled={isProcessing}
+                          title="Cancel order"
+                          aria-label="Cancel order"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      {canDelete(order) && (
                         <button
                           onClick={() => {
                             setOrderToDelete(order);
@@ -564,7 +665,8 @@ export default function OrdersPage() {
                         >
                           🗑️
                         </button>
-                      </div>
+                      )}
+                    </div>
                   </article>
                 ))
               ) : (
@@ -573,7 +675,7 @@ export default function OrdersPage() {
                 </div>
               )}
             </div>
-            {/* Paginación */}
+            {/* Pagination */}
             <div className="flex justify-between items-center mt-2 mb-4 border-t border-white/20 px-5 pt-4">
               <p className="text-sm text-gray-400">
                 Page {currentPage} of {totalPages}
@@ -583,59 +685,59 @@ export default function OrdersPage() {
                   onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
                   disabled={!showPagination || currentPage === 1}
                   className={`px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button
-                  ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}
+                    ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}
                 >Previous</button>
                 <button
                   onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
                   disabled={!showPagination || currentPage === totalPages}
                   className={`px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button
-                  ${currentPage === 1 ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}
+                    ${currentPage === totalPages ? "opacity-60 cursor-not-allowed pointer-events-none" : ""}`}
                 >Next</button>
               </div>
             </div>
           </div>
         )}
       </div>
+      {/* MODAL CREAR/EDITAR */}
       {isOrderModalOpen && (
-        <div className="app-modal-overlay app-modal-overlay--padded">
-          <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
-          <div className="mb-5">
+        <Portal>
+          <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
+            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+              <div className="mb-5">
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-                  {editingOrder ? "Edit order" : "New order"} 
+                  {editingOrder ? "Edit order" : "New order"}
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">
-                    Make a order adding products, selecting a client and confirming the date.
+                  Make an order by adding products, selecting a client and confirming the date.
                 </p>
-            </div>            
-            <form
-              className="grid gap-x-3 gap-y-4 grid-cols-1 md:grid-cols-3 md:gap-y-3"
-              onSubmit={e => { e.preventDefault(); handleOrderSave(); }}
-            >
-              <Field label="Folio" error={orderFormErrors.folio} className="md:col-span-1">
-                <input
-                  name="folio"
-                  className="glass-input w-full"
-                  value={orderForm.folio}
-                  onChange={handleOrderField}
-                  required
-                />
-              </Field>
-              <Field label="Order date" error={orderFormErrors.fechaOrden} className="md:col-span-1">
+              </div>
+              <form
+                className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-4"
+                onSubmit={e => { e.preventDefault(); handleOrderSave(); }}
+              >
+                <Field label="Folio" error={orderFormErrors.folio} className="">
+                  <input
+                    name="folio"
+                    className="glass-input w-full"
+                    value={orderForm.folio}
+                    onChange={handleOrderField}
+                  />
+                </Field>
+                <Field label="Order date" error={orderFormErrors.fechaOrden} className="">
                   <input
                     type="date"
                     name="fechaOrden"
                     className="glass-input w-full"
                     value={orderForm.fechaOrden}
                     onChange={handleOrderField}
-                    required
                   />
                 </Field>
-
-                <Field label="Delivery date" error={orderFormErrors.fechaEntrega} className="md:col-span-1">
+                <Field label="Delivery date" error={orderFormErrors.fechaEntrega} className="">
                   <input
                     type="date"
                     name="fechaEntrega"
                     className="glass-input w-full"
+                    min={orderForm.fechaOrden || undefined}
                     value={orderForm.fechaEntrega ?? ""}
                     onChange={(e) =>
                       setOrderForm((prev) => ({
@@ -645,97 +747,101 @@ export default function OrdersPage() {
                     }
                   />
                 </Field>
-              <Field label="Client" error={orderFormErrors.clienteId} className="md:col-span-1">
-                <select
-                  name="clienteId"
-                  className="glass-input w-full"
-                  value={orderForm.clienteId}
-                  onChange={handleOrderClient}
-                  required
-                >
-                  <option value="">Select client...</option>
-                  {activeClients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Comments" error={orderFormErrors.comentarios} className="md:col-span-3">
-                <input
-                  name="comentarios"
-                  className="glass-input w-full"
-                  value={orderForm.comentarios ?? ""}
-                  onChange={handleOrderField}
-                />
-              </Field>
-              <div className="md:col-span-3">
-                <span className="block font-bold mb-1 text-slate-800 text-sm">Products</span>
-                <div className="flex flex-col gap-2">
-                  {orderForm.items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3"
-                    >
-                      <select
-                        value={item.productId}
-                        onChange={e => handleOrderItemProductSelect(idx, e.target.value)}
-                        className="glass-input"
-                        required
-                        style={{ minWidth: 160 }}
+                <Field label="Client" error={orderFormErrors.clienteId} className="md:col-span-1">
+                  <select
+                    name="clienteId"
+                    className="glass-input w-full"
+                    value={orderForm.clienteId}
+                    onChange={handleOrderClient}
+                  >
+                    <option value="">Select client...</option>
+                    {activeClients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Comments" error={orderFormErrors.comentarios} className="md:col-span-2">
+                  <input
+                    name="comentarios"
+                    className="glass-input w-full"
+                    value={orderForm.comentarios ?? ""}
+                    onChange={handleOrderField}
+                  />
+                </Field>
+                <div className="md:col-span-3">
+                  <span className="block font-bold mb-1 text-slate-800 text-sm">Products</span>
+                  <div className="flex flex-col gap-2 max-h-26 overflow-y-auto">
+                    {orderForm.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3"
                       >
-                        <option value="">Product...</option>
-                        {availableProducts.map(p => (
-                          <option key={p.id} value={p.id}>
-                            {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      {orderFormErrors[`items.${idx}.productId`] && (
-                        <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
-                      )}
-                      <input
-                        type="number"
-                        min={1}
-                        className="glass-input w-20"
-                        placeholder="Quantity"
-                        value={item.cantidad}
-                        onChange={e => handleOrderItemChange(idx, "cantidad", e.target.value)}
-                        required
-                      />
-                      {orderFormErrors[`items.${idx}.cantidad`] && (
-                        <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.cantidad`]}</span>
-                      )}
-                      <span className="glass-input w-28 text-right bg-gray-100 cursor-not-allowed select-none">
-                        ${item.precioUnitario}
-                      </span>
-                      <span className="block w-24 text-right">
-                        ${(+(item.cantidad) * +(item.precioUnitario)).toFixed(2)}
-                      </span>
-                      {orderForm.items.length > 1 && (
-                        <button type="button" onClick={() => handleRemoveOrderItem(idx)} className="ml-1 text-rose-500 font-bold">
-                          ✖
-                        </button>
-                      )}
+                        <select
+                          value={item.productId}
+                          onChange={e => handleOrderItemProductSelect(idx, e.target.value)}
+                          className="glass-input"
+                          required
+                          style={{ minWidth: 160 }}
+                        >
+                          <option value="">Product...</option>
+                          {availableProducts.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        {orderFormErrors[`items.${idx}.productId`] && (
+                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
+                        )}
+                        <input
+                          type="number"
+                          min={1}
+                          max={(() => {
+                            const product = availableProducts.find(p => p.id === item.productId);
+                            return product ? product.stock : undefined;
+                          })()}
+                          className="glass-input w-20"
+                          placeholder="Quantity"
+                          value={item.cantidad}
+                          onChange={e => handleOrderItemChange(idx, "cantidad", e.target.value)}
+                          required
+                        />
+                        {orderFormErrors[`items.${idx}.cantidad`] && (
+                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.cantidad`]}</span>
+                        )}
+                        <span className="glass-input w-28 text-right bg-gray-100 cursor-not-allowed select-none">
+                          ${item.precioUnitario}
+                        </span>
+                        <span className="block w-24 text-right">
+                          ${(+(item.cantidad) * +(item.precioUnitario)).toFixed(2)}
+                        </span>
+                        {orderForm.items.length > 1 && (
+                          <button type="button" onClick={() => handleRemoveOrderItem(idx)} className="ml-1 text-rose-500 font-bold">
+                            ✖
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
+                    + Add product
+                  </button>
+                  <div className="md:col-span-3 flex justify-end">
+                    <div className="rounded-2xl border border-white/40 bg-white/25 px-4 py-2 text-sm font-bold text-slate-800">
+                      Total: ${total.toFixed(2)}
                     </div>
-                  ))}
-                </div>
-                <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
-                  + Add product
-                </button>
-                <div className="md:col-span-3 flex justify-end">
-                  <div className="rounded-2xl border border-white/40 bg-white/25 px-4 py-2 text-sm font-bold text-slate-800">
-                    Total: ${total.toFixed(2)}
                   </div>
                 </div>
-              </div>
-              <div className="md:col-span-3 flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => setIsOrderModalOpen(false)} className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55">Cancel</button>
-                <button type="submit" disabled={isOrderSaving} className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60">
-                  {isOrderSaving ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
+                <div className="md:col-span-3 flex justify-end gap-3 mt-4">
+                  <button type="button" onClick={() => setIsOrderModalOpen(false)} className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-5 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55">Cancel</button>
+                  <button type="submit" disabled={isOrderSaving} className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold products-violet-black-button shadow-md transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isOrderSaving ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
       <ConfirmModal
         open={confirmOpen}
