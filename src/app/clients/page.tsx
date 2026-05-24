@@ -580,7 +580,7 @@ export default function ClientsPage() {
       {isModalOpen && (
         <Portal>
         <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
-          <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+          <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
             <div className="mb-5">
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 {editingClient ? "Edit client" : "New client"}

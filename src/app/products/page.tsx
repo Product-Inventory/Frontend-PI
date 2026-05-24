@@ -584,7 +584,7 @@ export default function ProductsPage() {
             {isModalOpen && (
                 <Portal>
                 <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
-                    <div className="app-modal-shell app-modal-shell--xl glass-card relative p-6 md:p-8">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
                         {validationToast && (
                             <Toast
                                 message={validationToast}
@@ -685,8 +685,8 @@ export default function ProductsPage() {
                     setConfirmOpen(false);
                     setProductToDelete(null);
                 }}
-                cancelButtonClassName="products-violet-black-button"
-                confirmButtonClassName="products-violet-black-button"
+                cancelButtonClassName=""
+                confirmButtonClassName=""
             />
         </div>
     );

@@ -27,7 +27,7 @@ export default function ConfirmModal({
   if (!open || !mounted) return null;
 
   return createPortal(
-    <div className="app-alert-overlay--module">
+    <div className="app-modal-overlay app-modal-overlay--form">
       <div className="app-modal-shell app-modal-shell--tight glass-card relative overflow-hidden p-6">
         <h2 className="mb-3 text-3xl font-extrabold text-[#392750]">{title}</h2>
         <p className="mb-6 text-[#392750]">{message}</p>

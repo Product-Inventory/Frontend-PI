@@ -164,7 +164,7 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
 
         <div className="sidebar-divider mx-2 my-4 flex-shrink-0" />
 
-        <nav className="sidebar-list custom-scrollbar flex-1 overflow-y-auto px-1 pr-1 flex flex-col gap-2">
+        <nav className="sidebar-list scrollbar-none flex-1 overflow-y-auto px-1 pr-1 flex flex-col gap-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const href = item.label === "Orders" ? "/orders" : item.href;
