@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Settings, Plus, Search } from "lucide-react";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { rolesService } from "@/services/roles.service";
 import { permissionsService } from "@/services/permissions.service";
 import type { Role } from "@/types/role";
@@ -45,6 +46,8 @@ export default function RolesPage() {
     const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const [modalToast, setModalToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
     useEffect(() => {
         void fetchRoles();
@@ -211,12 +214,14 @@ export default function RolesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Delete this role?")) return;
+    const handleDelete = async () => {
+        if (!roleToDelete) return;
 
         try {
-            await rolesService.delete(id);
+            await rolesService.delete(String(roleToDelete.id));
             setToast({ message: "Role deleted successfully", type: "success" });
+            setRoleToDelete(null);
+            setConfirmOpen(false);
             await fetchRoles();
         } catch (err) {
             console.error(err);
@@ -304,7 +309,7 @@ export default function RolesPage() {
                                                             ✏️
                                                         </button>
                                                         <button
-                                                            onClick={() => void handleDelete(String(role.id))}
+                                                            onClick={() => { setRoleToDelete(role); setConfirmOpen(true); }}
                                                             className="inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50"
                                                         >
                                                             🗑️
@@ -373,7 +378,7 @@ export default function RolesPage() {
                                             </button>
 
                                             <button
-                                                onClick={() => void handleDelete(String(role.id))}
+                                                onClick={() => { setRoleToDelete(role); setConfirmOpen(true); }}
                                                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                             >
                                                 🗑️
@@ -417,7 +422,7 @@ export default function RolesPage() {
                 <Portal>
                 <div className="app-modal-overlay app-modal-overlay--form p-4 sm:p-6">
                     <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
-                        <div className="h-full overflow-y-auto p-6 md:p-8">
+                        <div className="h-full overflow-y-auto scrollbar-none p-6 md:p-8">
                             {modalToast && (
                                 <Toast
                                     message={modalToast.message}
@@ -564,6 +569,19 @@ export default function RolesPage() {
                 </Portal>
             )}
         </div>
+
+            <ConfirmModal
+                open={confirmOpen}
+                title="Delete role"
+                message={`Do you want to delete the role "${roleToDelete?.nombre || ""}"?`}
+                onConfirm={() => void handleDelete()}
+                onCancel={() => {
+                    setConfirmOpen(false);
+                    setRoleToDelete(null);
+                }}
+                cancelButtonClassName=""
+                confirmButtonClassName=""
+            />
         </div>
     );
 }
