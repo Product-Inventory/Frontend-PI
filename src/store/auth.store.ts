@@ -28,19 +28,25 @@ export const useAuthStore = create<AuthState>()(
       isLoginSuccessPending: false,
       error: null,
       setSession: (token, user) => set({ accessToken: token, user, error: null }),
-      clearSession: () => set({ accessToken: null, user: null, error: null, isLoading: false, isLoginSuccessPending: false }),
+      clearSession: () =>
+        set({
+          accessToken: null,
+          user: null,
+          error: null,
+          isLoading: false,
+          isLoginSuccessPending: false,
+        }),
       setLoading: (loading) => set({ isLoading: loading }),
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
       setLoginSuccessPending: (pending) => set({ isLoginSuccessPending: pending }),
       setError: (error) => set({ error }),
       hasPermission: (permission: string) => {
         const user = get().user;
-
-        if (!user) {
-          return false;
-        }
-        
-        return user.permissions.includes(permission) || user.role.toLowerCase() === 'admin';
+        if (!user) return false;
+        if (user.role && user.role.toLowerCase() === 'admin') return true;
+        const perm = permission.toLowerCase();
+        const perms = (user.permissions || []).map((p) => p.toLowerCase());
+        return perms.includes(perm);
       },
     }),
     {

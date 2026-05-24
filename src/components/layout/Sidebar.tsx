@@ -19,17 +19,17 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
-  { label: "Clients", href: "/clients", icon: ClientsIcon },
-  { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon },
-  { label: "Products", href: "/products", icon: ProductsIcon },
-  { label: "Inventory", href: "/inventory", icon: InventoryIcon },
-  { label: "Orders", href: "/orders", icon: OrdersIcon },
-  { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon },
-  { label: "Users", href: "/users", icon: UsersIcon },
-  { label: "Roles", href: "/roles", icon: RolesIcon },
-  { label: "Permissions", href: "/dashboard/permissions", icon: PermissionsIcon },
-  { label: "Audit", href: "/audit", icon: AuditIcon },
+  { label: "Dashboard", href: "/dashboard", icon: DashboardIcon, permission: "dashboard:view" },
+  { label: "Clients", href: "/clients", icon: ClientsIcon, permission: "clients:view" },
+  { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon, permission: "suppliers:view" },
+  { label: "Products", href: "/products", icon: ProductsIcon, permission: "products:view" },
+  { label: "Inventory", href: "/inventory", icon: InventoryIcon, permission: "inventory:view" },
+  { label: "Orders", href: "/orders", icon: OrdersIcon, permission: "orders:view" },
+  { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon, permission: "recepciones:view" },
+  { label: "Users", href: "/users", icon: UsersIcon, permission: "users:view" },
+  { label: "Roles", href: "/roles", icon: RolesIcon, permission: "roles:view" },
+  { label: "Permissions", href: "/dashboard/permissions", icon: PermissionsIcon, permission: "permissions:view" },
+  { label: "Audit", href: "/audit", icon: AuditIcon, permission: "audit:view" },
 ];
 
 type SidebarIconProps = { active: boolean; className?: string };
