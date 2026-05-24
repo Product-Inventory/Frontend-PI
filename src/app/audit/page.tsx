@@ -45,8 +45,6 @@ export default function AuditPage() {
     setCurrentPage(1);
   };
 
-  const paginationBtnBase = "flex h-11 w-11 items-center justify-center rounded-full border border-white/45 bg-white/30 shadow-lg backdrop-blur-md transition hover:bg-white/50 disabled:opacity-20 disabled:hover:translate-y-0 active:scale-95";
-
   return (
     <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-[40px] overflow-hidden">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
@@ -83,8 +81,8 @@ export default function AuditPage() {
         ) : (
           <div className="glass-card flex flex-col rounded-[45px] overflow-hidden shadow-2xl border border-white/40">
             
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed text-left border-collapse">
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full table-fixed text-left border-collapse text-sm">
                 <thead className="bg-white/10">
                   <tr className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-500">
                     <th className="w-1/5 px-8 py-6">User</th>
@@ -121,6 +119,42 @@ export default function AuditPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="grid gap-4 p-4 md:hidden">
+              {paginatedLogs.length > 0 ? (
+                paginatedLogs.map((log, idx) => (
+                  <article key={idx} className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-sm">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">USER</p>
+                        <p className="text-lg font-extrabold text-slate-900 break-words">{log.usuario}</p>
+                      </div>
+                      <span className="rounded-full bg-indigo-100/50 border border-indigo-200/50 px-3 py-1 text-[9px] font-black text-indigo-700 uppercase tracking-widest max-w-[150px] break-all text-center">
+                        {log.resource}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">ACTION</p>
+                      <p className="text-sm font-semibold text-slate-800 break-words">{log.action}</p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-white/20 flex justify-between items-center">
+                      <span className="text-[11px] font-medium text-slate-500">
+                        {new Date(log.createdAt).toLocaleString('en', { 
+                          day: '2-digit', month: '2-digit', year: 'numeric', 
+                          hour: '2-digit', minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="text-center py-6 text-sm text-slate-500">
+                  No logs found matching "{searchTerm}"
+                </p>
+              )}
             </div>
 
             <div className="mt-auto flex items-center justify-between bg-white/5 px-8 py-6 border-t border-white/20">
