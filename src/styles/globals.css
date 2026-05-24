@@ -579,8 +579,8 @@ body {
 .dashboard-main button { color: #b48cff !important; }
 
 /* Hide scrollbar visually while keeping scroll functionality */
-.scrollbar-none { scrollbar-width: none; }
-.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none !important; }
+.scrollbar-none::-webkit-scrollbar { display: none !important; }
 
 /* Custom scrollbar */
 .custom-scrollbar { scrollbar-color: rgba(88, 111, 166, 0.52) transparent; scrollbar-width: thin; }

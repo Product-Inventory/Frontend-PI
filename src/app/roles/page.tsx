@@ -230,7 +230,7 @@ export default function RolesPage() {
     };
 
     return (
-        <div className="app-atmosphere relative min-h-full rounded-3xl overflow-hidden px-6 py-6 lg:px-10">
+        <div className="app-atmosphere relative min-h-full rounded-3xl overflow-hidden px-4 sm:px-6 py-6 lg:px-10">
             {toast && (
                 <Toast
                     message={toast.message}
@@ -247,7 +247,7 @@ export default function RolesPage() {
                             <RoleIcon className="h-6 w-6 text-black" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">Roles</h1>
+                            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">Roles</h1>
                             <p className="mt-1 text-sm text-slate-600">Assign permissions to each role.</p>
                         </div>
                     </div>
@@ -329,12 +329,12 @@ export default function RolesPage() {
                             </table>
                         </div>
 
-                        <div className="grid gap-4 p-4 md:hidden">
+                        <div className="grid gap-4 px-4 pt-4 pb-8 md:hidden">
                             {paginatedRoles.length > 0 ? (
                                 paginatedRoles.map((role) => (
                                     <article
                                         key={role.id}
-                                        className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)]"
+                                        className="rounded-3xl border border-white/45 bg-white/35 p-4 shadow-[0_8px_20px_rgba(138,108,198,0.12)] overflow-hidden"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
@@ -342,17 +342,17 @@ export default function RolesPage() {
                                                     Role
                                                 </p>
                                                 <p className="mt-1 truncate text-lg font-extrabold text-slate-900">{role.nombre}</p>
-                                                <p className="mt-1 text-base font-semibold text-slate-800">
+                                                <p className="mt-1 text-base font-semibold text-slate-800 line-clamp-2">
                                                     {role.descripcion || "-"}
                                                 </p>
                                             </div>
 
-                                            <span className="shrink-0 rounded-full bg-slate-200/80 px-3 py-1 text-xs font-bold text-slate-700">
-                                                {(role.permissions || []).length} perms
+                                            <span className="shrink-0 rounded-full bg-slate-200/80 px-2 py-1 text-xs font-bold text-slate-700 whitespace-nowrap">
+                                                {(role.permissions || []).length} p
                                             </span>
                                         </div>
 
-                                        <div className="mt-4 flex flex-wrap gap-2">
+                                        <div className="mt-4 flex flex-wrap gap-2 overflow-hidden">
                                             {(role.permissions || []).slice(0, 4).map((permission) => (
                                                 <span
                                                     key={permission}
@@ -368,10 +368,10 @@ export default function RolesPage() {
                                             )}
                                         </div>
 
-                                        <div className="mt-4 flex flex-wrap gap-2">
+                                        <div className="mt-4 flex gap-2">
                                             <button
                                                 onClick={() => openEdit(role)}
-                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                className="inline-flex flex-1 min-w-0 items-center justify-center gap-2 rounded-full border border-white/45 bg-white/45 px-4 py-2 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                             >
                                                 ✏️
                                                 Edit
@@ -379,7 +379,7 @@ export default function RolesPage() {
 
                                             <button
                                                 onClick={() => { setRoleToDelete(role); setConfirmOpen(true); }}
-                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
+                                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/45 bg-white/45 products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)]"
                                             >
                                                 🗑️
                                             </button>
@@ -393,7 +393,7 @@ export default function RolesPage() {
                             )}
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between border-t border-white/20 px-5 pt-4">
+                        <div className="mt-4 flex items-center justify-between border-t border-white/20 px-5 py-4">
                             <p className="text-sm text-gray-400">
                                 Page {currentPage} of {totalPages}
                             </p>
@@ -421,8 +421,8 @@ export default function RolesPage() {
             {isModalOpen && (
                 <Portal>
                 <div className="app-modal-overlay app-modal-overlay--form p-4 sm:p-6">
-                    <div className="app-modal-shell app-modal-shell--xl glass-card relative h-full w-full max-h-full overflow-hidden rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
-                        <div className="h-full overflow-y-auto scrollbar-none p-6 md:p-8">
+                    <div className="app-modal-shell app-modal-shell--xl glass-card relative w-full max-h-[90vh] overflow-y-auto scrollbar-none rounded-[40px] border border-white/45 shadow-[0_24px_60px_rgba(17,24,39,0.24)]">
+                        <div className="p-6 md:p-8">
                             {modalToast && (
                                 <Toast
                                     message={modalToast.message}
@@ -481,7 +481,7 @@ export default function RolesPage() {
                                     <button
                                         type="button"
                                         onClick={() => setForm((current) => ({ ...current, permissions: [] }))}
-                                        className="inline-flex h-10 items-center justify-center rounded-full border border-white/45 bg-white/45 px-4 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
+                                        className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-white/45 bg-white/45 px-4 text-sm font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
                                     >
                                         Clear permissions
                                     </button>
@@ -511,13 +511,13 @@ export default function RolesPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleModulePermissions(group.items)}
-                                                            className="inline-flex h-9 items-center justify-center rounded-full border border-white/45 bg-white/45 px-3 text-xs font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
+                                                            className="inline-flex h-9 shrink-0 items-center justify-center rounded-full border border-white/45 bg-white/45 px-3 text-xs font-semibold products-violet-black-button shadow-sm transition hover:bg-white/55"
                                                         >
                                                             {allSelected ? "Unselect module" : "Select module"}
                                                         </button>
                                                     </div>
 
-                                                    <div className="grid gap-2 sm:grid-cols-2">
+                                                    <div className="grid gap-2 md:grid-cols-2">
                                                         {group.items.map((permission) => {
                                                             const checked = form.permissions.includes(permission.code);
 
