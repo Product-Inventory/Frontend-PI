@@ -702,7 +702,7 @@ export default function OrdersPage() {
       {isOrderModalOpen && (
         <Portal>
           <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
-            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] p-6 md:p-8">
+            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
               <div className="mb-5">
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
                   {editingOrder ? "Edit order" : "New order"}
@@ -770,7 +770,7 @@ export default function OrdersPage() {
                 </Field>
                 <div className="md:col-span-3">
                   <span className="block font-bold mb-1 text-slate-800 text-sm">Products</span>
-                  <div className="flex flex-col gap-2 max-h-26 overflow-y-auto">
+                  <div className="flex flex-col gap-2 max-h-26 overflow-y-auto scrollbar-none">
                     {orderForm.items.map((item, idx) => (
                       <div
                         key={idx}
