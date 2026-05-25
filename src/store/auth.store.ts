@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '../types/auth';
 
+function normalizePermission(permission: string) {
+  return permission.toLowerCase().replace(/\./g, ':');
+}
+
 interface AuthState {
   accessToken: string | null;
   user: User | null;
@@ -44,8 +48,8 @@ export const useAuthStore = create<AuthState>()(
         const user = get().user;
         if (!user) return false;
         if (user.role && user.role.toLowerCase() === 'admin') return true;
-        const perm = permission.toLowerCase();
-        const perms = (user.permissions || []).map((p) => p.toLowerCase());
+        const perm = normalizePermission(permission);
+        const perms = (user.permissions || []).map(normalizePermission);
         return perms.includes(perm);
       },
     }),

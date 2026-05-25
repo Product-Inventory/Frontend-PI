@@ -9,6 +9,9 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
 import { Toast } from "@/components/ui/Toast";
 import { ClipboardList, Plus, Eye, CheckCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 
 const itemsPerPage = 5;
 
@@ -25,6 +28,24 @@ export default function ReceptionsPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
+  const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+  const router = useRouter();
+
+  const routeConfig = getRouteByPath(pathname);
+  useEffect(() => {
+    if (!isHydrated || isAuthLoading) return;
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+      router.replace(getDefaultRoute(user)); 
+    }
+  }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+  if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+  if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+    // mientras redirige o si no puede, no muestra la pantalla
+    return null;
+  }
+  
   const fetchReceptions = async () => {
     try {
       setIsLoading(true);

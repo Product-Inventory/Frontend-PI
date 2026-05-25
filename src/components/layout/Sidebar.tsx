@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { getAccessibleRoutes } from "@/routes/routeConfig";
 import { useAuthStore } from "@/store/auth.store";
 import {
   LayoutDashboard,
@@ -135,6 +136,21 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const navItems = getAccessibleRoutes(user);
+
+  const iconMap: Record<string, any> = {
+    Dashboard: DashboardIcon,
+    Users: UsersIcon,
+    Roles: RolesIcon,
+    Permissions: PermissionsIcon,
+    Clients: ClientsIcon,
+    Suppliers: SuppliersIcon,
+    Products: ProductsIcon,
+    Inventory: InventoryIcon,
+    Orders: OrdersIcon,
+    Recepciones: ReceptionsIcon,
+    Audit: AuditIcon,
+  };
 
   const handleSignOut = () => {
     clearSession();
@@ -166,18 +182,13 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
 
         <nav className="sidebar-list scrollbar-none flex-1 overflow-y-auto px-1 pr-1 flex flex-col gap-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const href = item.label === "Orders" ? "/orders" : item.href;
-            const Icon = item.icon;
+            const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
+            const Icon = iconMap[item.label] || LayoutDashboard;
 
             return (
-              <Link
-                key={`${item.label}-${item.href}`}
-                href={href}
-                className={`sidebar-pill ${isActive ? "sidebar-pill-active" : ""}`}
-              >
+              <Link key={item.path} href={item.path} className={`sidebar-pill ${isActive ? "sidebar-pill-active" : ""}`}>
                 <Icon active={isActive} className="shrink-0" />
-                <span className={`sidebar-pill-label ${isActive ? "font-extrabold text-white" : "font-semibold text-white/88"}`}>
+                <span className={`sidebar-pill-label ${isActive ? "font-extrabold" : "font-semibold"}`}>
                   {item.label}
                 </span>
               </Link>
