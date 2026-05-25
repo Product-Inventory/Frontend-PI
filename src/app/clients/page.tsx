@@ -8,7 +8,9 @@ import { Toast } from "@/components/ui/Toast";
 import { clientsService } from "@/services/clients.service";
 import type { Client } from "@/types/client";
 import { AlertTriangle, ChevronLeft, ChevronRight, User, Plus, Power } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -80,6 +82,24 @@ export default function ClientsPage() {
 
   const requestSeqRef = useRef(0);
   const showPagination = totalItems > itemsPerPage;
+
+  const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+  const router = useRouter();
+
+  const routeConfig = getRouteByPath(pathname);
+  useEffect(() => {
+    if (!isHydrated || isAuthLoading) return;
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+      router.replace(getDefaultRoute(user)); 
+    }
+  }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+  if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+  if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+    // mientras redirige o si no puede, no muestra la pantalla
+    return null;
+  }
 
   const fetchClients = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
     const requestSeq = ++requestSeqRef.current;

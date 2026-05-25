@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { usersService } from "@/services/users.service";
 import { User } from "@/types/user";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import UserFormModal from "@/components/forms/UserFormModal";
@@ -22,6 +25,24 @@ export default function UsersPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+  const router = useRouter();
+
+  const routeConfig = getRouteByPath(pathname);
+  useEffect(() => {
+    if (!isHydrated || isAuthLoading) return;
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+      router.replace(getDefaultRoute(user)); 
+    }
+  }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+  if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+  if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+    // mientras redirige o si no puede, no muestra la pantalla
+    return null;
+  }
 
   const fetchUsers = async () => {
     try {

@@ -7,11 +7,16 @@
 
 import type { User } from '@/types/auth';
 
+function normalizePermission(permission: string) {
+    return permission.toLowerCase().replace(/\./g, ':');
+}
+
 // Configuracion base de cada ruta dentro de la app.
 export type AppRouteConfig = {
     path: string;
     label: string;
-    permission?: string;
+    module?: string; 
+    permissions?: string[];
     requiresAuth?: boolean;
     showInSidebar?: boolean;
 };
@@ -24,76 +29,88 @@ export const routeConfig: AppRouteConfig[] = [
     {
         path: '/dashboard',
         label: 'Dashboard',
+        module: 'dashboard',
+        permissions: ['dashboard:read'],
         requiresAuth: false,
         showInSidebar: true,
     },
     {
         path: '/users',
         label: 'Users',
-        permission: 'users.view',
+        module: 'users',
+        permissions: ['users:read', 'users:create', 'users:update', 'users:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/roles',
         label: 'Roles',
-        permission: 'roles.view',
+        module: 'roles',
+        permissions: ['roles:read', 'roles:create', 'roles:update', 'roles:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/permissions',
         label: 'Permissions',
-        permission: 'permissions.view',
+        module: 'permissions',
+        permissions: ['permissions:read', 'permissions:create', 'permissions:update', 'permissions:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/clients',
         label: 'Clients',
-        permission: 'clients.view',
+        module: 'clients',
+        permissions: ['clients:read', 'clients:create', 'clients:update', 'clients:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/suppliers',
         label: 'Suppliers',
-        permission: 'suppliers.view',
+        module: 'suppliers',
+        permissions: ['suppliers:read', 'suppliers:create', 'suppliers:update', 'suppliers:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/products',
         label: 'Products',
-        permission: 'products.view',
+        module: 'products',
+        permissions: ['products:read', 'products:create', 'products:update', 'products:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/inventory',
         label: 'Inventory',
-        permission: 'inventory.view',
+        module: 'inventory',
+        permissions: ['inventory:read', 'inventory:create', 'inventory:update', 'inventory:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/orders',
         label: 'Orders',
-        permission: 'orders.view',
+        module: 'orders',
+        permissions: ['orders:read', 'orders:create', 'orders:update', 'orders:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/recepciones',
         label: 'Recepciones',
-        permission: 'recepciones.view',
+        module: 'recepciones',
+        permissions: ['recepciones:read', 'recepciones:create', 'recepciones:update', 'recepciones:delete'],
         requiresAuth: true,
         showInSidebar: true,
     },
     {
         path: '/audit',
         label: 'Audit',
-        permission: 'audit.view',
+        module: 'audit',
+        permissions: ['audit:read', 'audit:create'],
         requiresAuth: true,
         showInSidebar: true,
     },
@@ -114,17 +131,22 @@ export function canAccessRoute(user: User | null | undefined, route: AppRouteCon
         return true;
     }
 
-    if (!route.permission) {
+    if (!route.permissions) {
         return true;
     }
 
-    // Verifica si el usuario tiene el permiso requerido para la ruta
-    return user.permissions.includes(route.permission);
+    // Verifica si el usuario tiene alguno de los permisos requeridos para la ruta
+    const normalizedUserPermissions = user.permissions.map(normalizePermission);
+    return route.permissions.some((permission) => normalizedUserPermissions.includes(normalizePermission(permission)));
 }
 
 // Filtrar rutas visibles segun permisos y estado de usuario
 export function getAccessibleRoutes(user: User | null | undefined) {
     return routeConfig.filter((route) => route.showInSidebar && canAccessRoute(user, route));
+}
+
+export function getDefaultRoute(user: User | null | undefined) {
+    return getAccessibleRoutes(user)[0]?.path ?? '/login';
 }
 
 // Obtener la configuracion de ruta por path exacto o prefijo

@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { getAccessibleRoutes } from "@/routes/routeConfig";
 import { useAuthStore } from "@/store/auth.store";
 import {
   LayoutDashboard,
@@ -19,17 +20,17 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
-  { label: "Clients", href: "/clients", icon: ClientsIcon },
-  { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon },
-  { label: "Products", href: "/products", icon: ProductsIcon },
-  { label: "Inventory", href: "/inventory", icon: InventoryIcon },
-  { label: "Orders", href: "/orders", icon: OrdersIcon },
-  { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon },
-  { label: "Users", href: "/users", icon: UsersIcon },
-  { label: "Roles", href: "/roles", icon: RolesIcon },
-  { label: "Permissions", href: "/dashboard/permissions", icon: PermissionsIcon },
-  { label: "Audit", href: "/audit", icon: AuditIcon },
+  { label: "Dashboard", href: "/dashboard", icon: DashboardIcon, permission: "dashboard:view" },
+  { label: "Clients", href: "/clients", icon: ClientsIcon, permission: "clients:view" },
+  { label: "Suppliers", href: "/suppliers", icon: SuppliersIcon, permission: "suppliers:view" },
+  { label: "Products", href: "/products", icon: ProductsIcon, permission: "products:view" },
+  { label: "Inventory", href: "/inventory", icon: InventoryIcon, permission: "inventory:view" },
+  { label: "Orders", href: "/orders", icon: OrdersIcon, permission: "orders:view" },
+  { label: "Receptions", href: "/recepciones", icon: ReceptionsIcon, permission: "recepciones:view" },
+  { label: "Users", href: "/users", icon: UsersIcon, permission: "users:view" },
+  { label: "Roles", href: "/roles", icon: RolesIcon, permission: "roles:view" },
+  { label: "Permissions", href: "/dashboard/permissions", icon: PermissionsIcon, permission: "permissions:view" },
+  { label: "Audit", href: "/audit", icon: AuditIcon, permission: "audit:view" },
 ];
 
 type SidebarIconProps = { active: boolean; className?: string };
@@ -135,6 +136,21 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const navItems = getAccessibleRoutes(user);
+
+  const iconMap: Record<string, any> = {
+    Dashboard: DashboardIcon,
+    Users: UsersIcon,
+    Roles: RolesIcon,
+    Permissions: PermissionsIcon,
+    Clients: ClientsIcon,
+    Suppliers: SuppliersIcon,
+    Products: ProductsIcon,
+    Inventory: InventoryIcon,
+    Orders: OrdersIcon,
+    Recepciones: ReceptionsIcon,
+    Audit: AuditIcon,
+  };
 
   const handleSignOut = () => {
     clearSession();
@@ -166,18 +182,13 @@ export default function AdminSidebar({ open = true, onClose }: { open?: boolean;
 
         <nav className="sidebar-list scrollbar-none flex-1 overflow-y-auto px-1 pr-1 flex flex-col gap-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const href = item.label === "Orders" ? "/orders" : item.href;
-            const Icon = item.icon;
+            const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
+            const Icon = iconMap[item.label] || LayoutDashboard;
 
             return (
-              <Link
-                key={`${item.label}-${item.href}`}
-                href={href}
-                className={`sidebar-pill ${isActive ? "sidebar-pill-active" : ""}`}
-              >
+              <Link key={item.path} href={item.path} className={`sidebar-pill ${isActive ? "sidebar-pill-active" : ""}`}>
                 <Icon active={isActive} className="shrink-0" />
-                <span className={`sidebar-pill-label ${isActive ? "font-extrabold text-white" : "font-semibold text-white/88"}`}>
+                <span className={`sidebar-pill-label ${isActive ? "font-extrabold" : "font-semibold"}`}>
                   {item.label}
                 </span>
               </Link>

@@ -5,6 +5,9 @@ import Loading from "@/components/ui/Loading";
 import { auditService } from "@/services/audit.service";
 import { AuditLog } from "@/types/audit";
 import { ClipboardList, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 
 const itemsPerPage = 5;
 
@@ -13,6 +16,24 @@ export default function AuditPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+  const router = useRouter();
+
+  const routeConfig = getRouteByPath(pathname);
+  useEffect(() => {
+    if (!isHydrated || isAuthLoading) return;
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+      router.replace(getDefaultRoute(user)); 
+    }
+  }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+  if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+  if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+    // mientras redirige o si no puede, no muestra la pantalla
+    return null;
+  }
 
   useEffect(() => {
     fetchLogs();

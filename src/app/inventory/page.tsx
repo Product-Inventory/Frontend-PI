@@ -8,6 +8,9 @@ import { inventoryService } from "@/services/inventory.service";
 import type { InventoryAdjustmentPayload, InventoryItem, InventoryMovement } from "@/types/inventory";
 import { Activity, AlertTriangle, Box } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 
 // ── Tipos de filtro ────────────────────────────────────────────────────────────
 
@@ -113,6 +116,18 @@ export default function InventoryPage() {
     const [adjustErrors,  setAdjustErrors]  = useState<AdjustFormErrors>({});
     const [adjustLoading, setAdjustLoading] = useState(false);
     const [adjustSaving,  setAdjustSaving]  = useState(false);
+
+
+    const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+    const router = useRouter();
+
+    const routeConfig = getRouteByPath(pathname);
+    useEffect(() => {
+        if (!isHydrated || isAuthLoading) return;
+        if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+        router.replace(getDefaultRoute(user)); 
+        }
+    }, [user, isAuthLoading, isHydrated, router, routeConfig]);
 
     // ── Valores derivados ────────────────────────────────────────────────────
 
@@ -252,6 +267,13 @@ export default function InventoryPage() {
     useEffect(() => {
         setMovementsPage((page) => Math.min(page, movementsTotalPages));
     }, [movementsTotalPages]);
+
+    if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+        // mientras redirige o si no puede, no muestra la pantalla
+        return null;
+    }
 
     // ── Manejadores del modal de ajuste ──────────────────────────────────────
 

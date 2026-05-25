@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { Toast } from "@/components/ui/Toast";
+import { getDefaultRoute } from "@/routes/routeConfig";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,13 +15,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [nextRoute, setNextRoute] = useState("/dashboard");
 
   const setSession = useAuthStore((state) => state.setSession);
   const setLoginSuccessPending = useAuthStore((state) => state.setLoginSuccessPending);
 
   const handleSuccessClose = () => {
     setLoginSuccessPending(false);
-    router.replace("/dashboard");
+    router.replace(nextRoute);
   };
 
   const handleLogin = async (e: any) => {
@@ -31,6 +33,7 @@ export default function LoginPage() {
     try {
       const res = await authService.login({ usuario, password });
       setSession(res.token, res.user);
+      setNextRoute(getDefaultRoute(res.user));
       setLoginSuccessPending(true);
       setShowSuccess(true);
     } catch {

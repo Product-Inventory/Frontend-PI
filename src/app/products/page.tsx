@@ -8,6 +8,9 @@ import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
 import type { Product, ProductFormValues } from "@/types/product";
 import { ChevronLeft, ChevronRight, Box, CheckCircle2, Plus, Power, Search } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -109,6 +112,24 @@ export default function ProductsPage() {
 
     const showPagination = totalItems > itemsPerPage;
 
+    const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+    const router = useRouter();
+
+    const routeConfig = getRouteByPath(pathname);
+    useEffect(() => {
+        if (!isHydrated || isAuthLoading) return;
+        if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+                router.replace(getDefaultRoute(user)); 
+        }
+    }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+    if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+        // mientras redirige o si no puede, no muestra la pantalla
+        return null;
+    }
+    
     const fetchProducts = async (opts?: { search?: string; status?: StatusFilter; page?: number }) => {
         const requestSeq = ++requestSeqRef.current;
         const q = opts?.search !== undefined ? opts.search : search;

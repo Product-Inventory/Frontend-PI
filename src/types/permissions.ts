@@ -5,3 +5,7 @@ export interface Permission {
   descripcion: string;
   modulo: string;
 }
+
+export function hasPermission(user, neededPermission: string) {
+  return user?.permisos?.includes(neededPermission);
+}

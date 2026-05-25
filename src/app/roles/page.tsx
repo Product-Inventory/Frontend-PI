@@ -9,6 +9,10 @@ import { rolesService } from "@/services/roles.service";
 import { permissionsService } from "@/services/permissions.service";
 import type { Role } from "@/types/role";
 import type { Permission } from "@/types/permissions";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
+import { usePathname, useRouter } from "next/navigation";
+import Loading from "@/components/ui/Loading";
 
 function RoleIcon({ className = "h-6 w-6 text-white" }: { className?: string }) {
     return <Settings className={className} size={24} />;
@@ -48,6 +52,24 @@ export default function RolesPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+
+    const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+    const router = useRouter();
+
+    const routeConfig = getRouteByPath(pathname);
+    useEffect(() => {
+    if (!isHydrated || isAuthLoading) return;
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+                router.replace(getDefaultRoute(user)); 
+    }
+    }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+    if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+    // mientras redirige o si no puede, no muestra la pantalla
+    return null;
+    }
 
     useEffect(() => {
         void fetchRoles();
