@@ -126,7 +126,7 @@ export default function ReceptionsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const showPagination = filteredReceptions.length > itemsPerPage;
+  //const showPagination = filteredReceptions.length > itemsPerPage;
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
@@ -144,31 +144,35 @@ export default function ReceptionsPage() {
 
         {/* HEADER */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-              <ClipboardList className="h-6 w-6 text-black" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
-                Receptions
-              </h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Inventory receipt registry.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 lg:min-w-[31rem]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                Total: {receptions.length}
-              </span>
-              <button onClick={handleCreate} className={buttonBase}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
+  <div className="flex items-center gap-4">
+    <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
+      <ClipboardList className="h-6 w-6 text-black" />
+    </div>
+    <div>
+      <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 drop-shadow-sm">
+        Receptions
+      </h1>
+      <p className="mt-1 text-sm text-slate-600">
+        Inventory receipt registry.
+      </p>
+    </div>
+  </div>
+  <div className="flex items-center justify-end">
+    <button onClick={handleCreate} className={buttonBase}>
+      <Plus className="mr-2 h-4 w-4" />
+      Create
+    </button>
+  </div>
+</div>
+
+{/* TOTAL CHIP */}
+<div className="flex flex-col gap-3">
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
+      <ClipboardList className="h-4 w-4 text-indigo-400" />
+      Total receptions: {receptions.length}
+    </span>
+  </div>
 
         {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -196,7 +200,7 @@ export default function ReceptionsPage() {
             </select>
           </div>
         </div>
-
+      </div>
         {isLoading ? (
           <Loading label="Loading receptions..." />
         ) : (
@@ -302,27 +306,25 @@ export default function ReceptionsPage() {
             </div>
 
             {/* Pagination */}
-            {showPagination && (
-              <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
-                <p className="text-sm text-gray-400">Page {currentPage} of {totalFilteredPages}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalFilteredPages))}
-                    disabled={currentPage === totalFilteredPages}
-                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
+  <p className="text-sm text-gray-400">Page {currentPage} of {totalFilteredPages}</p>
+  <div className="flex gap-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1 || totalFilteredPages === 0}
+      className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+    >
+      Previous
+    </button>
+    <button
+      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalFilteredPages))}
+      disabled={currentPage === totalFilteredPages || totalFilteredPages === 0}
+      className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+    >
+      Next
+    </button>
+  </div>
+</div>
           </div>
         )}
 
@@ -331,6 +333,7 @@ export default function ReceptionsPage() {
           onClose={() => setModalOpen(false)}
           onSuccess={fetchReceptions}
           recepcion={editingReception}
+           setToast={setToast}  
         />
 
         <ConfirmModal

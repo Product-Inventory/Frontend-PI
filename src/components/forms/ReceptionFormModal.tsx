@@ -12,9 +12,10 @@ interface Props {
   onClose: () => void;
   onSuccess: () => void;
   recepcion?: Reception | null;
+  setToast: (toast: { message: string; type: "success" | "error" } | null) => void;
 }
 
-export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepcion }: Props) {
+export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepcion, setToast  }: Props) {
   const [form, setForm] = useState<ReceptionFormValues>({
     supplierId: '',
     fecha: new Date().toISOString().slice(0, 10),
@@ -71,7 +72,14 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
         fecha: new Date().toISOString().slice(0, 10),
         folio: '',
         comentarios: '',
-        items: [],
+        items:  [{
+      productId: '',
+      sku: '',
+      productNombre: '',
+      cantidad: 1,
+      costoUnitario: 0,
+      subtotal: 0,
+    }],
       });
     }
     setErrors({});
@@ -146,26 +154,28 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
       const cantidad = Number(item.cantidad);
       const costo = Number(item.costoUnitario);
       if (isNaN(cantidad) || cantidad <= 0) err[`cantidad_${i}`] = 'Quantity must be > 0';
-      if (isNaN(costo) || costo <= 0) err[`costo_${i}`] = 'Unit cost must be > 0';
+      if (isNaN(costo) || costo <= 0) err[`costo_${i}`] = 'cost must be > 0';
     }
     setErrors(err);
     return Object.keys(err).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
     try {
       if (recepcion) {
         await receptionsService.update(recepcion.id, form);
+        setToast({ message: "Reception updated successfully", type: "success" });
       } else {
         await receptionsService.create(form);
+        setToast({ message: "Reception created successfully", type: "success" });
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error saving reception');
+      setToast({ message: err.response?.data?.message || "Error saving reception", type: "error" });
     } finally {
       setLoading(false);
     }

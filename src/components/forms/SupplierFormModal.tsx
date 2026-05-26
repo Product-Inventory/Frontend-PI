@@ -10,9 +10,10 @@ interface SupplierFormModalProps {
   onClose: () => void;
   onSuccess: () => void;
   supplier?: Supplier | null;  
+   setToast: (toast: { message: string; type: "success" | "error" } | null) => void;
 }
 
-export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier }: SupplierFormModalProps) {
+export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier, setToast }: SupplierFormModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
     rfc: '',
@@ -76,71 +77,73 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      if (supplier) {
-        await suppliersService.update(supplier.id, formData);
-      } else {
-        await suppliersService.create(formData);
-      }
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+  e.preventDefault();
+  if (!validate()) return;
+  setLoading(true);
+  try {
+    if (supplier) {
+      await suppliersService.update(supplier.id, formData);
+      setToast({ message: "Supplier updated successfully", type: "success" });
+    } else {
+      await suppliersService.create(formData);
+      setToast({ message: "Supplier created successfully", type: "success" });
     }
-  };
+    onSuccess();
+    onClose();
+  } catch (err: any) {
+    setToast({ message: err.response?.data?.message || "Error saving supplier", type: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 
   return (
     <Portal>
-    <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
-      <div className="app-modal-shell app-modal-shell--md glass-card rounded-2xl overflow-y-auto max-h-full scrollbar-none p-6 shadow-2xl">
+      <div className="app-modal-overlay app-modal-overlay--form px-4 py-4">
+        <div className="app-modal-shell app-modal-shell--lg glass-card relative overflow-y-auto max-h-[90vh] scrollbar-none p-6 md:p-8">
+    <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+  {supplier ? 'Edit Supplier' : 'New Supplier'}
+</h2>
+<p className="mt-1 text-sm text-slate-600">
+  {supplier ? 'Modify supplier details.' : 'Register a new supplier.'}
+</p>
 
-        <h2 className="text-xl font-bold text-white mb-4">
-          {supplier ? 'Edit Supplier' : 'New Supplier'}
-        </h2>
-
-        <h2 className="text-xl font-bold text-white mb-4">{supplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-white/80 text-sm mb-1">Company name *</label>
+             <label className="block text-sm font-semibold text-slate-800 mb-1">Company Name</label>
               <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} />
-              {errors.nombre && <p className="text-red-300 text-xs">{errors.nombre}</p>}
+              {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">RFC</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">RFC</label>
               <input type="text" name="rfc" className="glass-input w-full" value={formData.rfc} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Contact person</label>
+             <label className="block text-sm font-semibold text-slate-800 mb-1">Contact Person</label>
               <input type="text" name="contacto" className="glass-input w-full" value={formData.contacto} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Email</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Email</label>
               <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange} />
-              {errors.email && <p className="text-red-300 text-xs">{errors.email}</p>}
+              {errors.email && <p className="text-rose-600 text-xs">{errors.email}</p>}
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Phone</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Phone Number</label>
               <input type="tel" name="telefono" className="glass-input w-full" value={formData.telefono} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Address</label>
+             <label className="block text-sm font-semibold text-slate-800 mb-1">Adress</label>
               <input type="text" name="direccion" className="glass-input w-full" value={formData.direccion} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Business line</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Business Line</label>
               <input type="text" name="giro" className="glass-input w-full" value={formData.giro} onChange={handleChange} />
             </div>
             <div>
-              <label className="block text-white/80 text-sm mb-1">Status</label>
+           <label className="block text-sm font-semibold text-slate-800 mb-1">Status</label>
               <select name="activo" className="glass-input w-full" value={formData.activo ? 'true' : 'false'} onChange={handleChange}>
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
@@ -148,13 +151,15 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
             </div>
           </div>
           <div>
-            <label className="block text-white/80 text-sm mb-1">Notes</label>
+           <label className="block text-sm font-semibold text-slate-800 mb-1">Notes</label>
             <textarea name="notas" className="glass-input w-full" rows={2} value={formData.notas} onChange={handleChange} />
           </div>
           <div className="flex justify-end space-x-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-full bg-white/10 text-white hover:bg-white/20">Cancel</button>
-            <button type="submit" disabled={loading} className="products-violet-black-button px-4 py-2 rounded-full text-white font-semibold">
-              {loading ? 'Saving...' : supplier ? 'Update' : 'Create'}
+            <button type="button" onClick={onClose} className="inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-5 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50">
+                Cancel 
+              </button>
+            <button type="submit" disabled={loading} className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-sm font-semibold text-white shadow-md transition hover:opacity-95 disabled:opacity-60">
+                {loading ? 'Saving...' : supplier ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
