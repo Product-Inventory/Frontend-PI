@@ -791,18 +791,18 @@ export default function OrdersPage() {
                 </Field>
                 <div className="md:col-span-3">
                   <span className="block font-bold mb-1 text-slate-800 text-sm">Products</span>
-                  <div className="flex flex-col gap-2 max-h-26 overflow-y-auto scrollbar-none">
-                    {orderForm.items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3"
-                      >
+                  <div className="flex flex-col gap-3">
+                  {orderForm.items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-2xl border border-white/45 bg-white/35 p-4 shadow flex flex-col gap-2 relative"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <select
                           value={item.productId}
                           onChange={e => handleOrderItemProductSelect(idx, e.target.value)}
-                          className="glass-input"
+                          className="glass-input flex-1 min-w-[160px]"
                           required
-                          style={{ minWidth: 160 }}
                         >
                           <option value="">Product...</option>
                           {availableProducts.map(p => (
@@ -811,39 +811,43 @@ export default function OrdersPage() {
                             </option>
                           ))}
                         </select>
-                        {orderFormErrors[`items.${idx}.productId`] && (
-                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
-                        )}
                         <input
                           type="number"
                           min={1}
-                          max={(() => {
-                            const product = availableProducts.find(p => p.id === item.productId);
-                            return product ? product.stock : undefined;
-                          })()}
+                          max={availableProducts.find(p => p.id === item.productId)?.stock}
                           className="glass-input w-20"
                           placeholder="Quantity"
                           value={item.cantidad}
                           onChange={e => handleOrderItemChange(idx, "cantidad", e.target.value)}
                           required
                         />
-                        {orderFormErrors[`items.${idx}.cantidad`] && (
-                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.cantidad`]}</span>
-                        )}
                         <span className="glass-input w-28 text-right bg-gray-100 cursor-not-allowed select-none">
                           ${item.precioUnitario}
                         </span>
-                        <span className="block w-24 text-right">
+                        <span className="block w-24 text-right font-semibold">
                           ${(+(item.cantidad) * +(item.precioUnitario)).toFixed(2)}
                         </span>
                         {orderForm.items.length > 1 && (
-                          <button type="button" onClick={() => handleRemoveOrderItem(idx)} className="ml-1 text-rose-500 font-bold">
-                            ✖
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOrderItem(idx)}
+                            className="absolute text-rose-500 font-bold"
+                            title="Remove product"
+                          >
+                            🗑️
                           </button>
                         )}
                       </div>
-                    ))}
-                  </div>
+                      {/* Mostrar errores si existen */}
+                      {orderFormErrors[`items.${idx}.productId`] && (
+                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.productId`]}</span>
+                      )}
+                      {orderFormErrors[`items.${idx}.cantidad`] && (
+                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.cantidad`]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
                   <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
                     + Add product
                   </button>
