@@ -11,9 +11,10 @@ interface UserFormModalProps {
   onClose: () => void;
   onSuccess: () => void;
   user?: User | null;
+  setToast: (toast: { message: string; type: "success" | "error" } | null) => void;
 }
 
-export default function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModalProps) {
+export default function UserFormModal({ isOpen, onClose, onSuccess, user, setToast }: UserFormModalProps) {
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
@@ -106,7 +107,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
@@ -115,13 +116,15 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
         const updateData: any = { ...formData };
         if (!updateData.password) delete updateData.password;
         await usersService.update(user.id, updateData);
+        setToast({ message: "User updated successfully", type: "success" });
       } else {
         await usersService.create(formData);
+        setToast({ message: "User created successfully", type: "success" });
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error saving user');
+      setToast({ message: err.response?.data?.message || "Error saving user", type: "error" });
     } finally {
       setLoading(false);
     }

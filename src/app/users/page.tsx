@@ -144,24 +144,31 @@ export default function UsersPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-col gap-3 lg:min-w-[31rem]">
+         
             <div className="flex items-center justify-between gap-3">
-              <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                Total: {users.length}
-              </span>
+              
               <button onClick={handleCreate} className={buttonBase}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create
               </button>
             </div>
-          </div>
+          
         </div>
+        
+         <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
+              <Users className="h-4 w-4 text-indigo-400" />
+              Total users: {users.length}
+            </span>
+          </div>
+          
 
         {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 sm:max-w-md">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              
               <input
                 type="text"
                 placeholder="Search by name, username or email..."
@@ -185,6 +192,7 @@ export default function UsersPage() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+        </div>
         </div>
 
         {isLoading ? (
@@ -307,6 +315,7 @@ export default function UsersPage() {
           onClose={() => setModalOpen(false)}
           onSuccess={fetchUsers}
           user={editingUser}
+          setToast={setToast}
         />
 
         <ConfirmModal

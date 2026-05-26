@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
 import { usePathname, useRouter } from "next/navigation";
 
-const itemsPerPage = 5;
+const itemsPerPage = 3;
 
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -113,7 +113,7 @@ export default function SuppliersPage() {
 
   const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
   const paginatedSuppliers = filteredSuppliers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const showPagination = filteredSuppliers.length > itemsPerPage;
+  //const showPagination = filteredSuppliers.length > itemsPerPage;
 
   const buttonBase = "inline-flex h-10 items-center justify-center rounded-full border border-white/50 bg-white/35 px-4 text-sm font-semibold products-violet-black-button shadow-[0_6px_18px_rgba(138,108,198,0.14)] transition hover:-translate-y-0.5 hover:bg-white/50";
 
@@ -144,24 +144,29 @@ export default function SuppliersPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-col gap-3 lg:min-w-[31rem]">
+         
             <div className="flex items-center justify-between gap-3">
-              <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
-                Total: {suppliers.length}
-              </span>
+              
               <button onClick={handleCreate} className={buttonBase}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create
               </button>
             </div>
-          </div>
+          
         </div>
+
+          <div className="flex flex-col gap-3">
+  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <span className="glass-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-700">
+      <Truck className="h-4 w-4 text-indigo-400" />
+      Total suppliers: {suppliers.length}
+    </span>
+  </div>
 
         {/* FILTERS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2 sm:max-w-md">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
                 type="text"
                 placeholder="Search by name, RFC, contact or email..."
@@ -185,6 +190,7 @@ export default function SuppliersPage() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+        </div>
         </div>
 
         {isLoading ? (
@@ -277,27 +283,27 @@ export default function SuppliersPage() {
               )}
             </div>
 
-            {showPagination && (
-              <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
-                <p className="text-sm text-gray-400">Page {currentPage} of {totalPages}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+           <div className="flex justify-between items-center mt-4 border-t border-white/20 px-5 pt-4">
+  <p className="text-sm text-gray-400">
+    Page {currentPage} of {totalPages}
+  </p>
+  <div className="flex gap-2">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1 || totalPages === 0}
+      className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+    >
+      Previous
+    </button>
+    <button
+      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+      disabled={currentPage === totalPages || totalPages === 0}
+      className="px-4 py-2 rounded-lg border border-gray-200 bg-white shadow-sm products-violet-black-button disabled:opacity-20"
+    >
+      Next
+    </button>
+  </div>
+</div>
           </div>
         )}
 
@@ -306,6 +312,7 @@ export default function SuppliersPage() {
           onClose={() => setModalOpen(false)}
           onSuccess={fetchSuppliers}
           supplier={editingSupplier}
+            setToast={setToast}
         />
 
         <ConfirmModal
