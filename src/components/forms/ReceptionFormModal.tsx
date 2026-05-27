@@ -148,9 +148,22 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
     if (!form.fecha) err.fecha = 'Date is required';
     // folio: validación eliminada, se genera automáticamente
     if (form.items.length === 0) err.items = 'At least one product is required';
+
+    // Conteo de duplicados para detectar el mismo producto en varias filas
+    const productIdCount = new Map<string, number>();
+    form.items.forEach((item) => {
+      if (item.productId) {
+        productIdCount.set(item.productId, (productIdCount.get(item.productId) || 0) + 1);
+      }
+    });
+
     for (let i = 0; i < form.items.length; i++) {
       const item = form.items[i];
-      if (!item.productId) err[`product_${i}`] = 'Product is required';
+      if (!item.productId) {
+        err[`product_${i}`] = 'Product is required';
+      } else if ((productIdCount.get(item.productId) || 0) > 1) {
+        err[`product_${i}`] = 'Product already added';
+      }
       const cantidad = Number(item.cantidad);
       const costo = Number(item.costoUnitario);
       if (isNaN(cantidad) || cantidad <= 0) err[`cantidad_${i}`] = 'Quantity must be > 0';
@@ -277,11 +290,16 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
                           onChange={(e) => updateItem(idx, 'productId', e.target.value)}
                         >
                           <option value="">Select product</option>
-                          {products.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.nombre} {p.sku ? `(${p.sku})` : ''}
-                            </option>
-                          ))}
+                          {products.map(p => {
+                            const isAlreadySelected = form.items.some(
+                              (otherItem, otherIdx) => otherItem.productId === p.id && otherIdx !== idx
+                            );
+                            return (
+                              <option key={p.id} value={p.id} disabled={isAlreadySelected}>
+                                {p.nombre} {p.sku ? `(${p.sku})` : ''}{isAlreadySelected ? ' (already added)' : ''}
+                              </option>
+                            );
+                          })}
                         </select>
                         {errors[`product_${idx}`] && <p className="text-red-500 text-xs">{errors[`product_${idx}`]}</p>}
                       </td>
