@@ -652,6 +652,14 @@ export default function ProductsPage() {
                                 <input name="precioVenta" type="number" min="0.01" step="0.01" value={form.precioVenta} onChange={handleChange} className="glass-input w-full" placeholder="0.00" />
                             </Field>
 
+                            <Field label="Stock *" error={formErrors.stock}>
+                                <input name="stock" type="number" min="0" step="1" value={form.stock} onChange={handleChange} className="glass-input w-full" placeholder="0" />
+                            </Field>
+
+                            <Field label="Minimum stock *" error={formErrors.stockMinimo}>
+                                <input name="stockMinimo" type="number" min="0" step="1" value={form.stockMinimo} onChange={handleChange} className="glass-input w-full" placeholder="0" />
+                            </Field>
+
                             <div className="md:col-span-2">
                                 <Field label="Description">
                                     <textarea

@@ -282,10 +282,20 @@ export default function OrdersPage() {
     if (!Array.isArray(form.items) || form.items.length === 0) {
       errors.items = "Add at least 1 product";
     } else {
+      // Conteo de duplicados para detectar el mismo producto en varias filas
+      const productIdCount = new Map<string, number>();
+      form.items.forEach((item) => {
+        if (item.productId) {
+          productIdCount.set(item.productId, (productIdCount.get(item.productId) || 0) + 1);
+        }
+      });
+
       form.items.forEach((item, idx) => {
         const product = products.find(p => p.id === item.productId);
         if (!item.productId) {
           errors[`items.${idx}.productId`] = "Select a product";
+        } else if ((productIdCount.get(item.productId) || 0) > 1) {
+          errors[`items.${idx}.productId`] = "Product already added";
         } else if (!product || !product.activo || Number(product.stock) <= 0) {
           errors[`items.${idx}.productId`] = "Selected product is unavailable";
         }
