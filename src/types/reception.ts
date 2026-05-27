@@ -38,7 +38,7 @@ export interface ReceptionQueryParams {
 export interface ReceptionFormValues {
   supplierId: string;
   fecha: string;
-  folio: string;
+  // folio: generado automáticamente por el backend
   comentarios: string | null;
   items: Array<{
     productId: string;

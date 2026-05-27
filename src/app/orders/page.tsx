@@ -24,9 +24,9 @@ const itemsPerPage = 3;
 const statusOptions: StatusFilter[] = ["all", "DRAFT", "CONFIRMED", "DELIVERED", "CANCELLED"];
 
 const orderEmptyForm: OrderFormValues = {
-  folio: "",
+  // folio: generado automáticamente por el backend
   fechaOrden: "",
-  fechaEntrega: null, // puede iniciar null
+  fechaEntrega: null,
   clienteId: "",
   comentarios: "",
   items: [
@@ -55,6 +55,9 @@ function canCancel(order: Order): boolean {
 function canDelete(order: Order): boolean {
   return true;
 }
+function canView(order: Order): boolean {
+  return order.status === "DELIVERED" || order.status === "CANCELLED";
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -76,6 +79,7 @@ export default function OrdersPage() {
   const [isOrderSaving, setIsOrderSaving] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const requestSeqRef = useRef(0);
   const showPagination = totalItems > itemsPerPage;
 
@@ -271,9 +275,7 @@ export default function OrdersPage() {
 
   function validateOrderForm(form: OrderFormValues, clients: Client[], products: Product[]) {
     const errors: Record<string, string> = {};
-    if (!form.folio || form.folio.trim().length < 3) {
-      errors.folio = "Folio is required (min. 3 chars)";
-    }
+    // folio: validación eliminada, se genera automáticamente
     if (!form.fechaOrden) errors.fechaOrden = "Order date is required";
     if (!form.clienteId || !clients.some(c => c.id === form.clienteId && c.activo)) {
       errors.clienteId = "Select an active client";
@@ -347,7 +349,7 @@ export default function OrdersPage() {
     if (order.status !== "DRAFT") return;
     setEditingOrder(order);
     setOrderForm({
-      folio: order.folio,
+      // folio: no se edita, viene del registro existente
       fechaOrden: order.fechaOrden,
       fechaEntrega: order.fechaEntrega ?? null,
       clienteId: order.clienteId,
@@ -576,6 +578,16 @@ export default function OrdersPage() {
                                 Cancel
                               </button>
                             )}
+                            {canView(order) && (
+                              <button
+                                onClick={() => setViewingOrder(order)}
+                                className={iconButtonBase}
+                                title="View order details"
+                                aria-label="View order details"
+                              >
+                                👁️
+                              </button>
+                            )}
                             {canDelete(order) && (
                               <button
                                 onClick={() => {
@@ -673,6 +685,16 @@ export default function OrdersPage() {
                           Cancel
                         </button>
                       )}
+                      {canView(order) && (
+                        <button
+                          onClick={() => setViewingOrder(order)}
+                          className={iconButtonBase}
+                          title="View order details"
+                          aria-label="View order details"
+                        >
+                          👁️
+                        </button>
+                      )}
                       {canDelete(order) && (
                         <button
                           onClick={() => {
@@ -736,14 +758,15 @@ export default function OrdersPage() {
                 className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-4"
                 onSubmit={e => { e.preventDefault(); handleOrderSave(); }}
               >
-                <Field label="Folio" error={orderFormErrors.folio} className="">
-                  <input
-                    name="folio"
-                    className="glass-input w-full"
-                    value={orderForm.folio}
-                    onChange={handleOrderField}
-                  />
-                </Field>
+                <div className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+                  <span>Folio</span>
+                  <div className="glass-input w-full bg-white/10 text-slate-500 cursor-not-allowed select-none flex items-center gap-2">
+                    {editingOrder
+                      ? <span className="font-bold text-slate-700">{editingOrder.folio}</span>
+                      : <span className="italic text-slate-400">Auto-generated on save</span>
+                    }
+                  </div>
+                </div>
                 <Field label="Order date" error={orderFormErrors.fechaOrden} className="">
                   <input
                     type="date"
@@ -791,56 +814,66 @@ export default function OrdersPage() {
                 </Field>
                 <div className="md:col-span-3">
                   <span className="block font-bold mb-1 text-slate-800 text-sm">Products</span>
-                  <div className="flex flex-col gap-2 max-h-26 overflow-y-auto scrollbar-none">
+                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto scrollbar-none">
                     {orderForm.items.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3"
+                        className="flex flex-nowrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3"
                       >
-                        <select
-                          value={item.productId}
-                          onChange={e => handleOrderItemProductSelect(idx, e.target.value)}
-                          className="glass-input"
-                          required
-                          style={{ minWidth: 160 }}
-                        >
-                          <option value="">Product...</option>
-                          {availableProducts.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""}
-                            </option>
-                          ))}
-                        </select>
-                        {orderFormErrors[`items.${idx}.productId`] && (
-                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
-                        )}
-                        <input
-                          type="number"
-                          min={1}
-                          max={(() => {
-                            const product = availableProducts.find(p => p.id === item.productId);
-                            return product ? product.stock : undefined;
-                          })()}
-                          className="glass-input w-20"
-                          placeholder="Quantity"
-                          value={item.cantidad}
-                          onChange={e => handleOrderItemChange(idx, "cantidad", e.target.value)}
-                          required
-                        />
-                        {orderFormErrors[`items.${idx}.cantidad`] && (
-                          <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.cantidad`]}</span>
-                        )}
-                        <span className="glass-input w-28 text-right bg-gray-100 cursor-not-allowed select-none">
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                          <select
+                            value={item.productId}
+                            onChange={e => handleOrderItemProductSelect(idx, e.target.value)}
+                            className="glass-input w-full"
+                            required
+                          >
+                            <option value="">Product...</option>
+                            {availableProducts.map(p => (
+                              <option key={p.id} value={p.id}>
+                                {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          {orderFormErrors[`items.${idx}.productId`] && (
+                            <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
+                          )}
+                        </div>
+                        <div className="shrink-0 flex flex-col gap-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={(() => {
+                              const product = availableProducts.find(p => p.id === item.productId);
+                              return product ? product.stock : undefined;
+                            })()}
+                            className="glass-input w-20"
+                            placeholder="Qty"
+                            value={item.cantidad}
+                            onChange={e => handleOrderItemChange(idx, "cantidad", e.target.value)}
+                            required
+                          />
+                          {orderFormErrors[`items.${idx}.cantidad`] && (
+                            <span className="text-xs text-rose-500 w-20 text-center">{orderFormErrors[`items.${idx}.cantidad`]}</span>
+                          )}
+                        </div>
+                        <span className="shrink-0 glass-input w-28 text-right bg-gray-100 cursor-not-allowed select-none">
                           ${item.precioUnitario}
                         </span>
-                        <span className="block w-24 text-right">
+                        <span className="shrink-0 w-24 text-right text-sm font-semibold text-slate-800">
                           ${(+(item.cantidad) * +(item.precioUnitario)).toFixed(2)}
                         </span>
-                        {orderForm.items.length > 1 && (
-                          <button type="button" onClick={() => handleRemoveOrderItem(idx)} className="ml-1 text-rose-500 font-bold">
-                            ✖
-                          </button>
-                        )}
+                        <div className="shrink-0 flex w-9 items-center justify-center">
+                          {orderForm.items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOrderItem(idx)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/35 text-slate-500 transition hover:bg-rose-50 hover:text-rose-500"
+                              aria-label="Remove product"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -860,6 +893,93 @@ export default function OrdersPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </Portal>
+      )}
+      {/* MODAL VER ORDEN (solo lectura) */}
+      {viewingOrder && (
+        <Portal>
+          <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
+            <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Order details</h2>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                      viewingOrder.status === "DELIVERED"
+                        ? "bg-emerald-200/80 text-emerald-700"
+                        : "bg-rose-100 text-rose-800"
+                    }`}>{viewingOrder.status}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">Read-only view of the order.</p>
+                </div>
+                <button
+                  onClick={() => setViewingOrder(null)}
+                  className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/35 text-slate-500 hover:bg-white/60 transition font-bold"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-4">
+                {/* Folio */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Folio</span>
+                  <div className="glass-input bg-white/10 text-slate-700 font-bold cursor-default select-all">{viewingOrder.folio}</div>
+                </div>
+                {/* Order date */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Order date</span>
+                  <div className="glass-input bg-white/10 text-slate-700 cursor-default">{viewingOrder.fechaOrden}</div>
+                </div>
+                {/* Delivery date */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Delivery date</span>
+                  <div className="glass-input bg-white/10 text-slate-700 cursor-default">{viewingOrder.fechaEntrega || <span className="italic text-slate-400">—</span>}</div>
+                </div>
+                {/* Client */}
+                <div className="flex flex-col gap-1 md:col-span-1">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Client</span>
+                  <div className="glass-input bg-white/10 text-slate-700 cursor-default">{viewingOrder.clienteNombre}</div>
+                </div>
+                {/* Comments */}
+                <div className="flex flex-col gap-1 md:col-span-2">
+                  <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Comments</span>
+                  <div className="glass-input bg-white/10 text-slate-700 cursor-default min-h-[40px]">{viewingOrder.comentarios || <span className="italic text-slate-400">—</span>}</div>
+                </div>
+                {/* Items */}
+                <div className="md:col-span-3">
+                  <span className="block text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 mb-2">Products</span>
+                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto scrollbar-none">
+                    {viewingOrder.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3 text-sm"
+                      >
+                        <span className="flex-1 min-w-[160px] font-semibold text-slate-800">
+                          {item.productNombre || item.productId}
+                          {item.sku ? <span className="ml-2 text-xs text-slate-500 font-normal">({item.sku})</span> : null}
+                        </span>
+                        <span className="w-20 text-center text-slate-700">
+                          <span className="text-xs text-slate-500 mr-1">Qty:</span>{item.cantidad}
+                        </span>
+                        <span className="w-28 text-right text-slate-700">
+                          ${Number(item.precioUnitario).toFixed(2)}
+                        </span>
+                        <span className="w-24 text-right font-bold text-slate-800">
+                          ${(Number(item.cantidad) * Number(item.precioUnitario)).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <div className="rounded-2xl border border-white/40 bg-white/25 px-4 py-2 text-sm font-bold text-slate-800">
+                      Total: ${viewingOrder.total.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </Portal>

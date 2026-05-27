@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { receptionsService } from "@/services/receptions.service";
 import { Reception } from "@/types/reception";
 import { Loading } from "@/components/ui/Loading";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
 import { Toast } from "@/components/ui/Toast";
-import { ClipboardList, Plus, Eye, CheckCircle } from "lucide-react";
+import { Portal } from "@/components/ui/Portal";
+import { ClipboardList, Plus, CheckCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
 import { usePathname, useRouter } from "next/navigation";
@@ -27,6 +27,7 @@ export default function ReceptionsPage() {
   const [receptionToDelete, setReceptionToDelete] = useState<Reception | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [viewingReception, setViewingReception] = useState<Reception | null>(null);
 
   const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
   const router = useRouter();
@@ -235,9 +236,16 @@ export default function ReceptionsPage() {
                         <td className="px-5 py-5 text-right font-semibold">${rec.total.toLocaleString()}</td>
                         <td className="px-5 py-5 text-center">
                           <div className="inline-flex items-center gap-2">
-                            <Link href={`/recepciones/${rec.id}`} className="text-blue-200 hover:text-blue-100" title="View details">
-                              <Eye className="h-4 w-4" />
-                            </Link>
+                            {rec.status === "CONFIRMED" && (
+                              <button
+                                onClick={() => setViewingReception(rec)}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-sm transition hover:-translate-y-0.5 hover:bg-white/50"
+                                title="View details"
+                                aria-label="View reception details"
+                              >
+                                👁️
+                              </button>
+                            )}
                             {rec.status === "DRAFT" && (
                               <>
                                 <button onClick={() => handleEdit(rec)} className="text-yellow-200 hover:text-yellow-100" title="Edit">
@@ -287,7 +295,16 @@ export default function ReceptionsPage() {
                       <ReceptionMeta label="Total" value={`$${rec.total.toLocaleString()}`} />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Link href={`/recepciones/${rec.id}`} className={buttonBase}>👁️</Link>
+                      {rec.status === "CONFIRMED" && (
+                        <button
+                          onClick={() => setViewingReception(rec)}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/45 bg-white/35 products-violet-black-button shadow-sm transition hover:-translate-y-0.5 hover:bg-white/50"
+                          title="View details"
+                          aria-label="View reception details"
+                        >
+                          👁️
+                        </button>
+                      )}
                       {rec.status === "DRAFT" && (
                         <>
                           <button onClick={() => handleEdit(rec)} className={buttonBase}>✏️</button>
@@ -328,12 +345,97 @@ export default function ReceptionsPage() {
           </div>
         )}
 
+        {/* MODAL VER RECEPCIÓN (solo lectura) */}
+        {viewingReception && (
+          <Portal>
+            <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
+              <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Reception details</h2>
+                      <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold bg-emerald-200/80 text-emerald-700">
+                        CONFIRMED
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-600">Read-only view of the reception.</p>
+                  </div>
+                  <button
+                    onClick={() => setViewingReception(null)}
+                    className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/35 text-slate-500 hover:bg-white/60 transition font-bold"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-3 gap-y-4">
+                  {/* Folio */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Folio</span>
+                    <div className="glass-input bg-white/10 text-slate-700 font-bold cursor-default select-all">{viewingReception.folio}</div>
+                  </div>
+                  {/* Date */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Date</span>
+                    <div className="glass-input bg-white/10 text-slate-700 cursor-default">{new Date(viewingReception.fecha).toLocaleDateString()}</div>
+                  </div>
+                  {/* Supplier */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Supplier</span>
+                    <div className="glass-input bg-white/10 text-slate-700 cursor-default">{viewingReception.supplierNombre}</div>
+                  </div>
+                  {/* Notes */}
+                  {(viewingReception as any).notas !== undefined && (
+                    <div className="flex flex-col gap-1 md:col-span-3">
+                      <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500">Notes</span>
+                      <div className="glass-input bg-white/10 text-slate-700 cursor-default min-h-[40px]">
+                        {(viewingReception as any).notas || <span className="italic text-slate-400">—</span>}
+                      </div>
+                    </div>
+                  )}
+                  {/* Items */}
+                  <div className="md:col-span-3">
+                    <span className="block text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 mb-2">Products</span>
+                    <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto scrollbar-none">
+                      {viewingReception.items.map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex flex-wrap gap-2 items-center rounded-2xl border border-white/40 bg-white/25 p-3 text-sm"
+                        >
+                          <span className="flex-1 min-w-[160px] font-semibold text-slate-800">
+                            {item.productNombre || item.productId}
+                            {item.sku ? <span className="ml-2 text-xs text-slate-500 font-normal">({item.sku})</span> : null}
+                          </span>
+                          <span className="w-20 text-center text-slate-700">
+                            <span className="text-xs text-slate-500 mr-1">Qty:</span>{item.cantidad}
+                          </span>
+                          <span className="w-28 text-right text-slate-700">
+                            ${Number(item.precioUnitario ?? item.precioCompra ?? 0).toFixed(2)}
+                          </span>
+                          <span className="w-24 text-right font-bold text-slate-800">
+                            ${(Number(item.cantidad) * Number(item.precioUnitario ?? item.precioCompra ?? 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <div className="rounded-2xl border border-white/40 bg-white/25 px-4 py-2 text-sm font-bold text-slate-800">
+                        Total: ${viewingReception.total.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Portal>
+        )}
+
         <ReceptionFormModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           onSuccess={fetchReceptions}
           recepcion={editingReception}
-           setToast={setToast}  
+           setToast={setToast}
         />
 
         <ConfirmModal

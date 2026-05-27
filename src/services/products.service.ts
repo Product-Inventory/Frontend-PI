@@ -15,7 +15,7 @@ function toNumber(value: number | string) {
 
 function buildPayload(data: ProductFormValues) {
 	return {
-		sku: String(data.sku || "").trim().toUpperCase(),
+		// sku: generado automáticamente por el backend
 		nombre: String(data.nombre || "").trim(),
 		descripcion: normalizeOptionalText(data.descripcion),
 		categoria: normalizeOptionalText(data.categoria),
@@ -33,7 +33,7 @@ function buildPayload(data: ProductFormValues) {
 function buildUpdatePayload(data: Partial<ProductFormValues>) {
 	const payload: Record<string, unknown> = {};
 
-	if (data.sku !== undefined) payload.sku = String(data.sku || "").trim().toUpperCase();
+	// sku: no editable después de la creación
 	if (data.nombre !== undefined) payload.nombre = String(data.nombre || "").trim();
 	if (data.descripcion !== undefined) payload.descripcion = normalizeOptionalText(data.descripcion);
 	if (data.categoria !== undefined) payload.categoria = normalizeOptionalText(data.categoria);

@@ -24,7 +24,7 @@ export interface ProductQueryParams {
 }
 
 export interface ProductFormValues {
-	sku: string;
+	// sku: generado automáticamente por el backend
 	nombre: string;
 	descripcion: string | null;
 	categoria: string | null;

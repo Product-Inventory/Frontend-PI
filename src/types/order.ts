@@ -33,9 +33,9 @@ export interface Order {
 }
 
 export interface OrderFormValues {
-  folio: string;
+  // folio: generado automáticamente por el backend
   fechaOrden: string;
-  fechaEntrega: string | null; 
+  fechaEntrega: string | null;
   clienteId: string;
   comentarios: string | null;
   items: Array<{
