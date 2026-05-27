@@ -58,11 +58,11 @@ function formatDate(value: string | null) {
     return Number.isNaN(date.getTime()) ? "-" : dateFormatter.format(date);
 }
 
-// Verifica que el valor sea un número positivo (rechaza vacíos y negativos)
-function isPositiveNumber(value: string) {
+// Verifica que el valor sea un entero positivo (rechaza vacíos, decimales y negativos)
+function isPositiveInteger(value: string) {
     if (value.trim() === "") return false;
     const parsed = Number(value);
-    return !Number.isNaN(parsed) && parsed > 0;
+    return Number.isInteger(parsed) && parsed > 0;
 }
 
 // Convierte strings vacíos en null para que la API no reciba campos vacíos
@@ -311,6 +311,10 @@ export default function InventoryPage() {
     // Actualiza un campo del formulario de ajuste al escribir
     const handleAdjustChange = (event: any) => {
         const { name, value } = event.target;
+        if (name === "cantidad") {
+            setAdjustForm((current) => ({ ...current, cantidad: value.replace(/\D/g, "") }));
+            return;
+        }
         setAdjustForm((current) => ({ ...current, [name]: value }));
     };
 
@@ -318,7 +322,7 @@ export default function InventoryPage() {
     const validateAdjustForm = () => {
         const nextErrors: AdjustFormErrors = {};
         if (!adjustForm.tipo)                      nextErrors.tipo     = "Select a movement type";
-        if (!isPositiveNumber(adjustForm.cantidad)) nextErrors.cantidad = "Enter a positive quantity";
+        if (!isPositiveInteger(adjustForm.cantidad)) nextErrors.cantidad = "Enter a positive whole number";
         if (!adjustForm.motivo.trim())              nextErrors.motivo   = "Reason is required";
         return nextErrors;
     };
@@ -975,6 +979,8 @@ export default function InventoryPage() {
                                         name="cantidad"
                                         type="number"
                                         min="1"
+                                        step="1"
+                                        inputMode="numeric"
                                         value={adjustForm.cantidad}
                                         onChange={handleAdjustChange}
                                         className="glass-input w-full"
