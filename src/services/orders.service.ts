@@ -14,7 +14,7 @@ function toNumber(value: number | string) {
 
 function buildPayload(data: OrderFormValues) {
   return {
-    folio: String(data.folio || "").trim().toUpperCase(),
+    // folio: generado automáticamente por el backend
     fechaOrden: data.fechaOrden,
     fechaEntrega: data.fechaEntrega ?? null,
     clienteId: String(data.clienteId || "").trim(),
@@ -29,9 +29,7 @@ function buildPayload(data: OrderFormValues) {
 
 function buildUpdatePayload(data: Partial<OrderFormValues>) {
   const payload: Record<string, unknown> = {};
-  if (data.folio !== undefined) {
-    payload.folio = String(data.folio || "").trim().toUpperCase();
-  }
+  // folio: no editable después de la creación
   if (data.fechaOrden !== undefined) {
     payload.fechaOrden = data.fechaOrden;
   }

@@ -53,33 +53,12 @@ export default function RolesPage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
-    const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
+    const { user, isLoading: isAuthLoading, isHydrated } = useAuth();
+    const pathname = usePathname();
     const router = useRouter();
-
     const routeConfig = getRouteByPath(pathname);
-    useEffect(() => {
-    if (!isHydrated || isAuthLoading) return;
-    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
-                router.replace(getDefaultRoute(user)); 
-    }
-    }, [user, isAuthLoading, isHydrated, router, routeConfig]);
 
-    if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
-
-    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
-    // mientras redirige o si no puede, no muestra la pantalla
-    return null;
-    }
-
-    useEffect(() => {
-        void fetchRoles();
-        void fetchPermissions();
-    }, []);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [search]);
-
+    // ── Funciones de fetch (definidas antes de los hooks que las usan) ────
     const fetchRoles = async () => {
         try {
             setIsLoading(true);
@@ -106,6 +85,7 @@ export default function RolesPage() {
         }
     };
 
+    // ── useMemo hooks (deben estar antes de los early returns) ───────────
     const permissionGroups = useMemo<PermissionGroup[]>(() => {
         const grouped = new Map<string, Permission[]>();
 
@@ -125,9 +105,7 @@ export default function RolesPage() {
 
     const filteredRoles = useMemo(() => {
         const searchText = search.trim().toLowerCase();
-
         if (!searchText) return roles;
-
         return roles.filter((role) => {
             return (
                 role.nombre.toLowerCase().includes(searchText) ||
@@ -142,9 +120,35 @@ export default function RolesPage() {
     const endIndex = startIndex + itemsPerPage;
     const paginatedRoles = filteredRoles.slice(startIndex, endIndex);
 
+    // ── Todos los useEffect ANTES de cualquier early return ──────────────
+    useEffect(() => {
+        if (!isHydrated || isAuthLoading) return;
+        if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+            router.replace(getDefaultRoute(user));
+        }
+    }, [user, isAuthLoading, isHydrated, router, routeConfig]);
+
+    // Carga roles y permisos en cuanto el usuario está hidratado
+    useEffect(() => {
+        if (!isHydrated) return;
+        void fetchRoles();
+        void fetchPermissions();
+    }, [isHydrated]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
+
     useEffect(() => {
         setCurrentPage((page) => Math.min(page, totalPages));
     }, [totalPages]);
+
+    // ── Guards de autenticación ──────────────────────────────────────────
+    if (!isHydrated || isAuthLoading) return <Loading label="Cargando usuario..." />;
+
+    if (!user || !routeConfig || !canAccessRoute(user, routeConfig)) {
+        return null;
+    }
 
     const openCreate = () => {
         setEditingRole(null);

@@ -15,7 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 type StatusFilter = "all" | "active" | "inactive";
 
 type ProductFormState = {
-    sku: string;
+    // sku: generado automáticamente por el backend
     nombre: string;
     descripcion: string;
     categoria: string;
@@ -33,7 +33,7 @@ type ProductFormErrors = Partial<Record<keyof ProductFormState, string>>;
 const itemsPerPage = 4;
 
 const emptyForm: ProductFormState = {
-    sku: "",
+    // sku: generado automáticamente por el backend
     nombre: "",
     descripcion: "",
     categoria: "",
@@ -56,7 +56,7 @@ function toFormState(product?: Product | null): ProductFormState {
     if (!product) return emptyForm;
 
     return {
-        sku: product.sku || "",
+        // sku: no editable, viene del registro existente
         nombre: product.nombre || "",
         descripcion: product.descripcion || "",
         categoria: product.categoria || "",
@@ -195,12 +195,9 @@ export default function ProductsPage() {
     const validateForm = () => {
         const nextErrors: ProductFormErrors = {};
 
-        const sku = form.sku.trim();
+        // sku: validación eliminada, se genera automáticamente
         const nombre = form.nombre.trim();
         const categoria = form.categoria.trim();
-
-        if (!sku) nextErrors.sku = "SKU is required";
-        else if (sku.length < 2) nextErrors.sku = "SKU must have at least 2 characters";
 
         if (!nombre) nextErrors.nombre = "Name is required";
         else if (nombre.length < 2) nextErrors.nombre = "Name must have at least 2 characters";
@@ -241,7 +238,7 @@ export default function ProductsPage() {
     const handleSave = async () => {
         const nextErrors = validateForm();
         const requiredMissing = [
-            form.sku.trim(),
+            // sku: ya no es campo de entrada
             form.nombre.trim(),
             form.categoria.trim(),
             form.precioCompra.trim(),
@@ -263,7 +260,7 @@ export default function ProductsPage() {
         }
 
         const payload: ProductFormValues = {
-            sku: form.sku.trim(),
+            // sku: generado automáticamente por el backend
             nombre: form.nombre.trim(),
             descripcion: normalizeOptionalText(form.descripcion),
             categoria: normalizeOptionalText(form.categoria),
@@ -625,9 +622,15 @@ export default function ProductsPage() {
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <Field label="SKU *" error={formErrors.sku}>
-                                <input name="sku" value={form.sku} onChange={handleChange} className="glass-input w-full" placeholder="PRD-001" />
-                            </Field>
+                            <div className="flex flex-col gap-2 text-sm font-semibold text-slate-800">
+                                <span>SKU</span>
+                                <div className="glass-input w-full bg-white/10 text-slate-500 cursor-not-allowed select-none flex items-center gap-2 min-h-[2.5rem]">
+                                    {editingProduct
+                                        ? <span className="font-bold text-slate-700">{editingProduct.sku}</span>
+                                        : <span className="italic text-slate-400">Auto-generated on save</span>
+                                    }
+                                </div>
+                            </div>
 
                             <Field label="Name *" error={formErrors.nombre}>
                                 <input name="nombre" value={form.nombre} onChange={handleChange} className="glass-input w-full" placeholder="Laptop Pro 15" />

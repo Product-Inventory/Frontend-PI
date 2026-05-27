@@ -16,7 +16,7 @@ function buildPayload(data: ReceptionFormValues) {
   return {
     supplierId: data.supplierId,
     fecha: data.fecha,
-    folio: String(data.folio || "").trim(),
+    // folio: generado automáticamente por el backend
     comentarios: normalizeOptionalText(data.comentarios),
     items: Array.isArray(data.items)
       ? data.items.map((item) => ({
@@ -32,7 +32,7 @@ function buildUpdatePayload(data: Partial<ReceptionFormValues>) {
   const payload: Record<string, unknown> = {};
   if (data.supplierId !== undefined) payload.supplierId = data.supplierId;
   if (data.fecha !== undefined) payload.fecha = data.fecha;
-  if (data.folio !== undefined) payload.folio = String(data.folio || "").trim();
+  // folio: no editable después de la creación
   if (data.comentarios !== undefined)
     payload.comentarios = normalizeOptionalText(data.comentarios);
   if (data.items !== undefined)

@@ -19,7 +19,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
   const [form, setForm] = useState<ReceptionFormValues>({
     supplierId: '',
     fecha: new Date().toISOString().slice(0, 10),
-    folio: '',
+    // folio: generado automáticamente por el backend
     comentarios: '',
     items: [],
   });
@@ -55,7 +55,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
       setForm({
         supplierId: recepcion.supplierId,
         fecha: recepcion.fecha.slice(0, 10),
-        folio: recepcion.folio,
+        // folio: no editable, viene del registro existente
         comentarios: recepcion.comentarios || '',
         items: recepcion.items.map(item => ({
           productId: item.productId,
@@ -70,7 +70,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
       setForm({
         supplierId: '',
         fecha: new Date().toISOString().slice(0, 10),
-        folio: '',
+        // folio: generado automáticamente por el backend
         comentarios: '',
         items:  [{
       productId: '',
@@ -146,7 +146,7 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
     const err: Record<string, string> = {};
     if (!form.supplierId) err.supplierId = 'Supplier is required';
     if (!form.fecha) err.fecha = 'Date is required';
-    if (!form.folio.trim()) err.folio = 'Folio is required';
+    // folio: validación eliminada, se genera automáticamente
     if (form.items.length === 0) err.items = 'At least one product is required';
     for (let i = 0; i < form.items.length; i++) {
       const item = form.items[i];
@@ -232,14 +232,13 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
               {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1">Folio *</label>
-              <input
-                type="text"
-                className="glass-input w-full"
-                value={form.folio}
-                onChange={(e) => setForm({ ...form, folio: e.target.value })}
-              />
-              {errors.folio && <p className="text-red-500 text-xs mt-1">{errors.folio}</p>}
+              <label className="block text-sm font-semibold text-slate-800 mb-1">Folio</label>
+              <div className="glass-input w-full bg-white/10 text-slate-500 cursor-not-allowed select-none flex items-center gap-2 min-h-[2.5rem] px-3">
+                {recepcion
+                  ? <span className="font-bold text-slate-700">{recepcion.folio}</span>
+                  : <span className="italic text-slate-400">Auto-generated on save</span>
+                }
+              </div>
             </div>
           </div>
 
@@ -304,20 +303,27 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
                         </div>
                         {errors[`costo_${idx}`] && <p className="text-red-500 text-xs">{errors[`costo_${idx}`]}</p>}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono">
+                      <td className="px-2 py-2 text-right font-semibold text-slate-800">
                         ${(item.subtotal || 0).toFixed(2)}
                       </td>
                       <td className="px-2 py-2 text-center">
-                        <button type="button" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-600">
-                          🗑️
-                        </button>
+                        {form.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/45 bg-white/35 text-slate-500 transition hover:bg-rose-50 hover:text-rose-500"
+                            aria-label="Remove product"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <button type="button" onClick={addItem} className="text-blue-500 text-sm mt-2 flex items-center gap-1">
+            <button type="button" onClick={addItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
               + Add product
             </button>
             {errors.items && <p className="text-red-500 text-xs mt-1">{errors.items}</p>}
