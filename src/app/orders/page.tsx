@@ -270,8 +270,7 @@ export default function OrdersPage() {
     setOrderForm((prev) => ({
       ...prev,
       items: prev.items.filter((_, i) => i !== idx),
-    })
-  );
+    }));
 
   function validateOrderForm(form: OrderFormValues, clients: Client[], products: Product[]) {
     const errors: Record<string, string> = {};
@@ -845,7 +844,7 @@ export default function OrdersPage() {
                             })}
                           </select>
                           {orderFormErrors[`items.${idx}.productId`] && (
-                            <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
+                            <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.productId`]}</span>
                           )}
                         </div>
                         <div className="shrink-0 flex flex-col gap-1">
@@ -885,15 +884,7 @@ export default function OrdersPage() {
                           )}
                         </div>
                       </div>
-                      {/* Mostrar errores si existen */}
-                      {orderFormErrors[`items.${idx}.productId`] && (
-                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.productId`]}</span>
-                      )}
-                      {orderFormErrors[`items.${idx}.cantidad`] && (
-                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.cantidad`]}</span>
-                      )}
-                    </div>
-                  ))}
+                    ))}
                 </div>
                   <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
                     + Add product
