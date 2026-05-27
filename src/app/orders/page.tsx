@@ -80,6 +80,8 @@ export default function OrdersPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [confirmAction, setConfirmAction] = useState<null | { type: "confirm" | "deliver" | "cancel", order: Order }>(null);
+  const [processingAction, setProcessingAction] = useState<null | { type: string; message: string }>(null);
   const requestSeqRef = useRef(0);
   const showPagination = totalItems > itemsPerPage;
 
@@ -251,6 +253,46 @@ export default function OrdersPage() {
     }
   };
 
+  const handleConfirmClick = (order: Order) => setConfirmAction({ type: "confirm", order });
+  const handleDeliverClick = (order: Order) => setConfirmAction({ type: "deliver", order });
+  const handleCancelClick = (order: Order) => setConfirmAction({ type: "cancel", order });
+
+  const executeConfirmedAction = async () => {
+    if (!confirmAction) return;
+    const action = confirmAction;
+    // close the confirm modal immediately to avoid UI overlap
+    setConfirmAction(null);
+
+    // show a small delay before showing the processing box to avoid flicker
+    const delayTimer = window.setTimeout(() => {
+      setProcessingAction({
+        type: action.type,
+        message:
+          action.type === "confirm"
+            ? "Confirming order..."
+            : action.type === "deliver"
+            ? "Marking as delivered..."
+            : "Cancelling order...",
+      });
+    }, 200);
+
+    setIsProcessing(true);
+    try {
+      if (action.type === "confirm") {
+        await handleConfirm(action.order);
+      } else if (action.type === "deliver") {
+        await handleDelivered(action.order);
+      } else if (action.type === "cancel") {
+        await handleCancel(action.order);
+      }
+    } finally {
+      setIsProcessing(false);
+      clearTimeout(delayTimer);
+      // keep the processing box visible a short moment then hide
+      setTimeout(() => setProcessingAction(null), 300);
+    }
+  };
+
   const handleAddOrderItem = () =>
     setOrderForm((prev) => ({
       ...prev,
@@ -282,20 +324,10 @@ export default function OrdersPage() {
     if (!Array.isArray(form.items) || form.items.length === 0) {
       errors.items = "Add at least 1 product";
     } else {
-      // Conteo de duplicados para detectar el mismo producto en varias filas
-      const productIdCount = new Map<string, number>();
-      form.items.forEach((item) => {
-        if (item.productId) {
-          productIdCount.set(item.productId, (productIdCount.get(item.productId) || 0) + 1);
-        }
-      });
-
       form.items.forEach((item, idx) => {
         const product = products.find(p => p.id === item.productId);
         if (!item.productId) {
           errors[`items.${idx}.productId`] = "Select a product";
-        } else if ((productIdCount.get(item.productId) || 0) > 1) {
-          errors[`items.${idx}.productId`] = "Product already added";
         } else if (!product || !product.activo || Number(product.stock) <= 0) {
           errors[`items.${idx}.productId`] = "Selected product is unavailable";
         }
@@ -560,7 +592,9 @@ export default function OrdersPage() {
                             )}
                             {canConfirm(order) && (
                               <button
-                                onClick={() => handleConfirm(order)}
+                                onClick={() => { 
+                                  handleConfirmClick(order)
+                                }}
                                 className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
                                 disabled={isProcessing}
                               >
@@ -569,7 +603,9 @@ export default function OrdersPage() {
                             )}
                             {canDeliver(order) && (
                               <button
-                                onClick={() => handleDelivered(order)}
+                                onClick={() => { 
+                                  handleDeliverClick(order)
+                                }}
                                 className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
                                 disabled={isProcessing}
                               >
@@ -578,7 +614,9 @@ export default function OrdersPage() {
                             )}
                             {canCancel(order) && (
                               <button
-                                onClick={() => handleCancel(order)}
+                                onClick={() => { 
+                                  handleCancelClick(order)
+                                }}
                                 className={`${buttonBase} px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em]`}
                                 disabled={isProcessing}
                                 title="Cancel order"
@@ -1015,6 +1053,40 @@ export default function OrdersPage() {
         cancelButtonClassName="products-violet-black-button"
         confirmButtonClassName="products-violet-black-button"
       />
+      <ConfirmModal
+        open={!!confirmAction}
+        title={
+          confirmAction?.type === "confirm"
+            ? "Confirm Order"
+            : confirmAction?.type === "deliver"
+            ? "Mark as Delivered"
+            : confirmAction?.type === "cancel"
+            ? "Cancel Order"
+            : ""
+        }
+        message={
+          confirmAction?.type === "confirm"
+            ? `Are you sure you want to confirm order "${confirmAction.order?.folio}"?`
+            : confirmAction?.type === "deliver"
+            ? `Are you sure you want to mark as delivered order "${confirmAction.order?.folio}"?`
+            : confirmAction?.type === "cancel"
+            ? `Are you sure you want to cancel order "${confirmAction.order?.folio}"?`
+            : ""
+        }
+        onConfirm={executeConfirmedAction}
+        onCancel={() => setConfirmAction(null)}
+        cancelButtonClassName="products-violet-black-button"
+        confirmButtonClassName="products-violet-black-button"
+      />
+      {processingAction && (
+        <Portal>
+          <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
+            <div className="flex items-center justify-center p-6">
+              <span className="loading loading-ring loading-lg text-slate-700" aria-hidden="true" />
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 }
