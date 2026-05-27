@@ -28,6 +28,8 @@ export default function ReceptionsPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [viewingReception, setViewingReception] = useState<Reception | null>(null);
+  const [confirmReceptionOpen, setConfirmReceptionOpen] = useState(false);
+  const [receptionToConfirm, setReceptionToConfirm] = useState<string | null>(null);
 
   const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
   const router = useRouter();
@@ -76,7 +78,7 @@ export default function ReceptionsPage() {
     setEditingReception(rec);
     setModalOpen(true);
   };
-
+/*
   const handleConfirm = async (id: string) => {
     if (!confirm("Confirm this reception? Stock will be updated.")) return;
     setConfirmingId(id);
@@ -89,7 +91,20 @@ export default function ReceptionsPage() {
     } finally {
       setConfirmingId(null);
     }
-  };
+  };*/
+
+  const handleConfirmConfirmed = async (id: string) => {
+  setConfirmingId(id);
+  try {
+    await receptionsService.confirm(id);
+    setToast({ message: "Reception confirmed successfully", type: "success" });
+    fetchReceptions();
+  } catch (error: any) {
+    setToast({ message: error?.response?.data?.message || "Error confirming reception", type: "error" });
+  } finally {
+    setConfirmingId(null);
+  }
+};
 
   const handleDelete = (rec: Reception) => {
     if (rec.status === "CONFIRMED") {
@@ -251,9 +266,17 @@ export default function ReceptionsPage() {
                                 <button onClick={() => handleEdit(rec)} className="text-yellow-200 hover:text-yellow-100" title="Edit">
                                   ✏️
                                 </button>
-                                <button onClick={() => handleConfirm(rec.id)} disabled={confirmingId === rec.id} className="text-green-200 hover:text-green-100" title="Confirm">
-                                  <CheckCircle className="h-4 w-4" />
-                                </button>
+                                <button
+  onClick={() => {
+    setReceptionToConfirm(rec.id);
+    setConfirmReceptionOpen(true);
+  }}
+  disabled={confirmingId === rec.id}
+  className="text-green-200 hover:text-green-100"
+  title="Confirm"
+>
+  <CheckCircle className="h-4 w-4" />
+</button>
                                 <button onClick={() => handleDelete(rec)} className="text-red-200 hover:text-red-100" title="Delete">
                                   🗑️
                                 </button>
@@ -308,7 +331,18 @@ export default function ReceptionsPage() {
                       {rec.status === "DRAFT" && (
                         <>
                           <button onClick={() => handleEdit(rec)} className={buttonBase}>✏️</button>
-                          <button onClick={() => handleConfirm(rec.id)} className={buttonBase}>✅</button>
+                            <button
+  onClick={() => {
+    setReceptionToConfirm(rec.id);
+    setConfirmReceptionOpen(true);
+  }}
+  className={buttonBase}
+  disabled={confirmingId === rec.id}
+>
+  ✅
+</button>
+
+
                           <button onClick={() => handleDelete(rec)} className={buttonBase}>🗑️</button>
                         </>
                       )}
@@ -447,6 +481,26 @@ export default function ReceptionsPage() {
           confirmButtonClassName="products-violet-black-button"
           cancelButtonClassName="products-violet-black-button"
         />
+        <ConfirmModal
+  open={confirmReceptionOpen}
+  title="Confirm reception"
+  message="Confirm this reception? Stock will be updated."
+  onConfirm={() => {
+    if (receptionToConfirm) {
+      handleConfirmConfirmed(receptionToConfirm);
+    }
+    setConfirmReceptionOpen(false);
+    setReceptionToConfirm(null);
+  }}
+  onCancel={() => {
+    setConfirmReceptionOpen(false);
+    setReceptionToConfirm(null);
+  }}
+  confirmButtonClassName="products-violet-black-button"
+  cancelButtonClassName="products-violet-black-button"
+/>
+
+
       </div>
     </div>
   );

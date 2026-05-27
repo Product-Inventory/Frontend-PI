@@ -26,6 +26,7 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
     activo: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -57,28 +58,87 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
     setErrors({});
   }, [supplier, isOpen]);
 
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.nombre.trim()) newErrors.nombre = 'Company name is required';
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = 'Invalid email';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const validateForm = (): Record<string, string> => {
+  const newErrors: Record<string, string> = {};
+
+  if (!formData.nombre.trim()) newErrors.nombre = "Company name is required";
+  else if (formData.nombre.trim().length < 2) newErrors.nombre = "Company name must be at least 2 characters";
+
+  if (!formData.email.trim()) newErrors.email = "Email is required";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email";
+
+  if (!formData.telefono.trim()) newErrors.telefono = "Phone number is required";
+  else if (!/^\d{10}$/.test(formData.telefono)) newErrors.telefono = "Phone must have exactly 10 digits";
+
+  return newErrors;
+};
+
+  const validateField = (name: string, value: any): string | undefined => {
+  const v = String(value ?? "").trim();
+
+  switch (name) {
+    case "nombre":
+      if (!v) return "Company name is required";
+      if (v.length < 2) return "Company name must be at least 2 characters";
+      return;
+
+    case "email":
+      if (!v) return "Email is required";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Invalid email";
+      return;
+
+    case "telefono":
+      if (!v) return "Phone number is required";
+      if (!/^\d{10}$/.test(v)) return "Phone must have exactly 10 digits";
+      return;
+
+    // Los demás campos son opcionales (rfc, contacto, direccion, giro, notas)
+    default:
+      return;
+  }
+};
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const { name, value } = e.target;
+  setTouched((prev) => ({ ...prev, [name]: true }));
+  const error = validateField(name, value);
+  setErrors((prev) => ({ ...prev, [name]: error }));
+};
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    if (type === 'select-one' && name === 'activo') {
-      setFormData(prev => ({ ...prev, activo: value === 'true' }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
+  const { name, value, type } = e.target;
+  const newValue = type === "select-one" && name === "activo" ? value === "true" : value;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+  // Limpiar error del campo si existe
+  if (errors[name]) {
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+
+  // Si ya estaba tocado, validar en tiempo real
+  if (touched[name]) {
+    const error = validateField(name, newValue);
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  }
+};
+
+ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  if (!validate()) return;
+
+  // Marcar todos los campos como tocados para mostrar errores
+  const allFields = ["nombre", "email", "telefono", "rfc", "contacto", "direccion", "giro", "notas", "activo"];
+  const newTouched = allFields.reduce((acc, field) => ({ ...acc, [field]: true }), {});
+  setTouched(newTouched);
+
+  const newErrors = validateForm();
+  setErrors(newErrors);
+
+  if (Object.keys(newErrors).length > 0) {
+    setToast({ message: "Please fix the errors before saving", type: "error" });
+    return;
+  }
+
   setLoading(true);
   try {
     if (supplier) {
@@ -114,33 +174,38 @@ export default function SupplierFormModal({ isOpen, onClose, onSuccess, supplier
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
              <label className="block text-sm font-semibold text-slate-800 mb-1">Company Name</label>
-              <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} />
+              <input type="text" name="nombre" className="glass-input w-full" value={formData.nombre} onChange={handleChange} onBlur={handleBlur}/>
               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">RFC</label>
-              <input type="text" name="rfc" className="glass-input w-full" value={formData.rfc} onChange={handleChange} />
+              <input type="text" name="rfc" className="glass-input w-full" value={formData.rfc} onChange={handleChange} onBlur={handleBlur}/>
+               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
              <label className="block text-sm font-semibold text-slate-800 mb-1">Contact Person</label>
-              <input type="text" name="contacto" className="glass-input w-full" value={formData.contacto} onChange={handleChange} />
+              <input type="text" name="contacto" className="glass-input w-full" value={formData.contacto} onChange={handleChange}onBlur={handleBlur}/>
+               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">Email</label>
-              <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange} />
+              <input type="email" name="email" className="glass-input w-full" value={formData.email} onChange={handleChange}onBlur={handleBlur}/>
               {errors.email && <p className="text-rose-600 text-xs">{errors.email}</p>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">Phone Number</label>
-              <input type="tel" name="telefono" className="glass-input w-full" value={formData.telefono} onChange={handleChange} />
+              <input type="tel" name="telefono" className="glass-input w-full" value={formData.telefono} onChange={handleChange}onBlur={handleBlur}/>
+               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
              <label className="block text-sm font-semibold text-slate-800 mb-1">Adress</label>
-              <input type="text" name="direccion" className="glass-input w-full" value={formData.direccion} onChange={handleChange} />
+              <input type="text" name="direccion" className="glass-input w-full" value={formData.direccion} onChange={handleChange}onBlur={handleBlur}/>
+               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">Business Line</label>
-              <input type="text" name="giro" className="glass-input w-full" value={formData.giro} onChange={handleChange} />
+              <input type="text" name="giro" className="glass-input w-full" value={formData.giro} onChange={handleChange}onBlur={handleBlur}/>
+               {errors.nombre && <p className="text-rose-600 text-xs">{errors.nombre}</p>}
             </div>
             <div>
            <label className="block text-sm font-semibold text-slate-800 mb-1">Status</label>
