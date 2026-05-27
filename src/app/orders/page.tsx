@@ -885,8 +885,16 @@ export default function OrdersPage() {
                           )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      {/* Mostrar errores si existen */}
+                      {orderFormErrors[`items.${idx}.productId`] && (
+                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.productId`]}</span>
+                      )}
+                      {orderFormErrors[`items.${idx}.cantidad`] && (
+                        <span className="text-xs text-rose-500 inline-block pl-1">{orderFormErrors[`items.${idx}.cantidad`]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
                   <button type="button" onClick={handleAddOrderItem} className={`${buttonBase} mt-2 h-9 px-4 text-sm`}>
                     + Add product
                   </button>
