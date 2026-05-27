@@ -828,11 +828,21 @@ export default function OrdersPage() {
                             required
                           >
                             <option value="">Product...</option>
-                            {availableProducts.map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""}
-                              </option>
-                            ))}
+                            {availableProducts.map(p => {
+                              const isAlreadySelected = orderForm.items.some((otherItem, otherIdx) =>
+                                otherItem.productId === p.id && otherIdx !== idx
+                              );
+                              return (
+                                <option
+                                  key={p.id}
+                                  value={p.id}
+                                  disabled={isAlreadySelected}
+                                >
+                                  {p.nombre} ({p.sku}) {p.stock ? ` - ${p.stock} available` : ""} 
+                                  {isAlreadySelected ? " (already selected)" : ""}
+                                </option>
+                              );
+                            })}
                           </select>
                           {orderFormErrors[`items.${idx}.productId`] && (
                             <span className="text-xs text-rose-500">{orderFormErrors[`items.${idx}.productId`]}</span>
