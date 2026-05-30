@@ -69,6 +69,8 @@ export default function OrdersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [permissionToast, setPermissionToast] = useState<{ message: string; type: "error" } | null>(null);
+  const [permissionToastQueue, setPermissionToastQueue] = useState<string[]>([]);
   const [statusToast, setStatusToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
@@ -88,6 +90,24 @@ export default function OrdersPage() {
 
   const { user, isLoading: isAuthLoading, isHydrated } = useAuth();  const pathname = usePathname();
   const router = useRouter();
+
+  const enqueuePermissionToast = (message: string) => {
+    setPermissionToastQueue((current) =>
+      current.includes(message) ? current : [...current, message]
+    );
+  };
+
+  const handlePermissionToastClose = () => {
+    setPermissionToast(null);
+  };
+
+  useEffect(() => {
+    if (permissionToast || permissionToastQueue.length === 0) return;
+
+    const [nextMessage, ...rest] = permissionToastQueue;
+    setPermissionToast({ message: nextMessage, type: "error" });
+    setPermissionToastQueue(rest);
+  }, [permissionToast, permissionToastQueue]);
 
   const routeConfig = getRouteByPath(pathname);
   useEffect(() => {
@@ -146,6 +166,9 @@ export default function OrdersPage() {
   useEffect(() => { setCurrentPage(page => Math.min(page, totalPages)); }, [totalPages]);
   useEffect(() => {
     if (isOrderModalOpen) {
+      setPermissionToast(null);
+      setPermissionToastQueue([]);
+
       if (clients.length === 0) {
         clientsService.getAll({ limit: 100 })
           .then(res => setClients(res.items || []))
@@ -153,6 +176,11 @@ export default function OrdersPage() {
             const message = error?.response?.status === 403
               ? "You do not have permission to view clients"
               : (error?.response?.data?.message || "Error loading clients");
+            if (error?.response?.status === 403) {
+              enqueuePermissionToast(message);
+              return;
+            }
+
             setToast({ message, type: "error" });
           });
       }
@@ -163,6 +191,11 @@ export default function OrdersPage() {
             const message = error?.response?.status === 403
               ? "You do not have permission to view products"
               : (error?.response?.data?.message || "Error loading products");
+            if (error?.response?.status === 403) {
+              enqueuePermissionToast(message);
+              return;
+            }
+
             setToast({ message, type: "error" });
           });
       }
@@ -466,14 +499,22 @@ export default function OrdersPage() {
 
   return (
     <div className="app-atmosphere relative min-h-full px-6 py-6 lg:px-10 rounded-3xl overflow-hidden">
+      {permissionToast && (
+        <Toast
+          message={permissionToast.message}
+          type={permissionToast.type}
+          duration={1500}
+          onClose={handlePermissionToastClose}
+        />
+      )}
       {toast && (
-        <Toast message={toast.message} type={toast.type} duration={1000} onClose={() => setToast(null)} />
+        <Toast message={toast.message} type={toast.type} duration={1500} onClose={() => setToast(null)} />
       )}
       {statusToast && (
         <Toast
           message={statusToast.message}
           type={statusToast.type}
-          duration={1000}
+          duration={1500}
           onClose={() => setStatusToast(null)}
         />
       )}

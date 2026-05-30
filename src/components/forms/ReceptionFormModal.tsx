@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Portal } from '@/components/ui/Portal';
 import { Spinner } from '@/components/ui/Spinner';
+import { Toast } from '@/components/ui/Toast';
 import { receptionsService } from '@/services/receptions.service';
 import { suppliersService } from '@/services/suppliers.service';
 import { productsService } from '@/services/products.service';
@@ -30,9 +31,32 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
   const [products, setProducts] = useState<{ id: string; nombre: string; sku?: string; precioCompra?: number; precioVenta?: number }[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [permissionToast, setPermissionToast] = useState<{ message: string; type: "error" } | null>(null);
+  const [permissionToastQueue, setPermissionToastQueue] = useState<string[]>([]);
+
+  const enqueuePermissionToast = (message: string) => {
+    setPermissionToastQueue((current) =>
+      current.includes(message) ? current : [...current, message]
+    );
+  };
+
+  const handlePermissionToastClose = () => {
+    setPermissionToast(null);
+  };
+
+  useEffect(() => {
+    if (permissionToast || permissionToastQueue.length === 0) return;
+
+    const [nextMessage, ...rest] = permissionToastQueue;
+    setPermissionToast({ message: nextMessage, type: "error" });
+    setPermissionToastQueue(rest);
+  }, [permissionToast, permissionToastQueue]);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    setPermissionToast(null);
+    setPermissionToastQueue([]);
 
     setLoadingSuppliers(true);
     setLoadingProducts(true);
@@ -43,6 +67,11 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
         const message = err?.response?.status === 403
           ? "You do not have permission to view suppliers"
           : (err?.response?.data?.message || "Error loading suppliers");
+        if (err?.response?.status === 403) {
+          enqueuePermissionToast(message);
+          return;
+        }
+
         setToast({ message, type: "error" });
       })
       .finally(() => setLoadingSuppliers(false));
@@ -62,6 +91,11 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
         const message = err?.response?.status === 403
           ? "You do not have permission to view products"
           : (err?.response?.data?.message || "Error loading products");
+        if (err?.response?.status === 403) {
+          enqueuePermissionToast(message);
+          return;
+        }
+
         setToast({ message, type: "error" });
       })
       .finally(() => setLoadingProducts(false));
@@ -220,6 +254,19 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
   return (
     <Portal>
     <div className="app-modal-overlay app-modal-overlay--padded app-modal-overlay--form">
+      {permissionToast && (
+        <div className="fixed inset-x-0 z-[2147483647] flex flex-col items-center gap-4 px-4 pointer-events-none">
+          <Toast
+            message={permissionToast.message}
+            type={permissionToast.type}
+            duration={1500}
+            portal={false}
+            overlayClassName="w-full"
+            shellClassName="w-full max-w-2xl"
+            onClose={handlePermissionToastClose}
+          />
+        </div>
+      )}
       <div className="app-modal-shell app-modal-shell--lg glass-card rounded-[28px] overflow-y-auto max-h-full scrollbar-none p-6 md:p-8">
         <div className="mb-5">
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
