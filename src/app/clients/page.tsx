@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { clientsService } from "@/services/clients.service";
@@ -449,7 +450,7 @@ export default function ClientsPage() {
         </div>
 
         {isLoading ? (
-          <Loading label="Loading clients..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
             <div className="hidden overflow-x-auto md:block">

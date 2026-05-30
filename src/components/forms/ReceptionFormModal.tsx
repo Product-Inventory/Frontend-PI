@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Portal } from '@/components/ui/Portal';
+import { Spinner } from '@/components/ui/Spinner';
 import { receptionsService } from '@/services/receptions.service';
 import { suppliersService } from '@/services/suppliers.service';
 import { productsService } from '@/services/products.service';
@@ -32,9 +33,22 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
 
   useEffect(() => {
     if (!isOpen) return;
-    Promise.all([
-      suppliersService.getAll().then(data => setSuppliers(data.items)),
-      productsService.getAll().then(data => {
+
+    setLoadingSuppliers(true);
+    setLoadingProducts(true);
+
+    suppliersService.getAll()
+      .then(data => setSuppliers(data.items))
+      .catch((err: any) => {
+        const message = err?.response?.status === 403
+          ? "You do not have permission to view suppliers"
+          : (err?.response?.data?.message || "Error loading suppliers");
+        setToast({ message, type: "error" });
+      })
+      .finally(() => setLoadingSuppliers(false));
+
+    productsService.getAll()
+      .then(data => {
         const items = data.items.map((p: any) => ({
           id: p.id,
           nombre: p.nombre,
@@ -43,11 +57,14 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
           precioVenta: p.precioVenta ?? 0,
         }));
         setProducts(items);
-      }),
-    ]).finally(() => {
-      setLoadingSuppliers(false);
-      setLoadingProducts(false);
-    });
+      })
+      .catch((err: any) => {
+        const message = err?.response?.status === 403
+          ? "You do not have permission to view products"
+          : (err?.response?.data?.message || "Error loading products");
+        setToast({ message, type: "error" });
+      })
+      .finally(() => setLoadingProducts(false));
   }, [isOpen]);
 
   useEffect(() => {
@@ -219,7 +236,9 @@ export default function RecepcionFormModal({ isOpen, onClose, onSuccess, recepci
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">Supplier *</label>
               {loadingSuppliers ? (
-                <div className="glass-input w-full text-slate-400">Loading...</div>
+                <div className="glass-input w-full flex items-center min-h-[2.5rem]">
+                  <Spinner fullArea={false} size="sm" />
+                </div>
               ) : (
                 <select
                   className="glass-input w-full"

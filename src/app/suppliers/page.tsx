@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { suppliersService } from "@/services/suppliers.service";
 import { Supplier } from "@/types/supplier";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import SupplierFormModal from "@/components/forms/SupplierFormModal";
 import { Toast } from "@/components/ui/Toast";
@@ -194,7 +195,7 @@ export default function SuppliersPage() {
         </div>
 
         {isLoading ? (
-          <Loading label="Loading suppliers..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
             <div className="hidden overflow-x-auto md:block">

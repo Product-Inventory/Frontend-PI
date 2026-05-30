@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { receptionsService } from "@/services/receptions.service";
 import { Reception } from "@/types/reception";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import ReceptionFormModal from "@/components/forms/ReceptionFormModal";
 import { Toast } from "@/components/ui/Toast";
@@ -218,7 +219,7 @@ export default function ReceptionsPage() {
         </div>
       </div>
         {isLoading ? (
-          <Loading label="Loading receptions..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
             {/* Desktop table */}
