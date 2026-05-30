@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
 import { usePathname, useRouter } from "next/navigation";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import UserFormModal from "@/components/forms/UserFormModal";
 import { Toast } from "@/components/ui/Toast";
@@ -196,7 +197,7 @@ export default function UsersPage() {
         </div>
 
         {isLoading ? (
-          <Loading label="Loading users..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
             <div className="hidden overflow-x-auto md:block">

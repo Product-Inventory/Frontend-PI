@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Portal } from '@/components/ui/Portal';
+import { Spinner } from '@/components/ui/Spinner';
 import { usersService } from '@/services/users.service';
 import { rolesService } from '@/services/roles.service';
 import { User } from '@/types/user';
@@ -209,7 +210,9 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user, setToa
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1">Role *</label>
               {rolesLoading ? (
-                <div className="glass-input w-full text-slate-400">Loading roles...</div>
+                <div className="glass-input w-full flex items-center min-h-[2.5rem]">
+                  <Spinner fullArea={false} size="sm" />
+                </div>
               ) : (
                 <select
                   name="roleId"

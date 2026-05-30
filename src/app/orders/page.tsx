@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import { Toast } from "@/components/ui/Toast";
 import Navbar from "@/components/layout/Navbar";
 import type { Order, OrderStatus, OrderFormValues } from "@/types/order";
@@ -145,8 +146,26 @@ export default function OrdersPage() {
   useEffect(() => { setCurrentPage(page => Math.min(page, totalPages)); }, [totalPages]);
   useEffect(() => {
     if (isOrderModalOpen) {
-      if (clients.length === 0) clientsService.getAll({ limit: 100 }).then(res => setClients(res.items || []));
-      if (products.length === 0) productsService.getAll({ limit: 100 }).then(res => setProducts(res.items || []));
+      if (clients.length === 0) {
+        clientsService.getAll({ limit: 100 })
+          .then(res => setClients(res.items || []))
+          .catch((error: any) => {
+            const message = error?.response?.status === 403
+              ? "You do not have permission to view clients"
+              : (error?.response?.data?.message || "Error loading clients");
+            setToast({ message, type: "error" });
+          });
+      }
+      if (products.length === 0) {
+        productsService.getAll({ limit: 100 })
+          .then(res => setProducts(res.items || []))
+          .catch((error: any) => {
+            const message = error?.response?.status === 403
+              ? "You do not have permission to view products"
+              : (error?.response?.data?.message || "Error loading products");
+            setToast({ message, type: "error" });
+          });
+      }
     }
   }, [isOrderModalOpen]);
 
@@ -229,6 +248,9 @@ export default function OrdersPage() {
     try {
       await ordersService.cancel(order.id);
       setStatusToast({ message: "Order cancelled successfully", type: "success" });
+      // El backend repone el stock de la orden cancelada; limpiamos el caché
+      // de productos para que el formulario recargue el stock actualizado.
+      setProducts([]);
       await fetchOrders();
     } catch (error: any) {
       setStatusToast({ message: error?.response?.data?.message || "Error cancelling order", type: "error" });
@@ -539,7 +561,7 @@ export default function OrdersPage() {
 
         {/* TABLES / CARDS */}
         {isLoading ? (
-          <Loading label="Loading orders..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[30px]">
             <div className="hidden overflow-x-auto md:block">

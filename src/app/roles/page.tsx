@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canAccessRoute, getDefaultRoute, getRouteByPath } from "@/routes/routeConfig";
 import { usePathname, useRouter } from "next/navigation";
 import Loading from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 
 function RoleIcon({ className = "h-6 w-6 text-white" }: { className?: string }) {
     return <Settings className={className} size={24} />;
@@ -302,7 +303,7 @@ export default function RolesPage() {
                 </div>
 
                 {isLoading ? (
-                    <div className="p-10 text-center">Loading...</div>
+                    <Spinner />
                 ) : (
                     <div className="glass-card overflow-hidden rounded-[40px]">
                         <div className="hidden overflow-x-auto md:block">
@@ -500,7 +501,11 @@ export default function RolesPage() {
                                         <h3 className="text-lg font-bold text-[#392750]">Permissions</h3>
                                         <p className="text-sm text-[#392750]">
                                             {form.permissions.length} selected
-                                            {permissionsLoading ? " · Loading permissions..." : ""}
+                                            {permissionsLoading ? (
+                                                <span className="ml-2 inline-flex align-middle">
+                                                    <Spinner fullArea={false} size="sm" />
+                                                </span>
+                                            ) : null}
                                         </p>
                                     </div>
 
@@ -514,8 +519,8 @@ export default function RolesPage() {
                                 </div>
 
                                 {permissionsLoading ? (
-                                    <div className="rounded-3xl border border-white/40 bg-white/25 px-4 py-10 text-center text-slate-500">
-                                        Loading permissions...
+                                    <div className="flex justify-center rounded-3xl border border-white/40 bg-white/25 px-4 py-10">
+                                        <Spinner fullArea={false} size="md" />
                                     </div>
                                 ) : (
                                     <div className="grid gap-4 lg:grid-cols-2">

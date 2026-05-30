@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users, Package, Truck, Inbox, AlertTriangle, Activity, LayoutDashboard, ArrowUpRight } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import { dashboardService } from "@/services/dashboard.service";
 import { DashboardSummary } from "@/types/dashboard";
 import { useAuth } from "@/context/AuthContext";
@@ -56,7 +57,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) return <Loading label="Loading statistics..." />;
+  if (isLoading) return <Spinner />;
   if (!summary) return <p className="text-gray-500 p-10 font-bold text-center">Failed to load dashboard</p>;
 
   const stats = [

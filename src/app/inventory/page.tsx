@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { inventoryService } from "@/services/inventory.service";
@@ -546,7 +547,7 @@ export default function InventoryPage() {
                 {/* ── Contenido: pestaña Inventario ── */}
                 {activeTab === "inventory" && (
                     inventoryLoading ? (
-                        <Loading label="Loading inventory..." />
+                        <Spinner />
                     ) : (
                         <div className="glass-card overflow-hidden rounded-[30px]">
 
@@ -739,7 +740,7 @@ export default function InventoryPage() {
                 {/* ── Contenido: pestaña Movimientos ── */}
                 {activeTab === "movements" && (
                     movementsLoading ? (
-                        <Loading label="Loading movements..." />
+                        <Spinner />
                     ) : (
                         <div className="glass-card overflow-hidden rounded-[30px]">
 
@@ -939,7 +940,9 @@ export default function InventoryPage() {
 
                         {/* Mientras se recarga el producto se muestra un spinner */}
                         {adjustLoading ? (
-                            <Loading label="Loading..." />
+                            <div className="flex justify-center py-10">
+                                <Spinner fullArea={false} size="md" />
+                            </div>
                         ) : (
                             <div className="grid gap-4 md:grid-cols-2">
 

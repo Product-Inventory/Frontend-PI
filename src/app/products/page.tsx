@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
 import { productsService } from "@/services/products.service";
@@ -420,7 +421,7 @@ export default function ProductsPage() {
                 </div>
                 
                 {isLoading ? (
-                    <Loading label="Loading products..." />
+                    <Spinner />
                 ) : (
                     <div className="glass-card overflow-hidden rounded-[40px] relative">
                         <div className="hidden overflow-x-auto md:block">

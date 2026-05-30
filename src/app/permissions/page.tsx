@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { permissionsService } from "@/services/permissions.service";
 import { Permission } from "@/types/permissions";
 import { Loading } from "@/components/ui/Loading";
+import { Spinner } from "@/components/ui/Spinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Portal } from "@/components/ui/Portal";
 import { Toast } from "@/components/ui/Toast";
@@ -181,7 +182,7 @@ export default function PermissionsPage() {
         </div>
 
         {isLoading ? (
-          <Loading label="Loading permissions..." />
+          <Spinner />
         ) : (
           <div className="glass-card overflow-hidden rounded-[40px]">
 
